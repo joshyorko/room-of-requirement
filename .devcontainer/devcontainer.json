@@ -13,6 +13,5 @@
             ]
         }
     },
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
     "postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/joshyorko/joshyorko_devcontainer/refs/heads/main/.devcontainer/setup-dev-container.sh -o /workspaces/setup-dev-container.sh && chmod +x /workspaces/setup-dev-container.sh && bash /workspaces/setup-dev-container.sh; conda config --append channels defaults; cowsay -c ghostbusters -t 'This development environment Kicks Ass!'"
 }
