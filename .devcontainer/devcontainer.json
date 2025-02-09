@@ -1,7 +1,7 @@
 
 {
         "name": "JY Dev Container",
-        "image": "mcr.microsoft.com/devcontainers/universal:linux",
+        "image": "mcr.microsoft.com/devcontainers/universal:focal",
 
         "postCreateCommand": "curl -s https://raw.githubusercontent.com/joshyorko/joshyorko_devcontainer/refs/heads/main/.devcontainer/setup-dev-container.sh | bash; conda config --append channels defaults; cowsay -c ghostbusters -t 'This development environment Kicks Ass!'"
 
