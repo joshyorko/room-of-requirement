@@ -1,11 +1,17 @@
+// .devcontainer/devcontainer.json
 {
-	"name": "Python 3",
-	// Or use a Dockerfile or Docker Compose file. More info: https://containers.dev/guide/dockerfile
-	"image": "mcr.microsoft.com/devcontainers/universal:focal",
-
-	"postCreateCommand": "curl -fsSL https://raw.githubusercontent.com/joshyorko/joshyorko_devcontainer/refs/heads/main/.devcontainer/setup-dev-container.sh -o /workspaces/setup-dev-container.sh && chmod +x /workspaces/setup-dev-container.sh && bash /workspaces/setup-dev-container.sh; conda config --append channels defaults; cowsay -c ghostbusters -t 'This development environment Kicks Ass!'"
-
-	// Uncomment to connect as root instead. More info: https://aka.ms/dev-containers-non-root.
-	// "remoteUser": "root"
+    "name": "Universal Dev Container",
+    "image": "ghcr.io/joshyorko/joshyorko_devcontainer:latest",
+    "customizations": {
+        "vscode": {
+            "settings": {
+                "terminal.integrated.defaultProfile.linux": "zsh"
+            },
+            "extensions": [
+                "ms-python.python",
+                "ms-azuretools.vscode-docker"
+            ]
+        }
+    },
+    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
 }
-
