@@ -12,6 +12,5 @@
                 "ms-azuretools.vscode-docker"
             ]
         }
-    },
-    "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}"
+    }
 }
