@@ -1,4 +1,5 @@
-FROM mcr.microsoft.com/devcontainers/base:noble
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
+
 
 # Copy first run notice
 COPY first-run-notice.txt /tmp/scripts/
