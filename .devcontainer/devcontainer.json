@@ -1,22 +1,24 @@
 {
-    "name": "Ubuntu Noble with Docker in Docker",
-    "image": "mcr.microsoft.com/devcontainers/base:ubuntu-24.04",
-    "features": {
-      "ghcr.io/devcontainers/features/docker-in-docker:2.12.0": {}
-    },
-    "runArgs": [
-      "--privileged"
-    ],
-    "remoteUser": "vscode",
-    "customizations": {
-      "vscode": {
-        "settings": {
-          "terminal.integrated.defaultProfile.linux": "zsh"
-        },
-        "extensions": [
-          "ms-python.python",
-          "ms-azuretools.vscode-docker"
-        ]
-      }
+  "name": "Ubuntu Noble with Docker in Docker",
+  "build": {
+    "dockerfile": "Dockerfile"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2.12.0": {}
+  },
+  "runArgs": [
+    "--privileged"
+  ],
+  "remoteUser": "vscode",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      "extensions": [
+        "ms-python.python",
+        "ms-azuretools.vscode-docker"
+      ]
     }
+  }
 }

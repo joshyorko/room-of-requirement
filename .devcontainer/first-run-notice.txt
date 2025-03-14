@@ -1,0 +1,6 @@
+👋 Welcome to the Room-of-Requirement!
+
+    - The development container has a base image of : mcr.microsoft.com/devcontainers/base:ubuntu-24.04.
+    - Your workspace is mounted at /workspaces.
+    - When you are done please write mishchief_managed and it will destroy your entire environment
+
