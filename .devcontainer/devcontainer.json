@@ -1,16 +1,22 @@
-// .devcontainer/devcontainer.json
 {
-    "name": "Universal Dev Container",
-    "image": "ghcr.io/joshyorko/joshyorko_devcontainer:latest",
+    "name": "Ubuntu Noble with Docker in Docker",
+    "image": "mcr.microsoft.com/vscode/devcontainers/base:noble",
+    "features": {
+      "ghcr.io/devcontainers/features/docker-in-docker:1": {}
+    },
+    "runArgs": [
+      "--privileged"
+    ],
+    "remoteUser": "vscode",
     "customizations": {
-        "vscode": {
-            "settings": {
-                "terminal.integrated.defaultProfile.linux": "zsh"
-            },
-            "extensions": [
-                "ms-python.python",
-                "ms-azuretools.vscode-docker"
-            ]
-        }
+      "vscode": {
+        "settings": {
+          "terminal.integrated.defaultProfile.linux": "zsh"
+        },
+        "extensions": [
+          "ms-python.python",
+          "ms-azuretools.vscode-docker"
+        ]
+      }
     }
 }
