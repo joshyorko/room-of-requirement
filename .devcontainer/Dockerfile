@@ -22,7 +22,8 @@ RUN chmod +x /tmp/scripts/setup-dev-container.sh && \
   nano \
   zip \
   unzip \
-  xclip && \
+  xclip \
+  python3.12-venv && \
   /tmp/scripts/setup-dev-container.sh && \
   rm -rf /var/lib/apt/lists/*
 
