@@ -4,13 +4,18 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2.12.0": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:2.12.0": {},
+    "ghcr.io/devcontainers/features/common-utils:2": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true
+    }
   },
   "runArgs": [
     "--privileged"
   ],
   "remoteUser": "vscode",
-  "postCreateCommand": "curl https://install.duckdb.org | sh; curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "postCreateCommand": "set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh",
   "customizations": {
     "vscode": {
       "settings": {

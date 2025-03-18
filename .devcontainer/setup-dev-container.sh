@@ -19,15 +19,6 @@ handle_error() {
 echo "🚀 Starting development container setup..."
 
 
-show_progress "Installing k9s"
-{
-    K9S_VERSION=$(curl -s https://api.github.com/repos/derailed/k9s/releases/latest | grep '"tag_name":' | cut -d'"' -f4) &&
-    curl -L "https://github.com/derailed/k9s/releases/download/${K9S_VERSION}/k9s_Linux_amd64.tar.gz" -o k9s.tar.gz >/dev/null 2>&1 &&
-    tar -xf k9s.tar.gz &&
-    sudo mv k9s /usr/local/bin/ &&
-    rm -f k9s.tar.gz LICENSE README.md
-} || handle_error "Failed to install k9s"
-show_success "k9s installed"
 
 show_progress "Installing AWS CLI v2"
 {
@@ -37,6 +28,8 @@ show_progress "Installing AWS CLI v2"
     rm -rf awscliv2.zip aws
 } || handle_error "Failed to install AWS CLI v2"
 show_success "AWS CLI v2 installed"
+
+
 
 show_progress "Installing essential packages"
 {
@@ -50,6 +43,25 @@ show_progress "Installing essential packages"
         libpango-1.0-0 libgbm1 libgtk-3-0 >/dev/null 2>&1
 } || handle_error "Failed to install essential packages"
 show_success "Essential packages installed"
+
+
+show_progress "Installing kubectl"
+{
+    # Download and add Google Cloud public signing key
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | sudo gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg &&
+    # Add Kubernetes apt repository
+    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | sudo tee /etc/apt/sources.list.d/kubernetes.list &&
+    # Update apt package index
+    sudo apt-get update >/dev/null 2>&1 &&
+    # Install kubectl
+    sudo apt-get install -y kubectl >/dev/null 2>&1
+} || {
+    echo "Attempting alternative kubectl installation method..."
+    curl -LO "https://dl.k8s.io/release/$(curl -L -s https://dl.k8s.io/release/stable.txt)/bin/linux/amd64/kubectl" &&
+    sudo install -o root -g root -m 0755 kubectl /usr/local/bin/kubectl &&
+    rm kubectl
+} || handle_error "Failed to install kubectl"
+show_success "kubectl installed"
 
 show_progress "Installing Ansible"
 {
