@@ -1,6 +1,5 @@
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04
 
-
 # Copy first run notice
 COPY first-run-notice.txt /tmp/scripts/
 
@@ -24,7 +23,27 @@ RUN chmod +x /tmp/scripts/setup-dev-container.sh && \
   zip \
   unzip \
   xclip \
-  python3.12-venv && \
+  python3.12-venv \
+  # Browser dependencies
+  libasound2t64 \
+  libatk1.0-0 \
+  libatk-bridge2.0-0 \
+  libcups2 \
+  libdbus-1-3 \
+  libdrm2 \
+  libgbm1 \
+  libgtk-3-0 \
+  libnspr4 \
+  libnss3 \
+  libx11-6 \
+  libxcb1 \
+  libxcomposite1 \
+  libxdamage1 \
+  libxext6 \
+  libxfixes3 \
+  libxrandr2 \
+  libxshmfence1 \
+  && \
   /tmp/scripts/setup-dev-container.sh && \
   rm -rf /var/lib/apt/lists/*
 
