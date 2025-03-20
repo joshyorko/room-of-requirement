@@ -44,6 +44,15 @@ RUN chmod +x /tmp/scripts/setup-dev-container.sh && \
   libxrandr2 \
   libxshmfence1 \
   && \
+  # Download Sema4.ai Action Server
+  curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux64/action-server && \
+  chmod a+x action-server && \
+  # Add to PATH
+  mv action-server /usr/local/bin/ && \
+  # Download and install RCC
+  curl -o rcc https://cdn.sema4.ai/rcc/releases/latest/linux64/rcc && \
+  chmod a+x rcc && \
+  mv rcc /usr/local/bin/ && \
   /tmp/scripts/setup-dev-container.sh && \
   rm -rf /var/lib/apt/lists/*
 
