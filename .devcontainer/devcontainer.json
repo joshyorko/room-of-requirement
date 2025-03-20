@@ -22,10 +22,11 @@
         "terminal.integrated.defaultProfile.linux": "zsh"
       },
       "extensions": [
-        "ms-python.python",
-        "ms-azuretools.vscode-docker",
         "sema4ai.sema4ai",
-        "sema4ai.sema4ai-data-access"
+        "sema4ai.sema4ai-data-access",
+        "ms-python.python",
+        "ms-azuretools.vscode-docker"
+
       ]
     }
   }
