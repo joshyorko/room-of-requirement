@@ -68,7 +68,10 @@ RUN apt-get install -y --no-install-recommends \
 
 # Cloud tools stage
 FROM dev-tools AS cloud-tools
-RUN echo "🚀 Installing Cloud Tools" && \
+RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+    apt-get install -y nodejs && \
+    npm install -g npm@latest && \
+    echo "🚀 Installing Cloud Tools" && \
     # AWS CLI
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
@@ -87,8 +90,8 @@ RUN echo "🚀 Installing Cloud Tools" && \
     chmod +x mc && \
     mv mc /usr/local/bin/ && \
     # Sema4.AI tools
-    curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux64/action-server && \
-    chmod a+x action-server && \
+    wget -O action-server https://github.com/Sema4AI/actions/releases/download/sema4ai-action_server-2.6.0/sema4ai-action_server-2.6.0-linux64 && \
+    chmod +x action-server && \
     mv action-server /usr/local/bin/ && \
     curl -o rcc https://cdn.sema4.ai/rcc/releases/latest/linux64/rcc && \
     chmod a+x rcc && \
