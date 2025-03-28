@@ -90,8 +90,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     chmod +x mc && \
     mv mc /usr/local/bin/ && \
     # Sema4.AI tools
-    wget -O action-server https://github.com/Sema4AI/actions/releases/download/sema4ai-action_server-2.6.0/sema4ai-action_server-2.6.0-linux64 && \
-    chmod +x action-server && \
+    curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux64/action-server && \
+    chmod a+x action-server && \
     mv action-server /usr/local/bin/ && \
     curl -o rcc https://cdn.sema4.ai/rcc/releases/latest/linux64/rcc && \
     chmod a+x rcc && \
