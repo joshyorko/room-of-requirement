@@ -19,10 +19,7 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "zsh",
-        "python.defaultInterpreterPath": "/usr/bin/python3.12",
-        "python.analysis.diagnosticMode": "workspace",
-        "python.analysis.typeCheckingMode": "basic"
+        "terminal.integrated.defaultProfile.linux": "zsh"
       },
       "extensions": [
 
