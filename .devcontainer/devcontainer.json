@@ -19,14 +19,16 @@
   "customizations": {
     "vscode": {
       "settings": {
-        "terminal.integrated.defaultProfile.linux": "zsh"
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "python.defaultInterpreterPath": "/usr/bin/python3.12",
+        "python.analysis.diagnosticMode": "workspace",
+        "python.analysis.typeCheckingMode": "basic"
       },
       "extensions": [
-        "sema4ai.sema4ai",
-        "ms-python.python",
-        "ms-azuretools.vscode-docker",
-        "ms-microsoft.data-wrangler",
-        "ms-toolsai.jupyter"
+
+
+        "ms-azuretools.vscode-docker"
+
       ]
     }
   }
