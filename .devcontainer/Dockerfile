@@ -26,6 +26,8 @@ RUN apt-get update && \
     unzip \
     xclip \
     python3.12-venv \
+    python3 \
+    python3-venv \
     # Browser dependencies
     libnss3 \
     libnspr4 \
