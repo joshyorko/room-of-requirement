@@ -78,7 +78,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     npm install -g npm@latest && \
     echo "🚀 Installing Cloud Tools" && \
     # AWS CLI
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-${TARGETARCH}.zip" -o "awscliv2.zip" && \
+    ARCH="${TARGETARCH}" && \
+    if [ "$ARCH" = "arm64" ]; then ARCH="aarch64"; fi && \
+    if [ "$ARCH" = "amd64" ]; then ARCH="x86_64"; fi && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install && \
     rm -rf awscliv2.zip aws && \
@@ -91,14 +94,14 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-add-repository --yes --update ppa:ansible/ansible && \
     apt-get install -y ansible && \
     # MinIO Client
-    curl -s -O https://dl.min.io/client/mc/release/linux-${TARGETARCH}/mc && \
+    curl -s -O https://dl.min.io/client/mc/release/linux-${ARCH}/mc && \
     chmod +x mc && \
     mv mc /usr/local/bin/ && \
     # Sema4.AI tools
-    curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux-${TARGETARCH}/action-server && \
+    curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux-${ARCH}/action-server && \
     chmod a+x action-server && \
     mv action-server /usr/local/bin/ && \
-    curl -o rcc https://cdn.sema4.ai/rcc/releases/latest/linux-${TARGETARCH}/rcc && \
+    curl -o rcc https://cdn.sema4.ai/rcc/releases/latest/linux-${ARCH}/rcc && \
     chmod a+x rcc && \
     mv rcc /usr/local/bin/
 
