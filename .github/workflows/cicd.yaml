@@ -27,7 +27,7 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@v3
         with:
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64  # Ensure we are only targeting amd64
           buildkitd-flags: --debug
 
       - name: Log in to the Container registry
@@ -63,7 +63,7 @@ jobs:
           push: true
           tags: ${{ steps.meta.outputs.tags }}
           labels: ${{ steps.meta.outputs.labels }}
-          platforms: linux/amd64,linux/arm64
+          platforms: linux/amd64  # Ensuring a single architecture build
           cache-from: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache
           cache-to: type=registry,ref=${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:cache,mode=max
           no-cache: ${{ steps.cache_exists.outputs.cache_exists == 'false' }}
@@ -71,8 +71,3 @@ jobs:
       - name: Verify Image in GHCR
         run: |
           skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:latest | jq '.Layers | length'
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@v2
-        with:
-          platforms: all
