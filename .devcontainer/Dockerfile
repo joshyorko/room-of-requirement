@@ -1,13 +1,10 @@
-FROM --platform=$BUILDPLATFORM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS base
-
-ARG TARGETARCH
-ARG TARGETPLATFORM
+FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS base
 
 # Copy first run notice
 COPY first-run-notice.txt /tmp/scripts/
 
 # System dependencies stage
-FROM --platform=$BUILDPLATFORM base AS system-deps
+FROM base AS system-deps
 RUN apt-get update && \
     apt-get install -y --no-install-recommends \
     build-essential \
@@ -54,7 +51,7 @@ RUN apt-get update && \
     libxshmfence1
 
 # Development tools stage
-FROM --platform=$BUILDPLATFORM system-deps AS dev-tools
+FROM system-deps AS dev-tools
 RUN apt-get install -y --no-install-recommends \
     cmake \
     cppcheck \
@@ -72,16 +69,13 @@ RUN apt-get install -y --no-install-recommends \
     fd-find
 
 # Cloud tools stage
-FROM --platform=$BUILDPLATFORM dev-tools AS cloud-tools
+FROM dev-tools AS cloud-tools
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g npm@latest && \
     echo "🚀 Installing Cloud Tools" && \
     # AWS CLI
-    ARCH="${TARGETARCH}" && \
-    if [ "$ARCH" = "arm64" ]; then ARCH="aarch64"; fi && \
-    if [ "$ARCH" = "amd64" ]; then ARCH="x86_64"; fi && \
-    curl "https://awscli.amazonaws.com/awscli-exe-linux-${ARCH}.zip" -o "awscliv2.zip" && \
+    curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
     ./aws/install && \
     rm -rf awscliv2.zip aws && \
@@ -94,19 +88,19 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-add-repository --yes --update ppa:ansible/ansible && \
     apt-get install -y ansible && \
     # MinIO Client
-    curl -s -O https://dl.min.io/client/mc/release/linux-${ARCH}/mc && \
+    curl -s -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
     chmod +x mc && \
     mv mc /usr/local/bin/ && \
     # Sema4.AI tools
-    curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux-${ARCH}/action-server && \
+    curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux64/action-server && \
     chmod a+x action-server && \
     mv action-server /usr/local/bin/ && \
-    curl -o rcc https://cdn.sema4.ai/rcc/releases/latest/linux-${ARCH}/rcc && \
+    curl -o rcc https://cdn.sema4.ai/rcc/releases/latest/linux64/rcc && \
     chmod a+x rcc && \
     mv rcc /usr/local/bin/
 
 # Final stage
-FROM --platform=$BUILDPLATFORM cloud-tools AS final
+FROM cloud-tools AS final
 # ZSH setup
 RUN mkdir -p /home/vscode/.oh-my-zsh/custom/plugins && \
     curl -fsSL https://raw.githubusercontent.com/joshyorko/.dotfiles/refs/heads/main/dotfiles/.zshrc -o /home/vscode/.zshrc && \
