@@ -74,6 +74,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g npm@latest && \
     echo "🚀 Installing Cloud Tools" && \
+    # Kind installation
+    bash -c '[ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64' && \
+    chmod +x ./kind && \
+    mv ./kind /usr/local/bin/kind && \
     # AWS CLI
     curl "https://awscli.amazonaws.com/awscli-exe-linux-x86_64.zip" -o "awscliv2.zip" && \
     unzip awscliv2.zip && \
