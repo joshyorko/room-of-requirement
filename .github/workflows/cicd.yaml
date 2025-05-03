@@ -2,12 +2,9 @@ name: Build and Push Devcontainer
 
 on:
   workflow_dispatch:
-  #push:
-  #  branches:
-  #    - main
-  #  paths:
-  #    - '.devcontainer/**'
-  #    - '.github/workflows/build-devcontainer.yml'
+  push:
+    branches:
+      - main
 
 env:
   REGISTRY: ghcr.io
