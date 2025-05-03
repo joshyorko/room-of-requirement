@@ -20,13 +20,10 @@
     "vscode": {
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh"
-      },
-      "extensions": [
+      }
 
 
-        "ms-azuretools.vscode-containers"
 
-      ]
     }
   }
 }
