@@ -41,7 +41,7 @@ jobs:
 
       - name: Build and Push Dev Container image
         run: |
-          npx @devcontainers/cli build --workspace-folder .devcontainer \
+          npx @devcontainers/cli build --workspace-folder . \
             --image-name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
             --push
 
