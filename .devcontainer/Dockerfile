@@ -70,7 +70,7 @@ RUN apt-get install -y --no-install-recommends \
 
 # Cloud tools stage
 FROM dev-tools AS cloud-tools
-RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - && \
+RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g npm@latest && \
     echo "🚀 Installing Cloud Tools" && \
