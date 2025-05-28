@@ -48,7 +48,8 @@ RUN apt-get update && \
     libxcb1 \
     libxext6 \
     libxrandr2 \
-    libxshmfence1
+    libxshmfence1 \
+    libasound2-dev
 
 # Development tools stage
 FROM system-deps AS dev-tools

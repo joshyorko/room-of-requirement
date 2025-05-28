@@ -15,7 +15,7 @@
     "--privileged"
   ],
   "remoteUser": "vscode",
-  "postCreateCommand": "set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh",
   "customizations": {
     "vscode": {
       "settings": {
