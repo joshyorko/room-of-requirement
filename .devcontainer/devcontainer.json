@@ -20,10 +20,11 @@
     "vscode": {
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh"
-      }
-
-
-
+      },
+      "extensions": [
+        "ms-azuretools.vscode-containers",
+        "sema4ai.sema4ai"
+      ]
     }
   }
 }
