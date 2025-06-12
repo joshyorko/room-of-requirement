@@ -39,9 +39,9 @@ jobs:
       - name: Build and Push Dev Container image
         run: |
           npx @devcontainers/cli build --workspace-folder . \
-            --image-name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }} \
+            --image-name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
             --push
 
       - name: Verify Image in GHCR
         run: |
-          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:latest | jq '.Layers | length'
+          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} | jq '.Layers | length'
