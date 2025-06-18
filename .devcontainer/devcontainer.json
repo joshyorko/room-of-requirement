@@ -5,7 +5,7 @@
   },
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2.12.2": {},
-    "ghcr.io/devcontainers/features/common-utils:2": {
+    "ghcr.io/devcontainers/features/common-utils:2.5.3": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
       "installOhMyZsh": true
@@ -24,7 +24,8 @@
       "extensions": [
         "ms-azuretools.vscode-containers",
         "sema4ai.sema4ai",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "ms-python.python"
       ]
     }
   }
