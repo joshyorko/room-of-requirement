@@ -28,23 +28,38 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.CR_PAT }}
 
-      - name: Set up Node.js
-        uses: actions/setup-node@v4.4.0
+
+      - name: Set up Docker Buildx
+        uses: docker/setup-buildx-action@v3
+
+      - name: Extract metadata (tags, labels)
+        id: meta
+        uses: docker/metadata-action@v5
         with:
-          node-version: '18'
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=sha
+            type=raw,value=latest,enable=true
 
-      - name: Install Dev Container CLI
-        run: npm install -g @devcontainers/cli
+      - name: Build and Push with BuildKit
+        uses: docker/build-push-action@v6
+        with:
+          context: .
+          file: ./Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          platforms: linux/amd64
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
 
-      - name: Build and Push Dev Container image
+      - name: BuildKit Metadata Summary
         run: |
-          npx @devcontainers/cli build --workspace-folder . \
-            --image-name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            --push
-          
-          # Tag and push as latest
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+          echo "### BuildKit Build Summary" > $GITHUB_STEP_SUMMARY
+          echo "- Image(s) pushed: ${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Labels: ${{ steps.meta.outputs.labels }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Registry: ${{ env.REGISTRY }}" >> $GITHUB_STEP_SUMMARY
+          echo "- Image name: ${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
 
       - name: Verify Image in GHCR
         run: |
