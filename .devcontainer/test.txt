@@ -1,0 +1,35 @@
+{
+  "name": "Ubuntu Noble with Docker in Docker",
+  "dockerComposeFile": "docker-compose.yml",
+  "service": "app",
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "containerEnv": {
+    "DOCKER_BUILDKIT": "1"
+  },
+  "remoteEnv": {
+    "DOCKER_BUILDKIT": "${containerEnv:DOCKER_BUILDKIT}"
+  },
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2.12.2": {},
+    "ghcr.io/devcontainers/features/common-utils:2.5.3": {
+      "installZsh": true,
+      "configureZshAsDefaultShell": true,
+      "installOhMyZsh": true
+    }
+  },
+  "remoteUser": "vscode",
+  "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh && echo 'export COMPOSE_DOCKER_CLI_BUILD=1' >> ~/.zshrc && export COMPOSE_DOCKER_CLI_BUILD=1",
+  "customizations": {
+    "vscode": {
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      "extensions": [
+        "ms-azuretools.vscode-containers",
+        "sema4ai.sema4ai",
+        "github.vscode-github-actions",
+        "ms-python.python"
+      ]
+    }
+  }
+}
