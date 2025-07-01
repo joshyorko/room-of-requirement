@@ -58,7 +58,7 @@ jobs:
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
           echo "| 🏷️ **Image SHA** | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 🆕 **Image Latest** | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📦 **GHCR Link** | [View on GHCR](https://github.com/users/${{ github.actor }}/pkgs/container/${{ env.IMAGE_NAME }}) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 **GHCR Link** | [View on GHCR](https://github.com/joshyorko/room-of-requirement/pkgs/container/ror) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "### 📝 Usage Example" >> $GITHUB_STEP_SUMMARY
