@@ -1,7 +1,10 @@
 {
   "name": "Ubuntu Noble with Docker in Docker",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "args": {
+      "BUILDKIT_INLINE_CACHE": "1"
+    }
   },
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2.12.2": {},
@@ -9,13 +12,14 @@
       "installZsh": true,
       "configureZshAsDefaultShell": true,
       "installOhMyZsh": true
-    }
+    },
+    "buildkit": {}
   },
   "runArgs": [
     "--privileged"
   ],
   "remoteUser": "vscode",
-  "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh",
+  "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh && bash .devcontainer/init-buildkit.sh",
   "customizations": {
     "vscode": {
       "settings": {
@@ -28,5 +32,10 @@
         "ms-python.python"
       ]
     }
+  },
+  "remoteEnv": {
+    "DOCKER_BUILDKIT": "1",
+    "COMPOSE_DOCKER_CLI_BUILD": "1",
+    "COMPOSE_BAKE": "true"
   }
 }
