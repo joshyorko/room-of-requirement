@@ -49,10 +49,30 @@ jobs:
 
       - name: Devcontainer Metadata Summary
         run: |
-          echo "### Devcontainer Build Summary" > $GITHUB_STEP_SUMMARY
-          echo "- Image built: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}" >> $GITHUB_STEP_SUMMARY
-          echo "- Image tagged as latest: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
-          echo "- Pushed to GHCR: https://github.com/users/${{ github.actor }}/packages/container/${{ env.IMAGE_NAME }}" >> $GITHUB_STEP_SUMMARY
+          echo "" > $GITHUB_STEP_SUMMARY
+          echo "# 🪄 Room of Requirement: Devcontainer Build ✨" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo ' _   _                 _                 _   _                 _           _   _             _   _             ' >> $GITHUB_STEP_SUMMARY
+          echo '| | | | ___  _ __ ___ | |__   ___ _ __  | \ | | _____      __ | | ___  ___| |_| |_ ___ _ __ | |_| |_ ___  _ __ ' >> $GITHUB_STEP_SUMMARY
+          echo "| |_| |/ _ \\| '_ \` _ \\| '_ \\ / _ \\ '__| |  \\| |/ _ \\ \\ /\\ / / | |/ _ \\/ __| __| __/ _ \\ '_ \\| __| __/ _ \\| '__|" >> $GITHUB_STEP_SUMMARY
+          echo '|  _  | (_) | | | | | | | |_) |  __/ |    | |\  |  __/\ V  V /  | |  __/ (__| |_| ||  __/ | | | |_| || (_) | |   ' >> $GITHUB_STEP_SUMMARY
+          echo '|_| |_|\___/|_| |_| |_|_.__/ \___|_|    |_| \_|\___| \_/\_/   |_|\___|\___|\__|\__\___|_| |_|\__|\__\___/|_|   ' >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "**✅ Build Complete!**" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "- 🏷️ **Image built:** \`\n  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 🆕 **Image tagged as latest:** \`\n  ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\`" >> $GITHUB_STEP_SUMMARY
+          echo "- 📦 **Pushed to GHCR:** [View on GHCR](https://github.com/users/${{ github.actor }}/packages/container/${{ env.IMAGE_NAME }})" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "### 📝 Usage Example" >> $GITHUB_STEP_SUMMARY
+          echo '```shell' >> $GITHUB_STEP_SUMMARY
+          echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
+          echo '```' >> $GITHUB_STEP_SUMMARY
+          echo "---" >> $GITHUB_STEP_SUMMARY
+          echo "✨ _Happy coding in your magical devcontainer!_ ✨" >> $GITHUB_STEP_SUMMARY
 
       - name: Verify Image in GHCR
         run: |
