@@ -1,6 +1,31 @@
-👋 Welcome to the Room-of-Requirement!
+*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 
-    - The development container has a base image of : mcr.microsoft.com/devcontainers/base:ubuntu-24.04.
-    - Your workspace is mounted at /workspaces.
-    - When you are done please write mishchief_managed and it will destroy your entire environment
+✨ WELCOME TO THE ROOM OF REQUIREMENT ✨         
+
+*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
+
+
+Your custom development environment is now ready.
+
+┌──────────────────── 🧙 DEVELOPMENT ENVIRONMENT 🧙 ──────────────────┐
+│                                                                    │
+│  🏰 Ubuntu Noble (24.04) - Modern Linux foundation                 │
+│  🐳 Docker-in-Docker    - Container management capabilities        │
+│  🔮 k3d & k9s          - Kubernetes development tools              │
+│  🧪 UV                 - Fast Python package installer             │
+│  🪄 Zsh + Oh My Zsh    - Enhanced shell experience                 │
+│                                                                    │
+└────────────────────────────────────────────────────────────────────┘
+
+⚡ USEFUL COMMANDS TO TRY ⚡
+
+  $ docker ps                # List running containers
+  $ k3d cluster create       # Create a local Kubernetes cluster
+  $ k9s                      # Kubernetes CLI dashboard
+  $ uv --version             # Check Python package manager version
+
+⭐️ When you're finished with your work, type "mischief_managed"
+   to properly close and clean up the environment.
+
+~*~ Happy Coding in Your Custom DevContainer! ~*~
 
