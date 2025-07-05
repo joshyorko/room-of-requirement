@@ -10,7 +10,7 @@ Your custom development environment is now ready.
 ┌──────────────────── 🧙 DEVELOPMENT ENVIRONMENT 🧙 ──────────────────┐
 │                                                                    │
 │  🏰 Ubuntu Noble (24.04) - Modern Linux foundation                 │
-│  🐳 Docker-in-Docker    - Container management capabilities        │
+│  🐳 Docker (host socket) - Container management via host Docker     │
 │  🔮 k3d & k9s          - Kubernetes development tools              │
 │  🧪 UV                 - Fast Python package installer             │
 │  🪄 Zsh + Oh My Zsh    - Enhanced shell experience                 │
