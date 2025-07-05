@@ -24,6 +24,7 @@
       "extensions": [
         "ms-azuretools.vscode-containers",
         "sema4ai.sema4ai",
+        "sema4ai.sema4ai-data-access",
         "github.vscode-github-actions"
       ]
     }
