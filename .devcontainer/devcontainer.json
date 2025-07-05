@@ -4,7 +4,7 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2.12.2": {},
+    "ghcr.io/devcontainers/features/docker-outside-of-docker:1.6.3": {},
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
@@ -12,10 +12,11 @@
     }
   },
   "runArgs": [
-    "--privileged"
+    "--volume=/var/run/docker.sock:/var/run/docker.sock"
   ],
   "remoteUser": "vscode",
   "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh;curl https://install.duckdb.org | sh",
+  "postStartCommand": "docker version || echo 'Docker daemon not reachable'",
   "customizations": {
     "vscode": {
       "settings": {
