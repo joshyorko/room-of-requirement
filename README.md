@@ -8,11 +8,11 @@
 |_| |_|\___/|_| |_| |_|_.__/ \___|_|    |_| \_|\___| \_/\_/   |_|\___|\___|\__|\__\___|_| |_|\__|\__\___/|_|   
 -- Room of Requirement --
 -- DevContainer Setup --
--- Ubuntu Noble + Docker-in-Docker + Zsh + K3d + K9s + uv --
+-- Ubuntu Noble + Docker (host socket) + Zsh + K3d + K9s + uv --
 -- VS Code Extensions: Containers, Sema4AI, GitHub Actions --
 -- Post-create installs: k3d, k9s, uv --
 -- Default shell: zsh (with Oh My Zsh) --
--- Privileged mode for Docker-in-Docker --
+-- Docker socket from host, not privileged mode --
 -- Remote user: vscode --
 -- All the magic you need for cloud-native dev! --
 -- ✨🧙‍♂️✨ --
@@ -31,7 +31,7 @@
 
 ## ✨ **Features**
 - **Ubuntu Noble** base
-- **Docker-in-Docker** for container magic
+- **Docker (host socket)** for container magic
 - **Zsh** (with Oh My Zsh)
 - **k3d** (K3s in Docker)
 - **k9s** (Kubernetes CLI UI)
@@ -51,7 +51,7 @@
 ## 📝 **Details**
 - **Remote User:** `vscode`
 - **Default Shell:** `zsh`
-- **Privileged Mode:** Enabled (for Docker-in-Docker)
+- **Docker:** Host socket (docker-outside-of-docker feature)
 - **Post-create Installs:** k3d, k9s, uv
 
 ---

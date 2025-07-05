@@ -1,5 +1,5 @@
 {
-  "name": "Ubuntu Noble with Docker in Docker",
+  "name": "Ubuntu Noble with Docker (host socket)",
   "build": {
     "dockerfile": "Dockerfile"
   },
@@ -11,10 +11,8 @@
       "installOhMyZsh": true
     }
   },
-  "runArgs": [
-    "--privileged"
-  ],
   "remoteUser": "vscode",
+  "remoteEnv": { "LOCAL_WORKSPACE_FOLDER": "${localWorkspaceFolder}" },
   "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh;curl https://install.duckdb.org | sh",
   "postStartCommand": "docker version || echo 'Docker daemon not reachable'",
   "customizations": {
