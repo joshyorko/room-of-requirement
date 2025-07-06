@@ -96,11 +96,13 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     curl -s -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
     chmod +x mc && \
     mv mc /usr/local/bin/ && \
-    # -----------------------------------------------------------
-    # Sema4.ai extensions REQUIRE a shared holotree path:
-    # create it here world-writable so no sudo needed inside the devcontainer
-    # -----------------------------------------------------------
-    install -d -m 2777 /opt/sema4ai/ht
+    # Sema4.AI tools
+    curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux64/action-server && \
+    chmod a+x action-server && \
+    mv action-server /usr/local/bin/ && \
+    curl -o rcc https://downloads.robocorp.com/rcc/releases/v18.5.0/linux64/rcc && \
+    chmod a+x rcc && \
+    mv rcc /usr/local/bin/
 
 # Final stage
 FROM cloud-tools AS final
