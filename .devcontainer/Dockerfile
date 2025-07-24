@@ -74,7 +74,6 @@ FROM dev-tools AS cloud-tools
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g npm@latest && \
-    npm install -g @anthropic-ai/claude-code && \
     echo "🚀 Installing Cloud Tools" && \
     # Kind installation
     bash -c '[ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64' && \
