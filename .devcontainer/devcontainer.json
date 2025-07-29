@@ -5,7 +5,7 @@
   },
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2.12.2": {},
-      "ghcr.io/anthropics/devcontainer-features/claude-code:1.0": {},
+      "ghcr.io/anthropics/devcontainer-features/claude-code:1.0.5": {},
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
@@ -25,7 +25,8 @@
       "extensions": [
         "ms-azuretools.vscode-containers",
         "sema4ai.sema4ai",
-        "github.vscode-github-actions"
+        "github.vscode-github-actions",
+        "ms-python.python"
       ]
     }
   }
