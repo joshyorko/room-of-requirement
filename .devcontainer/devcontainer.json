@@ -5,7 +5,6 @@
   },
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2.12.2": {},
-      "ghcr.io/anthropics/devcontainer-features/claude-code:1.0.5": {},
     "ghcr.io/devcontainers/features/common-utils:2": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
@@ -16,7 +15,7 @@
     "--privileged"
   ],
   "remoteUser": "vscode",
-  "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh;curl https://install.duckdb.org | sh",
+  "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh;curl https://install.duckdb.org | sh; npm install -g @anthropic-ai/claude-code @musistudio/claude-code-router",
   "customizations": {
     "vscode": {
       "settings": {
