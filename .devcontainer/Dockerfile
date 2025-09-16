@@ -92,15 +92,11 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     # Ansible
     apt-add-repository --yes --update ppa:ansible/ansible && \
     apt-get install -y ansible && \
-    # MinIO Client
-    curl -s -O https://dl.min.io/client/mc/release/linux-amd64/mc && \
-    chmod +x mc && \
-    mv mc /usr/local/bin/ && \
     # Sema4.AI tools
-    curl -o action-server https://cdn.sema4.ai/action-server/releases/2.14.1/linux64/action-server && \
+    curl -o action-server https://cdn.sema4.ai/action-server/releases/2.14.3/linux64/action-server && \
     chmod a+x action-server && \
     mv action-server /usr/local/bin/ && \
-    curl -o rcc https://downloads.robocorp.com/rcc/releases/v18.5.0/linux64/rcc && \
+    curl -o rcc https://github.com/joshyorko/rcc/releases/download/v18.7.0/rcc-linux64 && \
     chmod a+x rcc && \
     mv rcc /usr/local/bin/
 
@@ -108,12 +104,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 FROM cloud-tools AS final
 # ZSH setup
 RUN mkdir -p /home/vscode/.oh-my-zsh/custom/plugins && \
-    curl -fsSL https://raw.githubusercontent.com/joshyorko/.dotfiles/refs/heads/main/dotfiles/.zshrc -o /home/vscode/.zshrc && \
     curl -fsSL https://raw.githubusercontent.com/joshyorko/.dotfiles/refs/heads/main/scripts/scrapeCrawl.py -o /home/vscode/scrapeCrawl.py && \
     git clone https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
     git clone https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting && \
     chown -R vscode:vscode /home/vscode/.oh-my-zsh/custom/plugins && \
-    chown vscode:vscode /home/vscode/.zshrc && \
     chown vscode:vscode /home/vscode/scrapeCrawl.py && \
     # Cleanup
     apt-get clean && \
