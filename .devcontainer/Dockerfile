@@ -100,7 +100,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     curl -o action-server https://cdn.sema4.ai/action-server/releases/2.14.1/linux64/action-server && \
     chmod a+x action-server && \
     mv action-server /usr/local/bin/ && \
-    curl -o rcc https://downloads.robocorp.com/rcc/releases/v18.5.0/linux64/rcc && \
+    curl -o rcc https://github.com/joshyorko/rcc/releases/download/v18.7.0/rcc-linux64 && \
     chmod a+x rcc && \
     mv rcc /usr/local/bin/
 
