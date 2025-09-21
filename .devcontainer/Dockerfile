@@ -96,9 +96,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     curl -o action-server https://cdn.sema4.ai/action-server/releases/2.14.3/linux64/action-server && \
     chmod a+x action-server && \
     mv action-server /usr/local/bin/ && \
-    curl -o rcc https://github.com/joshyorko/rcc/releases/download/v18.7.0/rcc-linux64 && \
-    chmod a+x rcc && \
-    mv rcc /usr/local/bin/
+    curl -L https://github.com/joshyorko/rcc/releases/download/v18.7.0/rcc-linux64 -o /usr/local/bin/rcc && \
+    chmod +x /usr/local/bin/rcc
 
 # Final stage
 FROM cloud-tools AS final
