@@ -103,10 +103,12 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
 FROM cloud-tools AS final
 # ZSH setup
 RUN mkdir -p /home/vscode/.oh-my-zsh/custom/plugins && \
+    curl -fsSL https://raw.githubusercontent.com/joshyorko/.dotfiles/refs/heads/main/dotfiles/.zshrc -o /home/vscode/.zshrc && \
     curl -fsSL https://raw.githubusercontent.com/joshyorko/.dotfiles/refs/heads/main/scripts/scrapeCrawl.py -o /home/vscode/scrapeCrawl.py && \
     git clone https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
     git clone https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting && \
     chown -R vscode:vscode /home/vscode/.oh-my-zsh/custom/plugins && \
+    chown vscode:vscode /home/vscode/.zshrc && \
     chown vscode:vscode /home/vscode/scrapeCrawl.py && \
     # Cleanup
     apt-get clean && \
