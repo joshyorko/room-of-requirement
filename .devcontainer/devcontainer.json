@@ -1,15 +1,15 @@
 {
-  "name": "Ubuntu Noble with Docker in Docker",
+  "name": "The Room of Requirement",
   "build": {
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2.12.2": {},
-    "ghcr.io/devcontainers/features/common-utils:2": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {},
+    "ghcr.io/devcontainers/features/common-utils:2.5.4": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
       "installOhMyZsh": true,
-      "upgradePackages": "true"   // ⚠️ not built-in, only works if you fork/override feature
+      "upgradePackages": "true"   // Upgrade all system packages during container build for latest security and features
     }
   },
   "runArgs": [
@@ -26,6 +26,8 @@
         "ms-azuretools.vscode-containers",
         "sema4ai.sema4ai",
         "github.vscode-github-actions",
+        "ms-vscode.vscode-websearchforcopilot",
+        "GitHub.vscode-pull-request-github",
         "ms-python.python"
       ]
     }
