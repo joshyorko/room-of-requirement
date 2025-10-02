@@ -9,7 +9,7 @@
       "installZsh": true,
       "configureZshAsDefaultShell": true,
       "installOhMyZsh": true,
-      "upgradePackages": "true"   // 
+      "upgradePackages": "true"   // Upgrade all system packages during container build for latest security and features
     }
   },
   "runArgs": [
