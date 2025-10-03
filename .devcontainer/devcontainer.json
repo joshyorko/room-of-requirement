@@ -24,7 +24,6 @@
       },
       "extensions": [
         "ms-azuretools.vscode-containers",
-        "sema4ai.sema4ai",
         "github.vscode-github-actions",
         "ms-vscode.vscode-websearchforcopilot",
         "GitHub.vscode-pull-request-github",
