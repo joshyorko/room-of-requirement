@@ -93,10 +93,10 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-add-repository --yes --update ppa:ansible/ansible && \
     apt-get install -y ansible && \
     # Sema4.AI tools
-    curl -o action-server https://cdn.sema4.ai/action-server/releases/2.15.0/linux64/action-server && \
+    curl -o action-server https://cdn.sema4.ai/action-server/releases/2.14.2/linux64/action-server && \
     chmod a+x action-server && \
     mv action-server /usr/local/bin/ && \
-    curl -L https://github.com/joshyorko/rcc/releases/download/v18.7.0/rcc-linux64 -o /usr/local/bin/rcc && \
+    curl -L https://github.com/joshyorko/rcc/releases/download/v18.8.0/rcc-linux64 -o /usr/local/bin/rcc && \
     chmod +x /usr/local/bin/rcc
 
 # Final stage
