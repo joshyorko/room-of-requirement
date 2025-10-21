@@ -1,29 +1,59 @@
 name: Build and Push Devcontainer
-
 on:
   workflow_dispatch:
   push:
-    branches:
-      - main
+    branches: [main]
     paths:
       - .devcontainer/**
   schedule:
     - cron: '0 10 * * *'
+concurrency:
+  group: devcontainer-${{ github.ref }}
+  cancel-in-progress: true
 
 env:
   REGISTRY: ghcr.io
   IMAGE_NAME: joshyorko/ror
 
 jobs:
+  # 1) Dockerfile lint (fail fast)
+  dockerfile-lint:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Hadolint
+        uses: hadolint/hadolint-action@v3.1.0
+        with:
+          dockerfile: .devcontainer/Dockerfile
+          # config: .hadolint.yaml
+
+  # 2) Build & push via devcontainers/ci (the right tool for GitHub)
   build-and-push:
     runs-on: ubuntu-latest
+    needs: [dockerfile-lint]
     permissions:
       contents: read
       packages: write
-
+      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
+
+      # Richer tags and OCI labels for traceability
+      - name: Docker metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          tags: |
+            type=raw,value=latest
+            type=sha
+            type=datetime,format=20060102
+          labels: |
+            org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
+            org.opencontainers.image.revision=${{ github.sha }}
+            org.opencontainers.image.title=Room of Requirement Devcontainer
+            org.opencontainers.image.description=Prebuilt Devcontainer image for development & CI
 
       - name: Log in to the Container registry
         uses: docker/login-action@v3
@@ -36,9 +66,28 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           imageName: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          imageTag: ${{ github.sha }},latest
+          imageTag: ${{ steps.meta.outputs.tags }}
           push: always
+          # subFolder: .devcontainer
 
+
+      # 3) Vulnerability scan of the freshly built image (by SHA tag)
+      - name: Trivy scan
+        uses: aquasecurity/trivy-action@0.28.0
+        with:
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          format: sarif
+          output: trivy.sarif
+          ignore-unfixed: true
+          vuln-type: "os,library"
+
+      - name: Upload SARIF to code scanning
+        uses: github/codeql-action/upload-sarif@v3
+        with:
+          sarif_file: trivy.sarif
+
+
+      # 4) Devcontainer Metadata Summary
       - name: Devcontainer Metadata Summary
         run: |
           echo "" > $GITHUB_STEP_SUMMARY
@@ -48,9 +97,10 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏷️ **Image SHA** | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🆕 **Image Latest** | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📦 **GHCR Link** | [View on GHCR](https://github.com/joshyorko/room-of-requirement/pkgs/container/ror) |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏷️ **SHA Tag** | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🆕 **Tags** | \`${{ steps.meta.outputs.tags }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 📦 **GHCR Link** | [View on GHCR](https://github.com/joshyorko/room-of-requirement/pkgs/container/ror) |" \
+            >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "### 📝 Usage Example" >> $GITHUB_STEP_SUMMARY
@@ -60,7 +110,10 @@ jobs:
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "✨ _Happy coding in your custom devcontainer!_ ✨" >> $GITHUB_STEP_SUMMARY
 
+      # 5) Verify tags actually exist in GHCR
       - name: Verify Image in GHCR
         run: |
-          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} | jq '.Layers | length'
           skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:latest | jq '.Layers | length'
+          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} | jq '.Layers | length'
+          DATE_TAG=$(date +%Y%m%d)
+          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:${DATE_TAG} | jq '.Layers | length'

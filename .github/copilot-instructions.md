@@ -99,7 +99,7 @@ rcc --version              # Robocorp Control Room client
 ### Sema4.AI Integration Patterns
 - **Version Strategy**: Pin exact versions in Dockerfile for reproducibility
 - **Installation**: Direct binary downloads to `/usr/local/bin/` (not package managers)
-- **Development Flow**: 
+- **Development Flow**:
   - Use `action-server new` to create AI action projects
   - Use `rcc` for Robocorp automation workflows
   - VS Code extension provides templates and debugging support

@@ -1,6 +1,6 @@
 *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 
-✨ WELCOME TO THE ROOM OF REQUIREMENT ✨         
+✨ WELCOME TO THE ROOM OF REQUIREMENT ✨
 
 *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 
@@ -28,4 +28,3 @@ Your custom development environment is now ready.
    to properly close and clean up the environment.
 
 ~*~ Happy Coding in Your Custom DevContainer! ~*~
-
