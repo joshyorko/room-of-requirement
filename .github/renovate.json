@@ -1,0 +1,22 @@
+{
+  "extends": ["config:recommended", ":semanticCommits"],
+  "dependencyDashboard": true,
+  "labels": ["deps"],
+  "prHourlyLimit": 4,
+  "rangeStrategy": "replace",
+  "docker": {
+    "pinDigests": true
+  },
+  "packageRules": [
+    {
+      "matchManagers": ["devcontainer"],
+      "groupName": "devcontainer",
+      "labels": ["devcontainer"]
+    },
+    {
+      "matchManagers": ["dockerfile"],
+      "groupName": "base images",
+      "labels": ["container"]
+    }
+  ]
+}

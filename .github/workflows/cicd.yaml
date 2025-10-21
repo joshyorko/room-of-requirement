@@ -30,24 +30,12 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-
-      - name: Set up Node.js
-        uses: actions/setup-node@v6.0.0
-        with:
-          node-version: '18'
-
-      - name: Install Dev Container CLI
-        run: npm install -g @devcontainers/cli
-
       - name: Build and Push Dev Container image
-        run: |
-          npx @devcontainers/cli build --workspace-folder . \
-            --image-name ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} \
-            --push
-          
-          # Tag and push as latest
-          docker tag ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }} ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
-          docker push ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest
+        uses: devcontainers/ci@v0.3
+        with:
+          imageName: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
+          imageTag: ${{ github.sha }},latest
+          push: always
 
       - name: Devcontainer Metadata Summary
         run: |

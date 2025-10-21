@@ -1,0 +1,11 @@
+{
+  "projectName": "room-of-requirement",
+  "projectOwner": "joshyorko",
+  "repoType": "github",
+  "repoHost": "https://github.com",
+  "files": ["README.md"],
+  "imageSize": 100,
+  "commit": false,
+  "contributors": [],
+  "contributorsPerLine": 7
+}
