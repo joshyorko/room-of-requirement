@@ -76,7 +76,7 @@ FROM dev-tools AS cloud-tools
 # Set pipefail for RUN commands with pipes
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y --no-install-recommends nodejs && \
     npm install -g npm@latest && \
     echo "🚀 Installing Cloud Tools" && \
     # Kind installation
@@ -92,7 +92,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg && \
     echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list && \
     apt-get update && \
-    apt-get install -y kubectl && \
+    apt-get install -y --no-install-recommends kubectl && \
     # Ansible
     apt-add-repository --yes --update ppa:ansible/ansible && \
     apt-get install -y --no-install-recommends ansible && \
