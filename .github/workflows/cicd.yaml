@@ -65,7 +65,7 @@ jobs:
         uses: devcontainers/ci@v0.3
         with:
           imageName: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          imageTag: ${{ steps.meta.outputs.tags }}
+          imageTag: latest,${{ steps.set_date_tag.outputs.date }},sha-${{ github.sha }}
           push: always
           # subFolder: .devcontainer
       - name: Trivy scan
