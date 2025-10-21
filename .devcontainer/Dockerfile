@@ -54,7 +54,8 @@ RUN apt-get update && \
 
 # Development tools stage
 FROM system-deps AS dev-tools
-RUN apt-get install -y --no-install-recommends \
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends \
     cmake \
     cppcheck \
     valgrind \
