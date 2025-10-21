@@ -71,7 +71,7 @@ jobs:
       - name: Trivy scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}
+          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
           format: sarif
           output: trivy.sarif
           ignore-unfixed: true
@@ -89,7 +89,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏷️ **SHA Tag** | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| 🏷️ **SHA Tag** | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 🆕 **Tags** | \`${{ steps.meta.outputs.tags }}\` |" >> $GITHUB_STEP_SUMMARY
           echo "| 📦 **GHCR Link** | [View on GHCR](https://github.com/joshyorko/room-of-requirement/pkgs/container/ror) |" \
             >> $GITHUB_STEP_SUMMARY
@@ -104,6 +104,5 @@ jobs:
       - name: Verify Image in GHCR
         run: |
           skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:latest | jq '.Layers | length'
-          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:${{ github.sha }} | jq '.Layers | length'
-          DATE_TAG=$(date +%Y%m%d)
-          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:${DATE_TAG} | jq '.Layers | length'
+          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:sha-${{ github.sha }} | jq '.Layers | length'
+          skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:${{ steps.set_date_tag.outputs.date }} | jq '.Layers | length'
