@@ -49,7 +49,8 @@ RUN apt-get update && \
     libxext6 \
     libxrandr2 \
     libxshmfence1 \
-    libasound2-dev
+    libasound2-dev && \
+    rm -rf /var/lib/apt/lists/*
 
 # Development tools stage
 FROM system-deps AS dev-tools
@@ -67,10 +68,13 @@ RUN apt-get install -y --no-install-recommends \
     software-properties-common \
     libsecret-1-dev \
     fzf \
-    fd-find
+    fd-find && \
+    rm -rf /var/lib/apt/lists/*
 
 # Cloud tools stage
 FROM dev-tools AS cloud-tools
+# Set pipefail for RUN commands with pipes
+SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y nodejs && \
     npm install -g npm@latest && \
@@ -91,7 +95,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y kubectl && \
     # Ansible
     apt-add-repository --yes --update ppa:ansible/ansible && \
-    apt-get install -y ansible && \
+    apt-get install -y --no-install-recommends ansible && \
     # Sema4.AI tools
     curl -o action-server https://cdn.sema4.ai/action-server/releases/latest/linux64/action-server && \
     chmod a+x action-server && \

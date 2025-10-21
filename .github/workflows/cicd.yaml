@@ -38,8 +38,9 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
-
-      # Richer tags and OCI labels for traceability
+      - name: Set DATE_TAG
+        id: set_date_tag
+        run: echo "date=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
       - name: Docker metadata
         id: meta
         uses: docker/metadata-action@v5
@@ -48,20 +49,18 @@ jobs:
           tags: |
             type=raw,value=latest
             type=sha
-            type=datetime,format=20060102
+            type=raw,value=${{ steps.set_date_tag.outputs.date }}
           labels: |
             org.opencontainers.image.source=${{ github.server_url }}/${{ github.repository }}
             org.opencontainers.image.revision=${{ github.sha }}
             org.opencontainers.image.title=Room of Requirement Devcontainer
             org.opencontainers.image.description=Prebuilt Devcontainer image for development & CI
-
       - name: Log in to the Container registry
         uses: docker/login-action@v3
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
       - name: Build and Push Dev Container image
         uses: devcontainers/ci@v0.3
         with:
@@ -69,9 +68,6 @@ jobs:
           imageTag: ${{ steps.meta.outputs.tags }}
           push: always
           # subFolder: .devcontainer
-
-
-      # 3) Vulnerability scan of the freshly built image (by SHA tag)
       - name: Trivy scan
         uses: aquasecurity/trivy-action@0.28.0
         with:
@@ -80,14 +76,10 @@ jobs:
           output: trivy.sarif
           ignore-unfixed: true
           vuln-type: "os,library"
-
       - name: Upload SARIF to code scanning
         uses: github/codeql-action/upload-sarif@v3
         with:
           sarif_file: trivy.sarif
-
-
-      # 4) Devcontainer Metadata Summary
       - name: Devcontainer Metadata Summary
         run: |
           echo "" > $GITHUB_STEP_SUMMARY
@@ -109,8 +101,6 @@ jobs:
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "✨ _Happy coding in your custom devcontainer!_ ✨" >> $GITHUB_STEP_SUMMARY
-
-      # 5) Verify tags actually exist in GHCR
       - name: Verify Image in GHCR
         run: |
           skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:latest | jq '.Layers | length'
