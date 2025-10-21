@@ -106,7 +106,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     chmod +x /usr/local/bin/rcc
 
 # Final stage
-FROM cloud-tools AS final
+FROM cloud-tools AS dev_containers_target_stage
 # ZSH setup
 RUN mkdir -p /home/vscode/.oh-my-zsh/custom/plugins && \
     curl -fsSL https://raw.githubusercontent.com/joshyorko/.dotfiles/refs/heads/main/dotfiles/.zshrc -o /home/vscode/.zshrc && \
