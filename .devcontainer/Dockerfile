@@ -77,7 +77,8 @@ FROM dev-tools AS cloud-tools
 # Set pipefail for RUN commands with pipes
 SHELL ["/bin/bash", "-o", "pipefail", "-c"]
 RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y nodejs && \
+    apt-get install -y --no-install-recommends nodejs && \
+    apt-mark hold nodejs && \
     npm install -g npm@latest && \
     echo "🚀 Installing Cloud Tools" && \
     # Kind installation
