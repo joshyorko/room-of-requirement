@@ -5,6 +5,8 @@ on:
   push:
     branches:
       - main
+    paths:
+      - .devcontainer/**
   schedule:
     - cron: '0 10 * * *'
 
@@ -52,7 +54,7 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
           echo "### 📝 Usage Example" >> $GITHUB_STEP_SUMMARY
-          echo '```shell' >> $GITHUB_STEP_SUMMARY 
+          echo '```shell' >> $GITHUB_STEP_SUMMARY
           echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
