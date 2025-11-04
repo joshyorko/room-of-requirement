@@ -1,0 +1,24 @@
+name: Cleanup Old Images
+on:
+  schedule:
+    - cron: "15 0 * * 0" # 0015 UTC on Sundays
+  workflow_dispatch:
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref || github.run_id }}
+
+jobs:
+  delete-older-than-5-days:
+    runs-on: ubuntu-latest
+    permissions:
+      packages: write
+    steps:
+      - name: Delete Images Older Than 5 Days
+        uses: dataaxiom/ghcr-cleanup-action@v1.0.16 # v1.0.16
+        with:
+          token: ${{ secrets.CR_PAT }}
+          packages: ror
+          older-than: 5 days
+          delete-orphaned-images: true
+          keep-n-tagged: 5
+          keep-n-untagged: 5
