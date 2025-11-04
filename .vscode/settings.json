@@ -1,5 +1,10 @@
 {
     "python.analysis.extraPaths": [
-        "/var/home/kdlocpanda/second_brain/Areas/devcontainers/room-of-requirement/automation/maintenance-robot/src"
-    ]
+        "/room-of-requirement/automation/maintenance-robot/src"
+    ],
+    "python.defaultInterpreterPath": "${workspaceFolder}/.venv/bin/python",
+    "python.terminal.activateEnvironment": true,
+    "git.enabled": true,
+    "git.path": "git",
+    "git.allowNoVerifyCommit": true
 }

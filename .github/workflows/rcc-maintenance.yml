@@ -9,6 +9,8 @@ permissions:
   contents: write
   actions: read
   pull-requests: read
+  packages: write
+  security-events: write
 
 env:
   ROBOCORP_HOME: ${{ github.workspace }}/.rcc_home
