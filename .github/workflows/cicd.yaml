@@ -1,6 +1,7 @@
 name: Build and Push Devcontainer
 on:
-  push:
+  pull_request:
+    types: [closed]
     branches:
       - main
     paths:
@@ -20,6 +21,7 @@ jobs:
   # Build & push via devcontainers/ci (linting handled by RCC maintenance)
   build-and-push:
     runs-on: ubuntu-latest
+    if: github.event.pull_request.merged == true || github.event_name == 'workflow_dispatch'
     permissions:
       contents: read
       packages: write
