@@ -1,0 +1,44 @@
+{
+  "actions/checkout": {
+    "repo": "actions/checkout",
+    "source": "release",
+    "max_major": 5,
+    "include_prerelease": false
+  },
+  "docker/login-action": {
+    "repo": "docker/login-action",
+    "source": "release",
+    "max_major": 3,
+    "include_prerelease": false
+  },
+  "docker/metadata-action": {
+    "repo": "docker/metadata-action",
+    "source": "release",
+    "max_major": 5,
+    "include_prerelease": false
+  },
+  "devcontainers/ci": {
+    "repo": "devcontainers/ci",
+    "source": "tag",
+    "max_major": 0,
+    "include_prerelease": false
+  },
+  "hadolint/hadolint-action": {
+    "repo": "hadolint/hadolint-action",
+    "source": "release",
+    "max_major": 3,
+    "include_prerelease": false
+  },
+  "aquasecurity/trivy-action": {
+    "repo": "aquasecurity/trivy-action",
+    "source": "release",
+    "max_major": 1,
+    "include_prerelease": false
+  },
+  "github/codeql-action": {
+    "repo": "github/codeql-action",
+    "source": "release",
+    "max_major": 4,
+    "include_prerelease": false
+  }
+}

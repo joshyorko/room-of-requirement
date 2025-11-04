@@ -1,0 +1,5 @@
+{
+    "python.analysis.extraPaths": [
+        "/var/home/kdlocpanda/second_brain/Areas/devcontainers/room-of-requirement/automation/maintenance-robot/src"
+    ]
+}
