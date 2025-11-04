@@ -15,7 +15,7 @@
 -- Docker socket from host, not privileged mode --
 -- Remote user: vscode --
 -- All the magic you need for cloud-native dev! --
--- ✨🧙‍♂️✨ --
+
 --
 -- Quick Start --
 1. Open in VS Code with Dev Containers extension
@@ -23,13 +23,13 @@
 3. Start coding your next magical project!
 -->
 
-# 🪄 **Room of Requirement**
+# **Room of Requirement**
 
 > _A magical devcontainer for all your cloud-native needs!_
 
 ---
 
-## ✨ **Features**
+## **Features**
 - **Ubuntu Noble** base
 - **Docker (host socket)** for container magic
 - **Zsh** (with Oh My Zsh)
@@ -40,7 +40,7 @@
 
 ---
 
-## 🚀 **Quick Start**
+## **Quick Start**
 1. Open this folder in VS Code
 2. Reopen in Container (Dev Containers extension)
 3. Wait for setup to finish
@@ -48,7 +48,7 @@
 
 ---
 
-## 📝 **Details**
+## **Details**
 - **Remote User:** `vscode`
 - **Default Shell:** `zsh`
 - **Docker:** Host socket (docker-outside-of-docker feature)
@@ -56,17 +56,25 @@
 
 ---
 
-## 🧙‍♂️ **Why Room of Requirement?**
+## **Why Room of Requirement?**
 Because every developer deserves a workspace that adapts to their needs—just like magic.
 
 ---
 
-## 🧩 **Customization**
+## **Customization**
 Feel free to edit `.devcontainer/devcontainer.json` to add more features or extensions!
 
 ---
 
-## 🦄 **Happy Coding!**
+## **Automated Maintenance**
+- Daily RCC-powered maintenance keeps `.devcontainer/` assets and GitHub Actions workflows up to date.
+- Review `automation/maintenance-robot/README.md` for details on allowlists, task entrypoints, and manual execution instructions.
+
+The automation workflow lives in `.github/workflows/rcc-maintenance.yml` and auto-commits any approved updates using the repository `GITHUB_TOKEN`.
+
+---
+
+## **Happy Coding!**
 
 ```shell
 $ zsh

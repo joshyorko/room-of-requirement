@@ -1,0 +1,100 @@
+name: RCC Maintenance
+
+on:
+  schedule:
+    - cron: '0 6 * * *'
+  workflow_dispatch:
+
+permissions:
+  contents: write
+  actions: read
+  pull-requests: read
+
+env:
+  ROBOCORP_HOME: ${{ github.workspace }}/.rcc_home
+
+jobs:
+  maintenance:
+    runs-on: ubuntu-latest
+    outputs:
+      committed: ${{ steps.commit.outputs.committed }}
+      files_changed: ${{ steps.check_files.outputs.devcontainer_affected }}
+    env:
+      RCC_VERSION: v18.8.0
+      MAINTENANCE_PUSH: true
+      MAINTENANCE_TARGET_BRANCH: main
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5
+
+      - name: Install RCC
+        run: |
+          if [ ! -x .tools/rcc/v18.8.0/rcc ]; then
+            mkdir -p .tools/rcc/v18.8.0
+            curl -sSL https://github.com/joshyorko/rcc/releases/download/v18.8.0/rcc-linux64 -o .tools/rcc/v18.8.0/rcc
+            chmod +x .tools/rcc/v18.8.0/rcc
+          fi
+          echo "${GITHUB_WORKSPACE}/.tools/rcc/v18.8.0" >> "$GITHUB_PATH"
+          export PATH="${GITHUB_WORKSPACE}/.tools/rcc/v18.8.0:$PATH"
+          rcc version
+
+      - name: Cache ROBOCORP_HOME
+        uses: actions/cache@v4
+        with:
+          path: ${{ env.ROBOCORP_HOME }}
+          key: rcc-home-${{ runner.os }}-rccv18.8.0-${{ hashFiles(
+            'automation/maintenance-robot/robot.yaml',
+            'automation/maintenance-robot/conda.yaml') }}
+          restore-keys: |
+            rcc-home-${{ runner.os }}-rccv18.8.0-
+            rcc-home-${{ runner.os }}-
+
+      - name: Disable RCC telemetry
+        run: rcc config identity -t
+
+      - name: Run maintenance robot
+        run: |
+          rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
+
+      - name: Check affected files
+        id: check_files
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            # Check if devcontainer-related files were modified
+            if git status --porcelain | grep -E '(\.devcontainer/|Dockerfile|devcontainer.json)'; then
+              echo "devcontainer_affected=true" >> $GITHUB_OUTPUT
+            else
+              echo "devcontainer_affected=false" >> $GITHUB_OUTPUT
+            fi
+          else
+            echo "devcontainer_affected=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Configure git
+        run: |
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+
+      - name: Create commit
+        id: commit
+        env:
+          SKIP: no-commit-to-branch
+        run: |
+          if [ -n "$(git status --porcelain)" ]; then
+            git add -A
+            git commit -m "chore: automated maintenance" --no-verify
+            echo "committed=true" >> $GITHUB_OUTPUT
+          else
+            echo "No changes detected"
+            echo "committed=false" >> $GITHUB_OUTPUT
+          fi
+
+      - name: Push changes
+        if: steps.commit.outputs.committed == 'true' && env.MAINTENANCE_PUSH == 'true'
+        run: git push origin HEAD:${{ env.MAINTENANCE_TARGET_BRANCH }}
+
+  trigger-build:
+    needs: maintenance
+    # Trigger devcontainer build immediately when maintenance modifies devcontainer files
+    if: needs.maintenance.outputs.committed == 'true' && needs.maintenance.outputs.files_changed == 'true'
+    uses: ./.github/workflows/cicd.yaml

@@ -1,30 +1,30 @@
 *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 
-✨ WELCOME TO THE ROOM OF REQUIREMENT ✨
+WELCOME TO THE ROOM OF REQUIREMENT
 
 *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 
 
-Your custom development environment is now ready.
+This container has manifested itself as your development environment.
 
-┌──────────────────── 🧙 DEVELOPMENT ENVIRONMENT 🧙 ──────────────────┐
+┌──────────────────── DEVELOPMENT ENVIRONMENT ──────────────────┐
 │                                                                    │
-│  🏰 Ubuntu Noble (24.04) - Modern Linux foundation                 │
-│  🐳 Docker (host socket) - Container management via host Docker     │
-│  🔮 k3d & k9s          - Kubernetes development tools              │
-│  🧪 UV                 - Fast Python package installer             │
-│  🪄 Zsh + Oh My Zsh    - Enhanced shell experience                 │
+│  Ubuntu Noble (24.04) - A foundation that adapts to your needs     │
+│  Docker (host socket) - Containers within containers, a paradox    │
+│  k3d & k9s          - Orchestrating clusters in miniature worlds   │
+│  UV                 - Python's swift shadow, installing dependencies│
+│  Zsh + Oh My Zsh    - Shell that echoes your commands back to you  │
 │                                                                    │
 └────────────────────────────────────────────────────────────────────┘
 
-⚡ USEFUL COMMANDS TO TRY ⚡
+USEFUL COMMANDS TO TRY
 
-  $ docker ps                # List running containers
-  $ k3d cluster create       # Create a local Kubernetes cluster
-  $ k9s                      # Kubernetes CLI dashboard
-  $ uv --version             # Check Python package manager version
+  $ docker ps                # Observe the containers you have summoned
+  $ k3d cluster create       # Conjure a Kubernetes cluster from nothing
+  $ k9s                      # Navigate the ethereal dashboard
+  $ uv --version             # Verify the version of your package conjurer
 
-⭐️ When you're finished with your work, type "mischief_managed"
-   to properly close and clean up the environment.
+When you're finished with your work, type "mischief_managed"
+   to dispel this environment and restore order.
 
-~*~ Happy Coding in Your Custom DevContainer! ~*~
+~*~ Happy Coding in Your Manifested DevContainer! ~*~

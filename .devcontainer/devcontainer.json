@@ -16,7 +16,7 @@
     "--privileged"
   ],
   "remoteUser": "vscode",
-  "postCreateCommand": "curl -s https://raw.githubusercontent.com/k3d-io/k3d/main/install.sh | bash; set -e && curl -sS https://webinstall.dev/k9s | sh && curl -LsSf https://astral.sh/uv/install.sh | sh;curl https://install.duckdb.org | sh;rcc config identity -t",
+  "postCreateCommand": "rcc config identity -t",
   "customizations": {
     "vscode": {
       "settings": {

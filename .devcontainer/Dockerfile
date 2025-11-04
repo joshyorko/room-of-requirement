@@ -103,7 +103,24 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     chmod a+x action-server && \
     mv action-server /usr/local/bin/ && \
     curl -L https://github.com/joshyorko/rcc/releases/download/v18.8.0/rcc-linux64 -o /usr/local/bin/rcc && \
-    chmod +x /usr/local/bin/rcc
+    chmod +x /usr/local/bin/rcc && \
+    # k3d installation
+    curl -L https://github.com/k3d-io/k3d/releases/download/v5.8.3/k3d-linux-amd64 -o /usr/local/bin/k3d && \
+    chmod +x /usr/local/bin/k3d && \
+    # k9s installation
+    curl -L https://github.com/derailed/k9s/releases/download/v0.50.16/k9s_Linux_amd64.tar.gz | tar xz -C /tmp && \
+    mv /tmp/k9s /usr/local/bin/k9s && \
+    chmod +x /usr/local/bin/k9s && \
+    # uv installation
+    curl -L https://github.com/astral-sh/uv/releases/download/0.9.7/uv-x86_64-unknown-linux-gnu.tar.gz | tar xz -C /tmp && \
+    mv /tmp/uv-x86_64-unknown-linux-gnu/uv /usr/local/bin/uv && \
+    chmod +x /usr/local/bin/uv && \
+    # DuckDB installation
+    curl -L https://github.com/duckdb/duckdb/releases/download/v1.4.1/duckdb_cli-linux-amd64.zip -o /tmp/duckdb.zip && \
+    unzip /tmp/duckdb.zip -d /tmp && \
+    mv /tmp/duckdb /usr/local/bin/duckdb && \
+    chmod +x /usr/local/bin/duckdb && \
+    rm -rf /tmp/duckdb.zip /tmp/uv-x86_64-unknown-linux-gnu
 
 # Final stage
 FROM cloud-tools AS dev_containers_target_stage

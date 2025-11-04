@@ -1,12 +1,7 @@
 name: Build and Push Devcontainer
 on:
+  workflow_call:
   workflow_dispatch:
-  push:
-    branches: [main]
-    paths:
-      - .devcontainer/**
-  schedule:
-    - cron: '0 10 * * *'
 concurrency:
   group: devcontainer-${{ github.ref }}
   cancel-in-progress: true
@@ -27,7 +22,7 @@ jobs:
           dockerfile: .devcontainer/Dockerfile
           # config: .hadolint.yaml
 
-  # 2) Build & push via devcontainers/ci (the right tool for GitHub)
+  # 2) Build & push via devcontainers/ci (validates then pushes)
   build-and-push:
     runs-on: ubuntu-latest
     needs: [dockerfile-lint]

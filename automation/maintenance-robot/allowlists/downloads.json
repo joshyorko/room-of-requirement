@@ -1,0 +1,159 @@
+{
+  "kind": {
+    "repo": "kubernetes-sigs/kind",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "https://kind\\.sigs\\.k8s\\.io/dl/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/kind-linux-amd64"
+        ]
+      }
+    ]
+  },
+  "rcc": {
+    "repo": "joshyorko/rcc",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "https://github\\.com/joshyorko/rcc/releases/download/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/rcc-linux64"
+        ]
+      }
+    ]
+  },
+  "nodejs": {
+    "repo": "nodejs/node",
+    "source": "release",
+    "max_major": 22,
+    "include_prerelease": false,
+    "version_format": "major_only",
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "deb\\.nodesource\\.com/setup_(?P<version>[0-9]+)\\.x"
+        ]
+      }
+    ]
+  },
+  "kubectl": {
+    "repo": "kubernetes/kubernetes",
+    "source": "release",
+    "max_major": 1,
+    "version_format": "major_minor",
+    "include_prerelease": false,
+    "comment": "Limited to v1.31 as later versions may not have deb repos yet",
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "pkgs\\.k8s\\.io/core:/stable:/v(?P<version>[0-9]+\\.[0-9]+)/deb/"
+        ]
+      }
+    ]
+  },
+  "docker-in-docker-feature": {
+    "repo": "devcontainers/features",
+    "source": "tag",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/devcontainer.json",
+        "patterns": [
+          "ghcr\\.io/devcontainers/features/docker-in-docker:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "common-utils-feature": {
+    "repo": "devcontainers/features",
+    "source": "tag",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/devcontainer.json",
+        "patterns": [
+          "ghcr\\.io/devcontainers/features/common-utils:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "k3d": {
+    "repo": "k3d-io/k3d",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "https://github\\.com/k3d-io/k3d/releases/download/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/k3d-linux-amd64"
+        ]
+      }
+    ]
+  },
+  "k9s": {
+    "repo": "derailed/k9s",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "https://github\\.com/derailed/k9s/releases/download/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/k9s_linux_amd64\\.tar\\.gz"
+        ]
+      }
+    ]
+  },
+  "uv": {
+    "repo": "astral-sh/uv",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "https://github\\.com/astral-sh/uv/releases/download/(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/uv-x86_64-unknown-linux-gnu\\.tar\\.gz"
+        ]
+      }
+    ]
+  },
+  "duckdb": {
+    "repo": "duckdb/duckdb",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "https://github\\.com/duckdb/duckdb/releases/download/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/duckdb_cli-linux-amd64\\.zip"
+        ]
+      }
+    ]
+  },
+  "action-server": {
+    "repo": "sema4ai/actions",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "https://cdn\\.sema4\\.ai/action-server/releases/(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/linux64/action-server"
+        ]
+      }
+    ]
+  }
+}

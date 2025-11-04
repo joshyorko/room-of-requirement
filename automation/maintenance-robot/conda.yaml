@@ -1,0 +1,27 @@
+# For more details on the format and content:
+# https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-condayaml
+# Tip: Adding a link to the release notes of the packages helps maintenance and security.
+
+channels:
+  - conda-forge
+
+dependencies:
+  - python=3.12.12
+  - uv=0.8.17
+  - nodejs=24.9.0
+
+  - pip:
+      - requests==2.32.5
+      - ruamel.yaml==0.18.16
+      - click==8.3.0
+      - robocorp==3.0.0
+      - robocorp-truststore==0.9.1
+      - pre-commit==4.3.0
+      - yamllint==1.37.1
+
+rccPostInstall:
+  - npm install -g @devcontainers/cli
+  - npm install -g prettier
+
+variables:
+  PYTHONPATH: "${ROBOT_ROOT}/src"
