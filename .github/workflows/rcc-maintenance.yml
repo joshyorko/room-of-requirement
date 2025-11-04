@@ -136,9 +136,3 @@ jobs:
           **Note:** Review carefully before merging. DevContainer build will trigger automatically on merge." \
             --base "${{ env.MAINTENANCE_TARGET_BRANCH }}" \
             --head "${{ steps.commit.outputs.branch_name }}"
-
-  trigger-build:
-    needs: maintenance
-    # Trigger devcontainer build immediately when maintenance modifies devcontainer files
-    if: needs.maintenance.outputs.committed == 'true' && needs.maintenance.outputs.files_changed == 'true'
-    uses: ./.github/workflows/cicd.yaml

@@ -1,6 +1,12 @@
 name: Build and Push Devcontainer
 on:
-  workflow_call:
+  push:
+    branches:
+      - main
+    paths:
+      - '.devcontainer/**'
+      - 'Dockerfile'
+      - '.github/workflows/cicd.yaml'
   workflow_dispatch:
 concurrency:
   group: devcontainer-${{ github.ref }}
@@ -11,21 +17,9 @@ env:
   IMAGE_NAME: joshyorko/ror
 
 jobs:
-  # 1) Dockerfile lint (fail fast)
-  dockerfile-lint:
-    runs-on: ubuntu-latest
-    steps:
-      - uses: actions/checkout@v5
-      - name: Hadolint
-        uses: hadolint/hadolint-action@v3.3.0
-        with:
-          dockerfile: .devcontainer/Dockerfile
-          # config: .hadolint.yaml
-
-  # 2) Build & push via devcontainers/ci (validates then pushes)
+  # Build & push via devcontainers/ci (linting handled by RCC maintenance)
   build-and-push:
     runs-on: ubuntu-latest
-    needs: [dockerfile-lint]
     permissions:
       contents: read
       packages: write
