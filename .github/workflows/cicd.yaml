@@ -19,8 +19,9 @@ jobs:
       - name: Hadolint
         uses: hadolint/hadolint-action@v3.3.0
         with:
-          dockerfile: .devcontainer/Dockerfile
-          # config: .hadolint.yaml
+          dockerfile:
+            .devcontainer/Dockerfile
+            # config: .hadolint.yaml
 
   # 2) Build & push via devcontainers/ci (validates then pushes)
   build-and-push:
@@ -38,7 +39,7 @@ jobs:
         run: echo "date=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
       - name: Docker metadata
         id: meta
-        uses: docker/metadata-action@v5
+        uses: docker/metadata-action@v5.8.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
@@ -51,18 +52,19 @@ jobs:
             org.opencontainers.image.title=Room of Requirement Devcontainer
             org.opencontainers.image.description=Prebuilt Devcontainer image for development & CI
       - name: Log in to the Container registry
-        uses: docker/login-action@v3
+        uses: docker/login-action@v3.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
       - name: Build and Push Dev Container image
-        uses: devcontainers/ci@v0.3
+        uses: devcontainers/ci@v0.3.1900000417
         with:
           imageName: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           imageTag: latest,${{ steps.set_date_tag.outputs.date }},sha-${{ github.sha }}
-          push: always
-          # subFolder: .devcontainer
+          push:
+            always
+            # subFolder: .devcontainer
       - name: Trivy scan
         uses: aquasecurity/trivy-action@0.33.1
         with:

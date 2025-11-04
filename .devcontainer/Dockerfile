@@ -82,7 +82,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     npm install -g npm@latest && \
     echo "🚀 Installing Cloud Tools" && \
     # Kind installation
-    bash -c '[ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.27.0/kind-linux-amd64' && \
+    bash -c '[ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64' && \
     chmod +x ./kind && \
     mv ./kind /usr/local/bin/kind && \
     # AWS CLI
@@ -91,8 +91,8 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     ./aws/install && \
     rm -rf awscliv2.zip aws && \
     # kubectl
-    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.29/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg && \
-    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.29/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list && \
+    curl -fsSL https://pkgs.k8s.io/core:/stable:/v1.34/deb/Release.key | gpg --dearmor -o /etc/apt/keyrings/kubernetes-apt-keyring.gpg && \
+    echo "deb [signed-by=/etc/apt/keyrings/kubernetes-apt-keyring.gpg] https://pkgs.k8s.io/core:/stable:/v1.34/deb/ /" | tee /etc/apt/sources.list.d/kubernetes.list && \
     apt-get update && \
     apt-get install -y --no-install-recommends kubectl && \
     # Ansible
