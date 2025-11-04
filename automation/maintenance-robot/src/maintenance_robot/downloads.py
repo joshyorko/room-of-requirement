@@ -7,7 +7,8 @@ from typing import Dict, Optional
 
 from packaging.version import InvalidVersion, Version
 
-from .github_api import fetch_latest_version
+from .github_api import fetch_latest_version as fetch_github_version
+from .pypi_api import fetch_latest_version as fetch_pypi_version
 from .reporter import DownloadUpdate, MaintenanceReport
 
 logger = logging.getLogger(__name__)
@@ -29,21 +30,44 @@ class DownloadsUpdater:
     def update_targets(self) -> None:
         """Process all downloads from allowlist with comprehensive pattern matching."""
         for identifier, config in self.allowlist.items():
-            repo = config.get("repo")
             source = config.get("source", "release")
             include_prerelease = bool(config.get("include_prerelease", False))
             max_major = config.get("max_major")
             version_format = config.get("version_format", "full")  # full, major_only, major_minor
 
-            release = fetch_latest_version(
-                repo=repo,
-                source=source,
-                include_prerelease=include_prerelease,
-                max_major=max_major,
-            )
-            if release is None:
-                logger.debug("No release info for %s", identifier)
-                continue
+            # Fetch version info based on source type
+            if source == "pypi":
+                package = config.get("package")
+                if not package:
+                    logger.warning("PyPI source requires 'package' field for %s", identifier)
+                    continue
+                package_info = fetch_pypi_version(
+                    package=package,
+                    include_prerelease=include_prerelease,
+                    max_major=max_major,
+                )
+                if package_info is None:
+                    logger.debug("No package info for %s", identifier)
+                    continue
+                version = package_info.version
+                version_str = package_info.version_str
+            else:
+                # GitHub release or tag
+                repo = config.get("repo")
+                if not repo:
+                    logger.warning("GitHub source requires 'repo' field for %s", identifier)
+                    continue
+                release = fetch_github_version(
+                    repo=repo,
+                    source=source,
+                    include_prerelease=include_prerelease,
+                    max_major=max_major,
+                )
+                if release is None:
+                    logger.debug("No release info for %s", identifier)
+                    continue
+                version = release.version
+                version_str = str(release.version)
 
             targets = config.get("targets", [])
             for target in targets:
@@ -60,7 +84,7 @@ class DownloadsUpdater:
 
                 for pattern_str in patterns:
                     pattern = re.compile(pattern_str, re.MULTILINE)
-                    self._update_file(path, pattern, identifier, release.version, version_format)
+                    self._update_file(path, pattern, identifier, version, version_format)
 
     def _update_file(
         self,

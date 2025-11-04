@@ -155,5 +155,117 @@
         ]
       }
     ]
+  },
+  "requests": {
+    "source": "pypi",
+    "package": "requests",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "requests==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "ruamel-yaml": {
+    "source": "pypi",
+    "package": "ruamel.yaml",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "ruamel\\.yaml==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "click": {
+    "source": "pypi",
+    "package": "click",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "click==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "robocorp": {
+    "source": "pypi",
+    "package": "robocorp",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "robocorp==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "robocorp-truststore": {
+    "source": "pypi",
+    "package": "robocorp-truststore",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "robocorp-truststore==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "pre-commit": {
+    "source": "pypi",
+    "package": "pre-commit",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "pre-commit==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "yamllint": {
+    "source": "pypi",
+    "package": "yamllint",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "yamllint==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "hadolintw": {
+    "source": "pypi",
+    "package": "hadolintw",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "hadolintw==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
   }
 }

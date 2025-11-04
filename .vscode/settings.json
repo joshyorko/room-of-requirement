@@ -6,5 +6,5 @@
     "python.terminal.activateEnvironment": true,
     "git.enabled": true,
     "git.path": "git",
-    "git.allowNoVerifyCommit": true
+    "git.allowNoVerifyCommit": false
 }
