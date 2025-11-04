@@ -75,24 +75,23 @@ jobs:
       - name: Devcontainer Metadata Summary
         run: |
           echo "" > $GITHUB_STEP_SUMMARY
-          echo "# 🪄 Room of Requirement: Devcontainer Build ✨" >> $GITHUB_STEP_SUMMARY
+          echo "# Room of Requirement Devcontainer Build Report" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**✅ Build Complete!**" >> $GITHUB_STEP_SUMMARY
+          echo "**Build completed successfully.**" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Key | Value |" >> $GITHUB_STEP_SUMMARY
+          echo "| Item | Details |" >> $GITHUB_STEP_SUMMARY
           echo "| --- | --- |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🏷️ **SHA Tag** | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 🆕 **Tags** | \`${{ steps.meta.outputs.tags }}\` |" >> $GITHUB_STEP_SUMMARY
-          echo "| 📦 **GHCR Link** | [View on GHCR](https://github.com/joshyorko/room-of-requirement/pkgs/container/ror) |" \
-            >> $GITHUB_STEP_SUMMARY
+          echo "| SHA tag | \`${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Published tags | \`${{ steps.meta.outputs.tags }}\` |" >> $GITHUB_STEP_SUMMARY
+          echo "| Registry link | [GitHub Container Registry](https://github.com/joshyorko/room-of-requirement/pkgs/container/ror) |" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "### 📝 Usage Example" >> $GITHUB_STEP_SUMMARY
+          echo "### Docker pull command" >> $GITHUB_STEP_SUMMARY
           echo '```shell' >> $GITHUB_STEP_SUMMARY
           echo "docker pull ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest" >> $GITHUB_STEP_SUMMARY
           echo '```' >> $GITHUB_STEP_SUMMARY
           echo "---" >> $GITHUB_STEP_SUMMARY
-          echo "✨ _Happy coding in your custom devcontainer!_ ✨" >> $GITHUB_STEP_SUMMARY
+          echo "This image is ready for use in development and CI workflows." >> $GITHUB_STEP_SUMMARY
       - name: Verify Image in GHCR
         run: |
           skopeo inspect docker://ghcr.io/${{ env.IMAGE_NAME }}:latest | jq '.Layers | length'

@@ -80,7 +80,7 @@ RUN curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
     apt-get install -y --no-install-recommends nodejs && \
     apt-mark hold nodejs && \
     npm install -g npm@latest && \
-    echo "🚀 Installing Cloud Tools" && \
+    echo "Installing cloud tooling" && \
     # Kind installation
     bash -c '[ $(uname -m) = x86_64 ] && curl -Lo ./kind https://kind.sigs.k8s.io/dl/v0.30.0/kind-linux-amd64' && \
     chmod +x ./kind && \
