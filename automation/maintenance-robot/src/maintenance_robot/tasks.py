@@ -105,7 +105,7 @@ def test_devcontainer_build() -> None:
         ]
         logging.info("Running: %s", " ".join(cmd))
         # Stream output in real-time instead of capturing it
-        result = subprocess.run(
+        subprocess.run(
             cmd,
             check=True,
             cwd=str(REPO_ROOT),

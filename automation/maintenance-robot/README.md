@@ -19,7 +19,7 @@ automation/maintenance-robot/
 ├── allowlists/
 │   ├── downloads.json          # regex targets + GitHub repos used for version discovery
 │   └── github_actions.json     # allowlisted actions + constraints
-├── conda.yaml                  # execution environment (Python 3.11 + uv + robocorp)
+├── conda.yaml                  # execution environment (Python 3.12.12 + uv + robocorp)
 ├── robot.yaml                  # robot definition consumed by rcc
 ├── src/maintenance_robot/
 │   ├── __init__.py

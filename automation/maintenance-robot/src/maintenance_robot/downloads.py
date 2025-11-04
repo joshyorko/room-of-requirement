@@ -3,7 +3,7 @@ from __future__ import annotations
 import logging
 import re
 from pathlib import Path
-from typing import Dict, List, Optional, Tuple
+from typing import Dict, Optional
 
 from packaging.version import InvalidVersion, Version
 
@@ -81,6 +81,8 @@ class DownloadsUpdater:
 
         updates_made = 0
         new_text = text
+        first_old_version = None
+        last_new_version = None
 
         # Process matches in reverse order to preserve offsets
         for match in reversed(matches):
@@ -113,29 +115,35 @@ class DownloadsUpdater:
                                current_version, latest_version, path)
                     continue
 
+            # Track first old version encountered (last in file due to reverse order)
+            if first_old_version is None:
+                first_old_version = current_version
+
             # Replace this specific occurrence
             start, end = match.span()
             old_match = new_text[start:end]
             new_match = old_match.replace(current_version, formatted_version)
             new_text = new_text[:start] + new_match + new_text[end:]
+            last_new_version = formatted_version
             updates_made += 1
 
         if updates_made > 0:
+            assert first_old_version is not None and last_new_version is not None
             path.write_text(new_text, encoding="utf-8")
             logger.info(
                 "Updated %s occurrences of %s in %s (previous: %s, new: %s)",
                 updates_made,
                 identifier,
                 path,
-                current_version,
-                formatted_version,
+                first_old_version,
+                last_new_version,
             )
             self.report.add_download_update(
                 DownloadUpdate(
                     file=path,
                     identifier=identifier,
-                    previous=current_version,
-                    updated=formatted_version,
+                    previous=first_old_version,
+                    updated=last_new_version,
                 )
             )
 
