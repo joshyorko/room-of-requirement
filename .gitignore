@@ -1,2 +1,4 @@
 .env
 .venv
+.rcc_home
+.tools

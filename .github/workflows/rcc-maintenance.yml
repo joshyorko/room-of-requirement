@@ -77,23 +77,63 @@ jobs:
           git config user.name "github-actions[bot]"
           git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
 
-      - name: Create commit
+      - name: Create commit and branch
         id: commit
-        env:
-          SKIP: no-commit-to-branch
         run: |
           if [ -n "$(git status --porcelain)" ]; then
+            # Ensure we don't accidentally commit RCC cache
+            if git status --porcelain | grep -q '\.rcc_home/'; then
+              echo "ERROR: .rcc_home directory detected in changes. This should be in .gitignore!"
+              exit 1
+            fi
+
+            BRANCH_NAME="maintenance/automated-$(date +%Y%m%d-%H%M%S)"
+            git checkout -b "$BRANCH_NAME"
             git add -A
-            git commit -m "chore: automated maintenance" --no-verify
+            git commit -m "chore: automated maintenance
+
+            - Updated dependencies and versions
+            - Ran pre-commit hooks and fixes
+            - Generated maintenance report"
             echo "committed=true" >> $GITHUB_OUTPUT
+            echo "branch_name=$BRANCH_NAME" >> $GITHUB_OUTPUT
           else
             echo "No changes detected"
             echo "committed=false" >> $GITHUB_OUTPUT
           fi
 
-      - name: Push changes
+      - name: Push branch and create PR
         if: steps.commit.outputs.committed == 'true' && env.MAINTENANCE_PUSH == 'true'
-        run: git push origin HEAD:${{ env.MAINTENANCE_TARGET_BRANCH }}
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          git push origin "${{ steps.commit.outputs.branch_name }}"
+
+          gh pr create \
+            --title "chore: Automated maintenance updates" \
+            --body "## Automated Maintenance Report
+
+          This PR contains automated maintenance updates from the RCC maintenance robot.
+
+          ### Changes
+          - Dependency updates
+          - Pre-commit hook fixes
+          - DevContainer lock file updates
+
+          ### Affected Files
+          DevContainer affected: ${{ steps.check_files.outputs.devcontainer_affected }}
+
+          <details>
+          <summary>Changed files</summary>
+
+          \`\`\`
+          $(git diff --name-status HEAD~1)
+          \`\`\`
+          </details>
+
+          **Note:** Review carefully before merging. DevContainer build will trigger automatically on merge." \
+            --base "${{ env.MAINTENANCE_TARGET_BRANCH }}" \
+            --head "${{ steps.commit.outputs.branch_name }}"
 
   trigger-build:
     needs: maintenance
