@@ -56,6 +56,14 @@ jobs:
       - name: Disable RCC telemetry
         run: rcc config identity -t
 
+      - name: Install hadolint
+        run: |
+          HADOLINT_VERSION=2.12.0
+          curl -sSL https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
+          chmod +x /usr/local/bin/hadolint
+          hadolint --version
+        shell: bash
+
       - name: Run maintenance robot
         run: |
           rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
