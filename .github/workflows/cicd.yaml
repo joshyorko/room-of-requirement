@@ -25,7 +25,6 @@ jobs:
     permissions:
       contents: read
       packages: write
-      security-events: write
     steps:
       - name: Checkout repository
         uses: actions/checkout@v5
@@ -60,18 +59,6 @@ jobs:
           push:
             always
             # subFolder: .devcontainer
-      - name: Trivy scan
-        uses: aquasecurity/trivy-action@0.33.1
-        with:
-          image-ref: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:sha-${{ github.sha }}
-          format: sarif
-          output: trivy.sarif
-          ignore-unfixed: true
-          vuln-type: "os,library"
-      - name: Upload SARIF to code scanning
-        uses: github/codeql-action/upload-sarif@v4
-        with:
-          sarif_file: trivy.sarif
       - name: Devcontainer Metadata Summary
         run: |
           echo "" > $GITHUB_STEP_SUMMARY
