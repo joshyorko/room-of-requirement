@@ -13,9 +13,11 @@ This is a production-ready DevContainer template called "Room of Requirement" - 
 - **Final stage**: ZSH setup with custom dotfiles from external repo
 
 ### DevContainer Configuration
-- Uses Docker host socket (not privileged mode) via `docker-in-docker` feature
-- Custom `postCreateCommand` installs: k3d, k9s, uv, DuckDB, Claude code tools
-- Volume mounts parent directory (`../..:/workspaces:cached`) for workspace access
+- Uses docker-in-docker feature (v2.12.4) for Docker daemon access
+- In Kubernetes/DevPod: Docker runs in a sidecar container sharing network/storage
+- Runs with `--privileged` flag for container-in-container capabilities
+- Custom `postCreateCommand` runs post-create.sh script with resilient error handling
+- Volume mount for UV cache to persist Python package downloads
 - Remote user: `vscode` with ZSH as default shell
 
 ## Critical Workflows
@@ -78,9 +80,11 @@ rcc --version              # Robocorp Control Room client
 ## Integration Points
 
 ### Docker Integration
-- Host socket mounting for Docker-outside-of-Docker pattern
-- No privileged mode required
-- Compatible with Docker Desktop and Podman
+- Docker-in-Docker pattern using DevContainer feature
+- In local environments: Starts Docker daemon inside the container
+- In Kubernetes/DevPod: Uses sidecar container pattern for Docker daemon
+- Runs with privileged mode for full container capabilities
+- Compatible with Docker Desktop, DevPod on Kubernetes, and other container runtimes
 
 ### Kubernetes Development
 - k3d for local cluster creation

@@ -4,10 +4,7 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {
-      "version": "latest",
-      "moby": true
-    },
+    "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {},
     "ghcr.io/devcontainers/features/common-utils:2.5.4": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
@@ -29,6 +26,9 @@
   "containerUser": "vscode",
   "remoteUser": "vscode",
   "updateRemoteUserUID": true,
+  "runArgs": [
+    "--privileged"
+  ],
   "containerEnv": {
     "UV_CACHE_DIR": "/home/vscode/.cache/uv"
   },
@@ -37,8 +37,7 @@
     "memory": "8gb",
     "storage": "32gb"
   },
-  // Lifecycle scripts - verify tools are available before running commands
-  "postCreateCommand": "/bin/bash ./scripts/post-create.sh || /bin/sh ./scripts/post-create.sh || true",
+  "postCreateCommand": "bash ./scripts/post-create.sh",
   "customizations": {
     "vscode": {
       "settings": {
@@ -49,15 +48,13 @@
         "github.vscode-github-actions",
         "ms-vscode.vscode-websearchforcopilot",
         "GitHub.vscode-pull-request-github",
-        "ms-python.python"
+        "ms-python.python",
+        "sema4ai.sema4ai"
       ]
     }
   },
-  // Additional DevContainer spec properties
   "mounts": [
-    // Docker socket is already mounted by docker-in-docker feature
     "source=room-of-requirement-uv-cache,target=/home/vscode/.cache/uv,type=volume"
   ],
-  // Override image command to prevent exit
   "overrideCommand": false
 }
