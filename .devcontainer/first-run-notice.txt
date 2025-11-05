@@ -24,8 +24,6 @@ USEFUL COMMANDS TO TRY
   $ k9s                      # Navigate the ethereal dashboard
   $ uv --version             # Verify the version of your package conjurer
 
-When you're finished with your work, type "mischief_managed"
-   to dispel this environment and restore order.
 
 
 ~*~ Happy Coding in Your Manifested DevContainer! ~*~
