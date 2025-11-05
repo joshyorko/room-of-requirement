@@ -173,6 +173,9 @@ RUN mkdir -p /home/vscode/.oh-my-zsh/custom/plugins && \
 RUN mkdir -p /home/vscode/.cache/uv && \
     chown -R vscode:vscode /home/vscode/.cache
 
+# Ensure vscode user can access Docker socket (for DevPod/K8s environments)
+RUN groupadd -f docker && usermod -aG docker vscode
+
 RUN mkdir -p /usr/local/etc/vscode-dev-containers/ && \
     mv -f /tmp/scripts/first-run-notice.txt /usr/local/etc/vscode-dev-containers/
 

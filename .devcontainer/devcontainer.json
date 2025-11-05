@@ -4,7 +4,12 @@
     "dockerfile": "Dockerfile"
   },
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {},
+    "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {
+      "moby": true,
+      "dockerDashComposeVersion": "v2",
+      "enableNonRootDocker": true,
+      "installDockerBuildx": true
+    },
     "ghcr.io/devcontainers/features/common-utils:2.5.4": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
@@ -37,7 +42,7 @@
     "memory": "8gb",
     "storage": "32gb"
   },
-  "postCreateCommand": "bash ./scripts/post-create.sh",
+  "postCreateCommand": "sh -c 'if [ -f ./scripts/post-create.sh ]; then bash ./scripts/post-create.sh; fi'",
   "customizations": {
     "vscode": {
       "settings": {

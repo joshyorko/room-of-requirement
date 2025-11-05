@@ -9,6 +9,23 @@ log() {
 # Ensure basic directories exist
 mkdir -p "${UV_CACHE_DIR:-$HOME/.cache/uv}" || log "Warning: Could not create UV cache directory"
 
+# Wait for Docker daemon to be ready (in DevPod/K8s environments)
+if command -v docker >/dev/null 2>&1; then
+  log "Waiting for Docker daemon to be ready..."
+  for i in {1..30}; do
+    if docker info >/dev/null 2>&1; then
+      log "Docker daemon is ready."
+      break
+    fi
+    if [ $i -eq 30 ]; then
+      log "Warning: Docker daemon not ready after 30 seconds. Continuing anyway..."
+    fi
+    sleep 1
+  done
+else
+  log "Docker command not found; skipping daemon check."
+fi
+
 if command -v rcc >/dev/null 2>&1; then
   if ! rcc config identity -t >/dev/null 2>&1; then
     log "rcc identity configuration skipped (non-zero exit code)."
