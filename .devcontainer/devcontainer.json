@@ -3,7 +3,7 @@
   "build": {
     "dockerfile": "Dockerfile"
   },
-  "features": {
+    "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {
       "moby": true,
       "dockerDashComposeVersion": "v2",
@@ -23,43 +23,27 @@
       "version": "latest",
       "helm": "latest",
       "minikube": "none"
-    }
-  },
-  // Workspace configuration per DevContainer spec
-  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
-  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
-  "containerUser": "vscode",
-  "remoteUser": "vscode",
-  "updateRemoteUserUID": true,
+    },
   "runArgs": [
     "--privileged"
   ],
-  "containerEnv": {
-    "UV_CACHE_DIR": "/home/vscode/.cache/uv"
-  },
-  "hostRequirements": {
-    "cpus": 4,
-    "memory": "8gb",
-    "storage": "32gb"
-  },
-  "postCreateCommand": "sh -c 'if [ -f ./scripts/post-create.sh ]; then bash ./scripts/post-create.sh; fi'",
+  "remoteUser": "vscode",
+  "postCreateCommand": "rcc config identity -t",
   "customizations": {
     "vscode": {
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh"
+      },
+      "mcp": {
+
       },
       "extensions": [
         "ms-azuretools.vscode-containers",
         "github.vscode-github-actions",
         "ms-vscode.vscode-websearchforcopilot",
         "GitHub.vscode-pull-request-github",
-        "ms-python.python",
-        "sema4ai.sema4ai"
+        "ms-python.python"
       ]
     }
-  },
-  "mounts": [
-    "source=room-of-requirement-uv-cache,target=/home/vscode/.cache/uv,type=volume"
-  ],
-  "overrideCommand": false
+  }
 }
