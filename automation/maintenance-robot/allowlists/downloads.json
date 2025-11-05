@@ -4,12 +4,14 @@
     "source": "release",
     "max_major": null,
     "include_prerelease": false,
+    "download_url_template": "https://kind.sigs.k8s.io/dl/v{version}/kind-linux-amd64",
     "targets": [
       {
         "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "https://kind\\.sigs\\.k8s\\.io/dl/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/kind-linux-amd64"
-        ]
+          "ARG KIND_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG KIND_SHA256=(?P<sha256>\\S+)"
       }
     ]
   },
@@ -18,12 +20,14 @@
     "source": "release",
     "max_major": null,
     "include_prerelease": false,
+    "download_url_template": "https://github.com/joshyorko/rcc/releases/download/v{version}/rcc-linux64",
     "targets": [
       {
         "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "https://github\\.com/joshyorko/rcc/releases/download/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/rcc-linux64"
-        ]
+          "ARG RCC_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG RCC_SHA256=(?P<sha256>\\S+)"
       }
     ]
   },
@@ -42,25 +46,10 @@
       }
     ]
   },
-  "kubectl": {
-    "repo": "kubernetes/kubernetes",
-    "source": "release",
-    "max_major": 1,
-    "version_format": "major_minor",
-    "include_prerelease": false,
-    "comment": "Limited to v1.31 as later versions may not have deb repos yet",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "pkgs\\.k8s\\.io/core:/stable:/v(?P<version>[0-9]+\\.[0-9]+)/deb/"
-        ]
-      }
-    ]
-  },
   "docker-in-docker-feature": {
     "repo": "devcontainers/features",
     "source": "tag",
+    "feature_name": "docker-in-docker",
     "max_major": null,
     "include_prerelease": false,
     "targets": [
@@ -75,6 +64,7 @@
   "common-utils-feature": {
     "repo": "devcontainers/features",
     "source": "tag",
+    "feature_name": "common-utils",
     "max_major": null,
     "include_prerelease": false,
     "targets": [
@@ -86,17 +76,49 @@
       }
     ]
   },
+  "aws-cli-feature": {
+    "repo": "devcontainers/features",
+    "source": "tag",
+    "feature_name": "aws-cli",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/devcontainer.json",
+        "patterns": [
+          "ghcr\\.io/devcontainers/features/aws-cli:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
+  "kubectl-helm-minikube-feature": {
+    "repo": "devcontainers/features",
+    "source": "tag",
+    "feature_name": "kubectl-helm-minikube",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": ".devcontainer/devcontainer.json",
+        "patterns": [
+          "ghcr\\.io/devcontainers/features/kubectl-helm-minikube:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
   "k3d": {
     "repo": "k3d-io/k3d",
     "source": "release",
     "max_major": null,
     "include_prerelease": false,
+    "download_url_template": "https://github.com/k3d-io/k3d/releases/download/v{version}/k3d-linux-amd64",
     "targets": [
       {
         "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "https://github\\.com/k3d-io/k3d/releases/download/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/k3d-linux-amd64"
-        ]
+          "ARG K3D_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG K3D_SHA256=(?P<sha256>\\S+)"
       }
     ]
   },
@@ -105,12 +127,14 @@
     "source": "release",
     "max_major": null,
     "include_prerelease": false,
+    "download_url_template": "https://github.com/derailed/k9s/releases/download/v{version}/k9s_linux_amd64.tar.gz",
     "targets": [
       {
         "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "https://github\\.com/derailed/k9s/releases/download/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/k9s_linux_amd64\\.tar\\.gz"
-        ]
+          "ARG K9S_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG K9S_SHA256=(?P<sha256>\\S+)"
       }
     ]
   },
@@ -119,12 +143,14 @@
     "source": "release",
     "max_major": null,
     "include_prerelease": false,
+    "download_url_template": "https://github.com/astral-sh/uv/releases/download/{version}/uv-x86_64-unknown-linux-gnu.tar.gz",
     "targets": [
       {
         "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "https://github\\.com/astral-sh/uv/releases/download/(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/uv-x86_64-unknown-linux-gnu\\.tar\\.gz"
-        ]
+          "ARG UV_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG UV_SHA256=(?P<sha256>\\S+)"
       }
     ]
   },
@@ -133,12 +159,14 @@
     "source": "release",
     "max_major": null,
     "include_prerelease": false,
+    "download_url_template": "https://github.com/duckdb/duckdb/releases/download/v{version}/duckdb_cli-linux-amd64.zip",
     "targets": [
       {
         "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "https://github\\.com/duckdb/duckdb/releases/download/v(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/duckdb_cli-linux-amd64\\.zip"
-        ]
+          "ARG DUCKDB_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG DUCKDB_SHA256=(?P<sha256>\\S+)"
       }
     ]
   },
@@ -147,12 +175,14 @@
     "source": "release",
     "max_major": null,
     "include_prerelease": false,
+    "download_url_template": "https://cdn.sema4.ai/action-server/releases/{version}/linux64/action-server",
     "targets": [
       {
         "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "https://cdn\\.sema4\\.ai/action-server/releases/(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)/linux64/action-server"
-        ]
+          "ARG ACTION_SERVER_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG ACTION_SERVER_SHA256=(?P<sha256>\\S+)"
       }
     ]
   },

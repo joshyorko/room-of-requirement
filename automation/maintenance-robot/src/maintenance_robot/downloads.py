@@ -1,7 +1,9 @@
 from __future__ import annotations
 
+import hashlib
 import logging
 import re
+import requests
 from pathlib import Path
 from typing import Dict, Optional
 
@@ -29,11 +31,14 @@ class DownloadsUpdater:
 
     def update_targets(self) -> None:
         """Process all downloads from allowlist with comprehensive pattern matching."""
+        logger.info("Processing %d download targets from allowlist", len(self.allowlist))
         for identifier, config in self.allowlist.items():
+            logger.info("\n=== Processing: %s ===", identifier)
             source = config.get("source", "release")
             include_prerelease = bool(config.get("include_prerelease", False))
             max_major = config.get("max_major")
             version_format = config.get("version_format", "full")  # full, major_only, major_minor
+            logger.info("  Source: %s, Prerelease: %s, Max Major: %s", source, include_prerelease, max_major)
 
             # Fetch version info based on source type
             if source == "pypi":
@@ -41,50 +46,67 @@ class DownloadsUpdater:
                 if not package:
                     logger.warning("PyPI source requires 'package' field for %s", identifier)
                     continue
+                logger.info("  Fetching PyPI package: %s", package)
                 package_info = fetch_pypi_version(
                     package=package,
                     include_prerelease=include_prerelease,
                     max_major=max_major,
                 )
                 if package_info is None:
-                    logger.debug("No package info for %s", identifier)
+                    logger.warning("  ⚠ No package info found for %s", identifier)
                     continue
                 version = package_info.version
                 version_str = package_info.version_str
+                logger.info("  ✓ Latest PyPI version: %s", version_str)
             else:
                 # GitHub release or tag
                 repo = config.get("repo")
                 if not repo:
-                    logger.warning("GitHub source requires 'repo' field for %s", identifier)
+                    logger.warning("  ⚠ GitHub source requires 'repo' field for %s", identifier)
                     continue
+                logger.info("  Fetching GitHub %s from repo: %s", source, repo)
+                feature_name = config.get("feature_name")
+                if feature_name:
+                    logger.info("  Filtering by feature name: %s", feature_name)
                 release = fetch_github_version(
                     repo=repo,
                     source=source,
                     include_prerelease=include_prerelease,
                     max_major=max_major,
+                    feature_name=feature_name,
                 )
                 if release is None:
-                    logger.debug("No release info for %s", identifier)
+                    logger.warning("  ⚠ No %s info found for %s (repo: %s)", source, identifier, repo)
                     continue
                 version = release.version
                 version_str = str(release.version)
+                logger.info("  ✓ Latest GitHub %s version: %s (tag: %s)", source, version, release.tag)
 
             targets = config.get("targets", [])
-            for target in targets:
+            download_url_template = config.get("download_url_template")
+            logger.info("  Processing %d target(s)", len(targets))
+            for target_idx, target in enumerate(targets, 1):
                 path = self.repo_root / target["file"]
+                logger.info("  Target %d: %s", target_idx, path.relative_to(self.repo_root))
                 if not path.exists():
-                    logger.debug("Target file does not exist: %s", path)
+                    logger.warning("    ⚠ Target file does not exist: %s", path)
                     continue
+
+                # Check if this target has SHA256 tracking
+                sha256_pattern_str = target.get("sha256_pattern")
 
                 # Support multiple patterns per target
                 patterns = target.get("patterns", [target.get("pattern")])
                 if not patterns or patterns == [None]:
-                    logger.warning("No patterns defined for %s in %s", identifier, path)
+                    logger.warning("    ⚠ No patterns defined for %s in %s", identifier, path)
                     continue
+                logger.info("    Checking %d pattern(s)", len(patterns))
 
-                for pattern_str in patterns:
+                for pattern_idx, pattern_str in enumerate(patterns, 1):
+                    logger.info("    Pattern %d: %s", pattern_idx, pattern_str[:80] + "..." if len(pattern_str) > 80 else pattern_str)
                     pattern = re.compile(pattern_str, re.MULTILINE)
-                    self._update_file(path, pattern, identifier, version, version_format)
+                    self._update_file(path, pattern, identifier, version, version_format,
+                                    sha256_pattern_str, download_url_template)
 
     def _update_file(
         self,
@@ -93,15 +115,18 @@ class DownloadsUpdater:
         identifier: str,
         latest_version: Version,
         version_format: str = "full",
+        sha256_pattern_str: Optional[str] = None,
+        download_url_template: Optional[str] = None,
     ) -> None:
-        """Update all occurrences of a version pattern in a file."""
+        """Update all occurrences of a version pattern in a file, and optionally update SHA256."""
         text = path.read_text(encoding="utf-8")
 
         # Find all matches
         matches = list(pattern.finditer(text))
         if not matches:
-            logger.debug("Pattern %s not found in %s", pattern.pattern, path)
+            logger.info("      ℹ Pattern not found in file (no matches)")
             return
+        logger.info("      Found %d match(es) in file", len(matches))
 
         updates_made = 0
         new_text = text
@@ -109,13 +134,15 @@ class DownloadsUpdater:
         last_new_version = None
 
         # Process matches in reverse order to preserve offsets
-        for match in reversed(matches):
+        for match_idx, match in enumerate(reversed(matches), 1):
             current_version = match.group("version")
+            logger.info("      Match %d: current version = %s", match_idx, current_version)
             maybe_version = self._to_version(current_version)
 
             if maybe_version is None:
-                logger.debug("Current version not parseable: %s in %s", current_version, path)
+                logger.warning("      ⚠ Current version not parseable: %s", current_version)
                 continue
+            logger.info("      Parsed as: %s", maybe_version)
 
             # Format the new version according to version_format
             formatted_version = self._format_version(latest_version, version_format)
@@ -124,20 +151,26 @@ class DownloadsUpdater:
             if version_format == "major_only":
                 # Compare major versions only
                 if latest_version.major <= maybe_version.major:
-                    logger.debug("Version %s already up to date (>= %s) in %s",
-                               current_version, latest_version, path)
+                    logger.info("      ✓ Already up to date: %s >= %s (major only)",
+                               current_version, latest_version)
                     continue
+                logger.info("      🔄 Update available: %s -> %s (major only)",
+                           current_version, formatted_version)
             elif version_format == "major_minor":
                 # Compare major.minor
                 if (latest_version.major, latest_version.minor) <= (maybe_version.major, maybe_version.minor):
-                    logger.debug("Version %s already up to date (>= %s) in %s",
-                               current_version, latest_version, path)
+                    logger.info("      ✓ Already up to date: %s >= %s (major.minor)",
+                               current_version, latest_version)
                     continue
+                logger.info("      🔄 Update available: %s -> %s (major.minor)",
+                           current_version, formatted_version)
             else:  # full version comparison
                 if latest_version <= maybe_version:
-                    logger.debug("Version %s already up to date (>= %s) in %s",
-                               current_version, latest_version, path)
+                    logger.info("      ✓ Already up to date: %s >= %s (full)",
+                               current_version, latest_version)
                     continue
+                logger.info("      🔄 Update available: %s -> %s (full)",
+                           current_version, formatted_version)
 
             # Track first old version encountered (last in file due to reverse order)
             if first_old_version is None:
@@ -171,6 +204,56 @@ class DownloadsUpdater:
                 )
             )
 
+            # If SHA256 pattern is provided, update the checksum too
+            if sha256_pattern_str and download_url_template:
+                logger.info("      🔐 Updating SHA256 checksum...")
+                self._update_sha256(path, sha256_pattern_str, download_url_template, formatted_version)
+
+    def _update_sha256(
+        self,
+        path: Path,
+        sha256_pattern_str: str,
+        download_url_template: str,
+        version: str,
+    ) -> None:
+        """Update SHA256 checksum for a given version."""
+        # Build download URL from template
+        download_url = download_url_template.format(version=version)
+
+        # Compute SHA256
+        new_sha256 = self._compute_sha256_from_url(download_url)
+        if not new_sha256:
+            logger.warning("      ⚠ Could not compute SHA256, skipping checksum update")
+            return
+
+        # Update SHA256 in file
+        text = path.read_text(encoding="utf-8")
+        sha256_pattern = re.compile(sha256_pattern_str, re.MULTILINE)
+        matches = list(sha256_pattern.finditer(text))
+
+        if not matches:
+            logger.warning("      ⚠ SHA256 pattern not found in file")
+            return
+
+        if len(matches) > 1:
+            logger.warning("      ⚠ Multiple SHA256 matches found, updating first occurrence only")
+
+        match = matches[0]
+        old_sha256 = match.group("sha256")
+
+        if old_sha256 == new_sha256:
+            logger.info("      ✓ SHA256 already up to date: %s", new_sha256[:16] + "...")
+            return
+
+        # Replace the SHA256
+        start, end = match.span()
+        old_match = text[start:end]
+        new_match = old_match.replace(old_sha256, new_sha256)
+        new_text = text[:start] + new_match + text[end:]
+        path.write_text(new_text, encoding="utf-8")
+        logger.info("      ✅ Updated SHA256: %s... -> %s...", old_sha256[:16], new_sha256[:16])
+
+
     @staticmethod
     def _format_version(version: Version, format_type: str) -> str:
         """Format a version according to the specified format."""
@@ -188,4 +271,23 @@ class DownloadsUpdater:
         try:
             return Version(cleaned)
         except InvalidVersion:
+            return None
+
+    @staticmethod
+    def _compute_sha256_from_url(url: str) -> Optional[str]:
+        """Download a file and compute its SHA256 checksum."""
+        try:
+            logger.info("      📥 Downloading to compute SHA256: %s", url)
+            response = requests.get(url, timeout=60, stream=True)
+            response.raise_for_status()
+
+            sha256_hash = hashlib.sha256()
+            for chunk in response.iter_content(chunk_size=8192):
+                sha256_hash.update(chunk)
+
+            checksum = sha256_hash.hexdigest()
+            logger.info("      ✓ Computed SHA256: %s", checksum)
+            return checksum
+        except Exception as e:
+            logger.warning("      ⚠ Failed to compute SHA256 from %s: %s", url, e)
             return None

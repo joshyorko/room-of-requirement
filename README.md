@@ -8,11 +8,11 @@
 |_| |_|\___/|_| |_| |_|_.__/ \___|_|    |_| \_|\___| \_/\_/   |_|\___|\___|\__|\__\___|_| |_|\__|\__\___/|_|
 -- Room of Requirement --
 -- DevContainer Setup --
--- Ubuntu Noble + Docker (host socket) + Zsh + K3d + K9s + uv --
+-- Ubuntu Noble + Docker-in-Docker + Zsh + K3d + K9s + uv --
 -- VS Code Extensions: Containers, Sema4AI, GitHub Actions --
--- Post-create installs: k3d, k9s, uv --
+-- Post-create installs: k3d, k9s, uv, DuckDB --
 -- Default shell: zsh (with Oh My Zsh) --
--- Docker socket from host, not privileged mode --
+-- Docker-in-Docker via official feature (secure, no privileged mode) --
 -- Remote user: vscode --
 -- All the magic you need for cloud-native dev! --
 
@@ -30,13 +30,16 @@
 ---
 
 ## **Features**
-- **Ubuntu Noble** base
-- **Docker (host socket)** for container magic
-- **Zsh** (with Oh My Zsh)
-- **k3d** (K3s in Docker)
+- **Ubuntu Noble (24.04)** base
+- **Docker-in-Docker** via official DevContainer feature (secure, no privileged mode required)
+- **Zsh** with Oh My Zsh and custom plugins (autosuggestions, syntax highlighting)
+- **k3d** (K3s in Docker) for local Kubernetes clusters
 - **k9s** (Kubernetes CLI UI)
-- **uv** (Python package manager)
-- **VS Code Extensions**: Containers, Sema4AI, GitHub Actions
+- **uv** (Fast Python package manager)
+- **DuckDB** (Embedded analytics database)
+- **Cloud Tools**: AWS CLI, kubectl, Ansible
+- **Sema4.AI Tools**: action-server, rcc
+- **VS Code Extensions**: Containers, Sema4AI, GitHub Actions, Python
 
 ---
 
@@ -51,8 +54,9 @@
 ## **Details**
 - **Remote User:** `vscode`
 - **Default Shell:** `zsh`
-- **Docker:** Host socket (docker-outside-of-docker feature)
-- **Post-create Installs:** k3d, k9s, uv
+- **Docker:** Docker-in-Docker via official feature (secure container nesting)
+- **Workspace Mount:** `/workspaces` (cached for performance)
+- **Security:** Follows principle of least privilege - no privileged mode
 
 ---
 

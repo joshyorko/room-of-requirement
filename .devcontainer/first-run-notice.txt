@@ -27,4 +27,5 @@ USEFUL COMMANDS TO TRY
 When you're finished with your work, type "mischief_managed"
    to dispel this environment and restore order.
 
+
 ~*~ Happy Coding in Your Manifested DevContainer! ~*~
