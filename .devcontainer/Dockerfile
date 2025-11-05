@@ -162,21 +162,20 @@ RUN set -euo pipefail && \
     install -m 0755 "${tmp_dir}/rcc" /usr/local/bin/rcc && \
     rm -rf "${tmp_dir}"
 
+
+# Final stage
 FROM cloud-tools AS dev_containers_target_stage
-
+# ZSH setup
 RUN mkdir -p /home/vscode/.oh-my-zsh/custom/plugins && \
-    git clone --depth=1 https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
-    git clone --depth=1 https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting && \
-    chown -R vscode:vscode /home/vscode/.oh-my-zsh/custom/plugins
+    git clone https://github.com/zsh-users/zsh-autosuggestions /home/vscode/.oh-my-zsh/custom/plugins/zsh-autosuggestions && \
+    git clone https://github.com/zsh-users/zsh-syntax-highlighting /home/vscode/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting && \
+    chown -R vscode:vscode /home/vscode/.oh-my-zsh/custom/plugins && \
+    # Cleanup
+    apt-get clean && \
+    rm -rf /var/lib/apt/lists/*
 
-# Create uv cache directory with correct ownership
-RUN mkdir -p /home/vscode/.cache/uv && \
-    chown -R vscode:vscode /home/vscode/.cache
-
-# Ensure vscode user can access Docker socket (for DevPod/K8s environments)
-RUN groupadd -f docker && usermod -aG docker vscode
-
-RUN mkdir -p /usr/local/etc/vscode-dev-containers/ && \
+# Move first run notice
+RUN mkdir -p "/usr/local/etc/vscode-dev-containers/" && \
     mv -f /tmp/scripts/first-run-notice.txt /usr/local/etc/vscode-dev-containers/
 
 CMD ["sleep", "infinity"]
