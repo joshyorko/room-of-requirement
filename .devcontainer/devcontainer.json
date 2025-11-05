@@ -20,18 +20,27 @@
       "minikube": "none"
     }
   },
+  "workspaceFolder": "/workspaces/${localWorkspaceFolderBasename}",
+  "workspaceMount": "source=${localWorkspaceFolder},target=/workspaces/${localWorkspaceFolderBasename},type=bind,consistency=cached",
+  "containerUser": "vscode",
+  "remoteUser": "vscode",
+  "updateRemoteUserUID": true,
   "runArgs": [
     "--privileged"
   ],
-  "remoteUser": "vscode",
+  "containerEnv": {
+    "UV_CACHE_DIR": "/home/vscode/.cache/uv"
+  },
+  "hostRequirements": {
+    "cpus": 4,
+    "memory": "8gb",
+    "storage": "32gb"
+  },
   "postCreateCommand": "rcc config identity -t",
   "customizations": {
     "vscode": {
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh"
-      },
-      "mcp": {
-
       },
       "extensions": [
         "ms-azuretools.vscode-containers",
@@ -39,7 +48,13 @@
         "ms-vscode.vscode-websearchforcopilot",
         "GitHub.vscode-pull-request-github",
         "ms-python.python"
-      ]
+
+      ],
+      "mcp": {}
     }
-  }
+  },
+  "mounts": [
+    "source=room-of-requirement-uv-cache,target=/home/vscode/.cache/uv,type=volume"
+  ],
+  "overrideCommand": false
 }
