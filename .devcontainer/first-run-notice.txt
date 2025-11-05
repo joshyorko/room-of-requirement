@@ -13,6 +13,7 @@ This container has manifested itself as your development environment.
 │  Docker (host socket) - Containers within containers, a paradox    │
 │  k3d & k9s          - Orchestrating clusters in miniature worlds   │
 │  UV                 - Python's swift shadow, installing dependencies│
+│  GitHub CLI (gh)    - Command your repositories with mystical powers│
 │  Zsh + Oh My Zsh    - Shell that echoes your commands back to you  │
 │                                                                    │
 └────────────────────────────────────────────────────────────────────┘
@@ -22,6 +23,7 @@ USEFUL COMMANDS TO TRY
   $ docker ps                # Observe the containers you have summoned
   $ k3d cluster create       # Conjure a Kubernetes cluster from nothing
   $ k9s                      # Navigate the ethereal dashboard
+  $ gh repo list             # List your GitHub repositories
   $ uv --version             # Verify the version of your package conjurer
 
 
