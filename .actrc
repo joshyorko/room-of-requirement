@@ -1,3 +1,0 @@
---platform ubuntu-latest=ghcr.io/catthehacker/ubuntu:custom-latest
---artifact-server-path .act/artifacts
---container-architecture linux/amd64
