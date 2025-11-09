@@ -37,7 +37,7 @@
 - **k9s** (Kubernetes CLI UI)
 - **uv** (Fast Python package manager)
 - **DuckDB** (Embedded analytics database)
-- **Cloud Tools**: AWS CLI, kubectl, Ansible
+- **Cloud Tools**: AWS CLI, kubectl, Ansible, GitHub CLI (gh)
 - **Sema4.AI Tools**: action-server, rcc
 - **VS Code Extensions**: Containers, Sema4AI, GitHub Actions, Python
 
