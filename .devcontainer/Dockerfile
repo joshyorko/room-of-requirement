@@ -14,6 +14,8 @@ ARG RCC_VERSION=v18.8.0
 ARG RCC_SHA256=bf5b06675adfd6ada7af8e43f4bdc93e6619065b38a6462178fdf8df49477000
 ARG ACTION_SERVER_VERSION=2.16.4
 ARG ACTION_SERVER_SHA256=beaca29dd529188547c8aa13df9f38aa7e4fc5273f35659f7fadbae0850ee995
+ARG AWSCLI_VERSION=2.31.30
+ARG AWSCLI_SHA256=joshe5c9e11b4e42fb6d6a661e89f2b037d25eb0d4e8d38f9d6a7eb2e9e9e5c2
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS base
 
@@ -110,6 +112,8 @@ ARG RCC_VERSION
 ARG RCC_SHA256
 ARG ACTION_SERVER_VERSION
 ARG ACTION_SERVER_SHA256
+ARG AWSCLI_VERSION
+ARG AWSCLI_SHA256
 
 # Install Node.js runtime managed via NodeSource
 RUN --mount=type=cache,target=/var/cache/apt \
@@ -160,6 +164,10 @@ RUN set -euo pipefail && \
     curl -fsSLo "${tmp_dir}/rcc" "https://github.com/joshyorko/rcc/releases/download/${RCC_VERSION}/rcc-linux64" && \
     echo "${RCC_SHA256}  ${tmp_dir}/rcc" | sha256sum --check --status && \
     install -m 0755 "${tmp_dir}/rcc" /usr/local/bin/rcc && \
+    curl -fsSLo "${tmp_dir}/awscliv2.zip" "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-${AWSCLI_VERSION}.zip" && \
+    echo "${AWSCLI_SHA256}  ${tmp_dir}/awscliv2.zip" | sha256sum --check --status && \
+    unzip -q "${tmp_dir}/awscliv2.zip" -d "${tmp_dir}" && \
+    "${tmp_dir}/aws/install" --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli && \
     rm -rf "${tmp_dir}"
 
 FROM cloud-tools AS dev_containers_target_stage

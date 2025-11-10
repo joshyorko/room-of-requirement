@@ -76,18 +76,19 @@
       }
     ]
   },
-  "aws-cli-feature": {
-    "repo": "devcontainers/features",
+  "awscli": {
+    "repo": "aws/aws-cli",
     "source": "tag",
-    "feature_name": "aws-cli",
     "max_major": null,
     "include_prerelease": false,
+    "download_url_template": "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-{version}.zip",
     "targets": [
       {
-        "file": ".devcontainer/devcontainer.json",
+        "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "ghcr\\.io/devcontainers/features/aws-cli:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
-        ]
+          "ARG AWSCLI_VERSION=(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ],
+        "sha256_pattern": "ARG AWSCLI_SHA256=(?P<sha256>\\S+)"
       }
     ]
   },
