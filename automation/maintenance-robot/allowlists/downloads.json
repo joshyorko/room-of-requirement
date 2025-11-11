@@ -313,5 +313,21 @@
         ]
       }
     ]
+  },
+  "hauler": {
+    "repo": "hauler-dev/hauler",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "download_url_template": "https://github.com/hauler-dev/hauler/releases/download/v{version}/hauler_{version}_linux_amd64.tar.gz",
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "ARG HAULER_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG HAULER_SHA256=(?P<sha256>\\S+)"
+      }
+    ]
   }
 }

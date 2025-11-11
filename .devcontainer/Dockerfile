@@ -14,8 +14,10 @@ ARG RCC_VERSION=v18.8.0
 ARG RCC_SHA256=bf5b06675adfd6ada7af8e43f4bdc93e6619065b38a6462178fdf8df49477000
 ARG ACTION_SERVER_VERSION=2.16.4
 ARG ACTION_SERVER_SHA256=beaca29dd529188547c8aa13df9f38aa7e4fc5273f35659f7fadbae0850ee995
-ARG AWSCLI_VERSION=2.31.33
-ARG AWSCLI_SHA256=4775b686c96cb2cf725d05a740a242bc8b14aba15fa629d6869a1e2416c1ab7c
+ARG AWSCLI_VERSION=2.31.32
+ARG AWSCLI_SHA256=58ca52fd749eba6c435c93c6fbd032f63fd44d2b8f1ab6aaaa29fe547f8a15b2
+ARG HAULER_VERSION=1.3.0
+ARG HAULER_SHA256=d38bb543feeb7ea5a73a92cbba1e121ee44c001e1214475f6394953b29c10a5d
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS base
 
@@ -114,6 +116,8 @@ ARG ACTION_SERVER_VERSION
 ARG ACTION_SERVER_SHA256
 ARG AWSCLI_VERSION
 ARG AWSCLI_SHA256
+ARG HAULER_VERSION
+ARG HAULER_SHA256
 
 # Install Node.js runtime managed via NodeSource
 RUN --mount=type=cache,target=/var/cache/apt \
@@ -168,6 +172,10 @@ RUN set -euo pipefail && \
     echo "${AWSCLI_SHA256}  ${tmp_dir}/awscliv2.zip" | sha256sum --check --status && \
     unzip -q "${tmp_dir}/awscliv2.zip" -d "${tmp_dir}" && \
     "${tmp_dir}/aws/install" --bin-dir /usr/local/bin --install-dir /usr/local/aws-cli && \
+    curl -fsSLo "${tmp_dir}/hauler.tar.gz" "https://github.com/hauler-dev/hauler/releases/download/v${HAULER_VERSION}/hauler_${HAULER_VERSION}_linux_amd64.tar.gz" && \
+    echo "${HAULER_SHA256}  ${tmp_dir}/hauler.tar.gz" | sha256sum --check --status && \
+    tar -xzf "${tmp_dir}/hauler.tar.gz" -C "${tmp_dir}" hauler && \
+    install -m 0755 "${tmp_dir}/hauler" /usr/local/bin/hauler && \
     rm -rf "${tmp_dir}"
 
 FROM cloud-tools AS dev_containers_target_stage
