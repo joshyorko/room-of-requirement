@@ -119,14 +119,19 @@ ARG AWSCLI_SHA256
 ARG HAULER_VERSION
 ARG HAULER_SHA256
 
-# Install Node.js runtime managed via NodeSource
-RUN --mount=type=cache,target=/var/cache/apt \
-    --mount=type=cache,target=/var/lib/apt \
-    curl -fsSL https://deb.nodesource.com/setup_22.x | bash - && \
-    apt-get install -y --no-install-recommends nodejs && \
-    apt-mark hold nodejs && \
+# Install Node.js runtime via nvm (more reliable than NodeSource)
+ENV NVM_DIR=/usr/local/nvm
+ENV NODE_VERSION=22
+RUN mkdir -p "${NVM_DIR}" && \
+    curl -fsSL https://raw.githubusercontent.com/nvm-sh/nvm/v0.39.7/install.sh | bash && \
+    . "${NVM_DIR}/nvm.sh" && \
+    nvm install "${NODE_VERSION}" && \
+    nvm alias default "${NODE_VERSION}" && \
+    nvm use default && \
     npm install -g npm@latest && \
-    rm -rf /var/lib/apt/lists/*
+    ln -sf "${NVM_DIR}/versions/node/$(nvm version default)/bin/node" /usr/local/bin/node && \
+    ln -sf "${NVM_DIR}/versions/node/$(nvm version default)/bin/npm" /usr/local/bin/npm && \
+    ln -sf "${NVM_DIR}/versions/node/$(nvm version default)/bin/npx" /usr/local/bin/npx
 
 # Install Ansible from official PPA
 RUN --mount=type=cache,target=/var/cache/apt \
