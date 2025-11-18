@@ -41,7 +41,7 @@
       {
         "file": ".devcontainer/Dockerfile",
         "patterns": [
-          "deb\\.nodesource\\.com/setup_(?P<version>[0-9]+)\\.x"
+          "ENV NODE_VERSION=(?P<version>[0-9]+)"
         ]
       }
     ]
