@@ -27,7 +27,7 @@ jobs:
       packages: write
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v5.0.1
       - name: Set DATE_TAG
         id: set_date_tag
         run: echo "date=$(date +%Y%m%d)" >> $GITHUB_OUTPUT

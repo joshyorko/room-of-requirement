@@ -27,7 +27,7 @@ jobs:
       MAINTENANCE_TARGET_BRANCH: main
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5
+        uses: actions/checkout@v5.0.1
         with:
           token: ${{ secrets.CR_PAT }}
 
@@ -46,9 +46,7 @@ jobs:
         uses: actions/cache@v4
         with:
           path: ${{ env.ROBOCORP_HOME }}
-          key: rcc-home-${{ runner.os }}-rccv18.8.0-${{ hashFiles(
-            'automation/maintenance-robot/robot.yaml',
-            'automation/maintenance-robot/conda.yaml') }}
+          key: rcc-home-${{ runner.os }}-rccv18.8.0-${{ hashFiles( 'automation/maintenance-robot/robot.yaml', 'automation/maintenance-robot/conda.yaml') }}
           restore-keys: |
             rcc-home-${{ runner.os }}-rccv18.8.0-
             rcc-home-${{ runner.os }}-
