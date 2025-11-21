@@ -5,7 +5,7 @@
   },
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2.12.4": {},
-    "ghcr.io/devcontainers/features/common-utils:2.5.4": {
+    "ghcr.io/devcontainers/features/common-utils:2.5.5": {
       "installZsh": true,
       "configureZshAsDefaultShell": true,
       "installOhMyZsh": true,
