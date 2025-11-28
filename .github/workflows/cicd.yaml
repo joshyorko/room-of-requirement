@@ -33,7 +33,7 @@ jobs:
         run: echo "date=$(date +%Y%m%d)" >> $GITHUB_OUTPUT
       - name: Docker metadata
         id: meta
-        uses: docker/metadata-action@v5.9.0
+        uses: docker/metadata-action@v5.10.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
