@@ -18,6 +18,8 @@ ARG AWSCLI_VERSION=2.32.11
 ARG AWSCLI_SHA256=b4ccaf7d378c6e198ee1d4d461723dd2c4ef27243fd5eff12a576f2506dcec07
 ARG HAULER_VERSION=1.3.1
 ARG HAULER_SHA256=d38bb543feeb7ea5a73a92cbba1e121ee44c001e1214475f6394953b29c10a5d
+ARG CLAUDE_CODE_VERSION=2.0.61
+ARG CLAUDE_CODE_SHA256=5c5686e99180eb0bd0498564e1fa991aa05c4199a08222a15c1563626332e8fc
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS base
 
@@ -118,6 +120,8 @@ ARG AWSCLI_VERSION
 ARG AWSCLI_SHA256
 ARG HAULER_VERSION
 ARG HAULER_SHA256
+ARG CLAUDE_CODE_VERSION
+ARG CLAUDE_CODE_SHA256
 
 # Install Node.js runtime via nvm (more reliable than NodeSource)
 ENV NVM_DIR=/usr/local/nvm
@@ -181,6 +185,9 @@ RUN set -euo pipefail && \
     echo "${HAULER_SHA256}  ${tmp_dir}/hauler.tar.gz" | sha256sum --check --status && \
     tar -xzf "${tmp_dir}/hauler.tar.gz" -C "${tmp_dir}" hauler && \
     install -m 0755 "${tmp_dir}/hauler" /usr/local/bin/hauler && \
+    curl -fsSLo "${tmp_dir}/claude-code" "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/${CLAUDE_CODE_VERSION}/linux-x64/claude" && \
+    echo "${CLAUDE_CODE_SHA256}  ${tmp_dir}/claude-code" | sha256sum --check --status && \
+    install -m 0755 "${tmp_dir}/claude-code" /usr/local/bin/claude && \
     rm -rf "${tmp_dir}"
 
 FROM cloud-tools AS dev_containers_target_stage
