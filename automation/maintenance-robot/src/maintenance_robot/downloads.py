@@ -230,8 +230,8 @@ class DownloadsUpdater:
             # If SHA256 pattern is provided, update the checksum too
             if sha256_pattern_str and (download_url_template or manifest_url_template):
                 logger.info("      🔐 Updating SHA256 checksum...")
-                self._update_sha256(path, sha256_pattern_str, formatted_version, 
-                                  download_url_template, manifest_url_template, platform)
+                self._update_sha256(path, sha256_pattern_str, formatted_version,
+                                    download_url_template, manifest_url_template, platform)
 
     def _update_sha256(
         self,
@@ -294,12 +294,11 @@ class DownloadsUpdater:
             logger.info("      📥 Fetching manifest: %s", manifest_url)
             response = requests.get(manifest_url, timeout=30)
             response.raise_for_status()
-            
             manifest = response.json()
             platforms = manifest.get("platforms", {})
             platform_data = platforms.get(platform, {})
             checksum = platform_data.get("checksum")
-            
+
             if checksum:
                 logger.info("      ✓ Found SHA256 in manifest for %s: %s", platform, checksum)
                 return checksum
