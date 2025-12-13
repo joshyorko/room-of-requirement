@@ -345,5 +345,21 @@
         "sha256_pattern": "ARG CLAUDE_CODE_SHA256=(?P<sha256>\\S+)"
       }
     ]
+  },
+  "dagger": {
+    "repo": "dagger/dagger",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "download_url_template": "https://github.com/dagger/dagger/releases/download/v{version}/dagger_v{version}_linux_amd64.tar.gz",
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "ARG DAGGER_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG DAGGER_SHA256=(?P<sha256>\\S+)"
+      }
+    ]
   }
 }

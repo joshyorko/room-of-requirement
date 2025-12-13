@@ -20,6 +20,8 @@ ARG HAULER_VERSION=1.3.1
 ARG HAULER_SHA256=d38bb543feeb7ea5a73a92cbba1e121ee44c001e1214475f6394953b29c10a5d
 ARG CLAUDE_CODE_VERSION=2.0.65
 ARG CLAUDE_CODE_SHA256=cfac3d6fe993622b6afcee02631e24e6f990c924733e63be9b7482a56627a9ca
+ARG DAGGER_VERSION=0.19.8
+ARG DAGGER_SHA256=4c7e1f2eda06bf93e55af1fc343a2cd987b5a4d45a867b9397cf6e4450287d65
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS base
 
@@ -122,6 +124,8 @@ ARG HAULER_VERSION
 ARG HAULER_SHA256
 ARG CLAUDE_CODE_VERSION
 ARG CLAUDE_CODE_SHA256
+ARG DAGGER_VERSION
+ARG DAGGER_SHA256
 
 # Install Node.js runtime via nvm (more reliable than NodeSource)
 ENV NVM_DIR=/usr/local/nvm
@@ -188,6 +192,10 @@ RUN set -euo pipefail && \
     curl -fsSLo "${tmp_dir}/claude-code" "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/${CLAUDE_CODE_VERSION}/linux-x64/claude" && \
     echo "${CLAUDE_CODE_SHA256}  ${tmp_dir}/claude-code" | sha256sum --check --status && \
     install -m 0755 "${tmp_dir}/claude-code" /usr/local/bin/claude && \
+    curl -fsSLo "${tmp_dir}/dagger.tar.gz" "https://github.com/dagger/dagger/releases/download/v${DAGGER_VERSION}/dagger_v${DAGGER_VERSION}_linux_amd64.tar.gz" && \
+    echo "${DAGGER_SHA256}  ${tmp_dir}/dagger.tar.gz" | sha256sum --check --status && \
+    tar -xzf "${tmp_dir}/dagger.tar.gz" -C "${tmp_dir}" dagger && \
+    install -m 0755 "${tmp_dir}/dagger" /usr/local/bin/dagger && \
     rm -rf "${tmp_dir}"
 
 FROM cloud-tools AS dev_containers_target_stage
