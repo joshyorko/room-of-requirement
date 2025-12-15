@@ -71,6 +71,14 @@ rcc --version              # Robocorp Control Room client
 # action-server new      # Create new action project
 # rcc create             # Create new robot/automation
 
+# Container Use (sandboxed dev environments for coding agents):
+container-use version    # Check container-use version
+# Example usage with Claude Code:
+# claude mcp add container-use -- container-use stdio
+# container-use list     # List all environments
+# container-use checkout {id}  # Inspect agent's work
+# container-use merge {id}     # Accept agent's changes
+
 # Custom shell enhancement:
 # - ZSH autosuggestions and syntax highlighting plugins
 # - Custom .zshrc from external dotfiles repo

@@ -22,6 +22,8 @@ ARG CLAUDE_CODE_VERSION=2.0.65
 ARG CLAUDE_CODE_SHA256=cfac3d6fe993622b6afcee02631e24e6f990c924733e63be9b7482a56627a9ca
 ARG DAGGER_VERSION=0.19.8
 ARG DAGGER_SHA256=4c7e1f2eda06bf93e55af1fc343a2cd987b5a4d45a867b9397cf6e4450287d65
+ARG CONTAINER_USE_VERSION=0.4.2
+ARG CONTAINER_USE_SHA256=3fa52b5833ae4aed2be4b86f7cf42671fdf4bca8c211fe5fff08cc19553d409b
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS base
 
@@ -126,6 +128,8 @@ ARG CLAUDE_CODE_VERSION
 ARG CLAUDE_CODE_SHA256
 ARG DAGGER_VERSION
 ARG DAGGER_SHA256
+ARG CONTAINER_USE_VERSION
+ARG CONTAINER_USE_SHA256
 
 # Install Node.js runtime via nvm (more reliable than NodeSource)
 ENV NVM_DIR=/usr/local/nvm
@@ -196,6 +200,10 @@ RUN set -euo pipefail && \
     echo "${DAGGER_SHA256}  ${tmp_dir}/dagger.tar.gz" | sha256sum --check --status && \
     tar -xzf "${tmp_dir}/dagger.tar.gz" -C "${tmp_dir}" dagger && \
     install -m 0755 "${tmp_dir}/dagger" /usr/local/bin/dagger && \
+    curl -fsSLo "${tmp_dir}/container-use.tar.gz" "https://github.com/dagger/container-use/releases/download/v${CONTAINER_USE_VERSION}/container-use_v${CONTAINER_USE_VERSION}_linux_amd64.tar.gz" && \
+    echo "${CONTAINER_USE_SHA256}  ${tmp_dir}/container-use.tar.gz" | sha256sum --check --status && \
+    tar -xzf "${tmp_dir}/container-use.tar.gz" -C "${tmp_dir}" container-use && \
+    install -m 0755 "${tmp_dir}/container-use" /usr/local/bin/container-use && \
     rm -rf "${tmp_dir}"
 
 FROM cloud-tools AS dev_containers_target_stage
