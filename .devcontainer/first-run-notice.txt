@@ -15,6 +15,7 @@ This container has manifested itself as your development environment.
 │  UV                 - Python's swift shadow, installing dependencies│
 │  GitHub CLI (gh)    - Command your repositories with mystical powers│
 │  Zsh + Oh My Zsh    - Shell that echoes your commands back to you  │
+│  container-use      - Sandboxed dev environments for coding agents │
 │                                                                    │
 └────────────────────────────────────────────────────────────────────┘
 
@@ -25,6 +26,8 @@ USEFUL COMMANDS TO TRY
   $ k9s                      # Navigate the ethereal dashboard
   $ gh repo list             # List your GitHub repositories
   $ uv --version             # Verify the version of your package conjurer
+  $ container-use version    # Check your sandboxed environment manager
+  $ dagger version           # Verify your CI/CD pipeline orchestrator
 
 
 

@@ -39,6 +39,7 @@
 - **DuckDB** (Embedded analytics database)
 - **Cloud Tools**: AWS CLI, kubectl, Ansible, GitHub CLI (gh)
 - **Sema4.AI Tools**: action-server, rcc
+- **Dagger Tools**: dagger, container-use (MCP for sandboxed dev environments)
 - **VS Code Extensions**: Containers, Sema4AI, GitHub Actions, Python
 
 ---
@@ -85,4 +86,6 @@ $ zsh
 $ k3d --version
 $ k9s version
 $ uv --version
+$ dagger version
+$ container-use version
 ```
