@@ -12,6 +12,7 @@ This container has manifested itself as your development environment.
 │  Ubuntu Noble (24.04) - A foundation that adapts to your needs     │
 │  Docker (host socket) - Containers within containers, a paradox    │
 │  k3d & k9s          - Orchestrating clusters in miniature worlds   │
+│  DevSpace           - Streamlined Kubernetes development workflows │
 │  UV                 - Python's swift shadow, installing dependencies│
 │  GitHub CLI (gh)    - Command your repositories with mystical powers│
 │  Zsh + Oh My Zsh    - Shell that echoes your commands back to you  │
@@ -24,6 +25,7 @@ USEFUL COMMANDS TO TRY
   $ docker ps                # Observe the containers you have summoned
   $ k3d cluster create       # Conjure a Kubernetes cluster from nothing
   $ k9s                      # Navigate the ethereal dashboard
+  $ devspace version         # Check your Kubernetes development accelerator
   $ gh repo list             # List your GitHub repositories
   $ uv --version             # Verify the version of your package conjurer
   $ container-use version    # Check your sandboxed environment manager

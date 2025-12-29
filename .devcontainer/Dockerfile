@@ -24,6 +24,9 @@ ARG DAGGER_VERSION=0.19.8
 ARG DAGGER_SHA256=4c7e1f2eda06bf93e55af1fc343a2cd987b5a4d45a867b9397cf6e4450287d65
 ARG CONTAINER_USE_VERSION=0.4.2
 ARG CONTAINER_USE_SHA256=3fa52b5833ae4aed2be4b86f7cf42671fdf4bca8c211fe5fff08cc19553d409b
+ARG DEVSPACE_VERSION=6.3.18
+ARG DEVSPACE_AMD64_SHA256=f36a08b8aad2500d26d23ceb2079df514a83799c12a143bfc08a0295c84feac7
+ARG DEVSPACE_ARM64_SHA256=8566a649b3171338e3e2d3557db96c406f68403a5eea5470d36335a54d6c7412
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04 AS base
 
@@ -130,6 +133,9 @@ ARG DAGGER_VERSION
 ARG DAGGER_SHA256
 ARG CONTAINER_USE_VERSION
 ARG CONTAINER_USE_SHA256
+ARG DEVSPACE_VERSION
+ARG DEVSPACE_AMD64_SHA256
+ARG DEVSPACE_ARM64_SHA256
 
 # Install Node.js runtime via nvm (more reliable than NodeSource)
 ENV NVM_DIR=/usr/local/nvm
@@ -204,6 +210,26 @@ RUN set -euo pipefail && \
     echo "${CONTAINER_USE_SHA256}  ${tmp_dir}/container-use.tar.gz" | sha256sum --check --status && \
     tar -xzf "${tmp_dir}/container-use.tar.gz" -C "${tmp_dir}" container-use && \
     install -m 0755 "${tmp_dir}/container-use" /usr/local/bin/container-use && \
+    rm -rf "${tmp_dir}"
+
+# Install DevSpace with multi-architecture support
+RUN set -euo pipefail && \
+    tmp_dir="$(mktemp -d)" && \
+    trap 'rm -rf "${tmp_dir}"' EXIT && \
+    arch="$(uname -m)" && \
+    if [[ "${arch}" == "x86_64" || "${arch}" == "amd64" ]]; then \
+        devspace_arch="amd64" && \
+        devspace_sha="${DEVSPACE_AMD64_SHA256}"; \
+    elif [[ "${arch}" == "aarch64" || "${arch}" == "arm64" ]]; then \
+        devspace_arch="arm64" && \
+        devspace_sha="${DEVSPACE_ARM64_SHA256}"; \
+    else \
+        echo "Unsupported architecture for DevSpace: ${arch}" >&2; \
+        exit 1; \
+    fi && \
+    curl -fsSLo "${tmp_dir}/devspace" "https://github.com/loft-sh/devspace/releases/download/v${DEVSPACE_VERSION}/devspace-linux-${devspace_arch}" && \
+    echo "${devspace_sha}  ${tmp_dir}/devspace" | sha256sum --check --status && \
+    install -m 0755 "${tmp_dir}/devspace" /usr/local/bin/devspace && \
     rm -rf "${tmp_dir}"
 
 FROM cloud-tools AS dev_containers_target_stage
