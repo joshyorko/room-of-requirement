@@ -66,7 +66,7 @@ jobs:
         env:
           GITHUB_TOKEN: ${{ secrets.CR_PAT }}
         run: |
-          rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
+          rcc run -r automation/maintenance-robot/robot.yaml -t maintenance --silent
 
       - name: Check affected files
         id: check_files
