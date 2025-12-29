@@ -10,6 +10,7 @@ from typing import Dict, Optional
 from packaging.version import InvalidVersion, Version
 
 from .github_api import fetch_latest_version as fetch_github_version
+from .npm_api import fetch_latest_version as fetch_npm_version
 from .pypi_api import fetch_latest_version as fetch_pypi_version
 from .reporter import DownloadUpdate, MaintenanceReport
 
@@ -58,6 +59,23 @@ class DownloadsUpdater:
                 version = package_info.version
                 version_str = package_info.version_str
                 logger.info("  ✓ Latest PyPI version: %s", version_str)
+            elif source == "npm":
+                package = config.get("package")
+                if not package:
+                    logger.warning("npm source requires 'package' field for %s", identifier)
+                    continue
+                logger.info("  Fetching npm package: %s", package)
+                package_info = fetch_npm_version(
+                    package=package,
+                    include_prerelease=include_prerelease,
+                    max_major=max_major,
+                )
+                if package_info is None:
+                    logger.warning("  ⚠ No package info found for %s", identifier)
+                    continue
+                version = package_info.version
+                version_str = package_info.version_str
+                logger.info("  ✓ Latest npm version: %s", version_str)
             elif source == "custom":
                 # Handle custom version fetching (e.g., Claude Code)
                 stable_version_url = config.get("stable_version_url")

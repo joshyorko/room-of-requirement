@@ -331,8 +331,10 @@
     ]
   },
   "claude-code": {
-    "source": "custom",
-    "stable_version_url": "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/stable",
+    "source": "npm",
+    "package": "@anthropic-ai/claude-code",
+    "max_major": null,
+    "include_prerelease": false,
     "manifest_url_template": "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/manifest.json",
     "download_url_template": "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/linux-x64/claude",
     "platform": "linux-x64",
