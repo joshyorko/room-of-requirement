@@ -6,9 +6,9 @@ channels:
   - conda-forge
 
 dependencies:
-  - python=3.12.12
+  - python=3.13.11
   - uv=0.8.17
-  - nodejs=24.9.0
+  - nodejs=25.2.1
 
   - pip:
       - requests==2.32.5
