@@ -379,5 +379,21 @@
         "sha256_pattern": "ARG CONTAINER_USE_SHA256=(?P<sha256>\\S+)"
       }
     ]
+  },
+  "devspace": {
+    "repo": "loft-sh/devspace",
+    "source": "release",
+    "max_major": null,
+    "include_prerelease": false,
+    "download_url_template": "https://github.com/loft-sh/devspace/releases/download/v{version}/devspace-linux-amd64",
+    "targets": [
+      {
+        "file": ".devcontainer/Dockerfile",
+        "patterns": [
+          "ARG DEVSPACE_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+        ],
+        "sha256_pattern": "ARG DEVSPACE_AMD64_SHA256=(?P<sha256>\\S+)"
+      }
+    ]
   }
 }

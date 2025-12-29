@@ -35,6 +35,7 @@
 - **Zsh** with Oh My Zsh and custom plugins (autosuggestions, syntax highlighting)
 - **k3d** (K3s in Docker) for local Kubernetes clusters
 - **k9s** (Kubernetes CLI UI)
+- **DevSpace** (Kubernetes development workflow tool)
 - **uv** (Fast Python package manager)
 - **DuckDB** (Embedded analytics database)
 - **Cloud Tools**: AWS CLI, kubectl, Ansible, GitHub CLI (gh)
@@ -85,6 +86,7 @@ The automation workflow lives in `.github/workflows/rcc-maintenance.yml` and aut
 $ zsh
 $ k3d --version
 $ k9s version
+$ devspace version
 $ uv --version
 $ dagger version
 $ container-use version
