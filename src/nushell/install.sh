@@ -1,47 +1,75 @@
 #!/bin/bash
-# T049: Create install.sh for Nushell Feature
-# T101: Install Nushell but keep ZSH as default shell
+# Nushell Feature install script
+# Installs Nushell shell as an alternative to bash/zsh
 set -euo pipefail
 
-NUSHELL_VERSION="${NUSHELL_VERSION:-latest}"
+VERSION="${VERSION:-latest}"
 
-echo "Installing Nushell (${NUSHELL_VERSION})..."
+echo "Installing Nushell (${VERSION})..."
 
-# Install Nushell via Homebrew or direct download
-if command -v brew &> /dev/null; then
-    brew install nushell
-elif command -v curl &> /dev/null; then
-    # Direct binary download for Nushell
-    ARCH=$(uname -m)
-    if [ "${ARCH}" = "x86_64" ] || [ "${ARCH}" = "amd64" ]; then
-        NUSHELL_ARCH="x86_64-linux"
-    elif [ "${ARCH}" = "aarch64" ] || [ "${ARCH}" = "arm64" ]; then
-        NUSHELL_ARCH="aarch64-linux"
-    else
-        echo "✗ Unsupported architecture: ${ARCH}"
+# Determine architecture
+ARCH=$(uname -m)
+case "${ARCH}" in
+    x86_64|amd64)
+        NU_ARCH="x86_64-unknown-linux-gnu"
+        ;;
+    aarch64|arm64)
+        NU_ARCH="aarch64-unknown-linux-gnu"
+        ;;
+    *)
+        echo "Unsupported architecture: ${ARCH}"
         exit 1
-    fi
+        ;;
+esac
 
-    DOWNLOAD_URL="https://github.com/nushell/nushell/releases/download/${NUSHELL_VERSION}/nu-${NUSHELL_VERSION}-${NUSHELL_ARCH}.tar.gz"
+# Get version to download
+if [ "${VERSION}" = "latest" ]; then
+    VERSION=$(curl -sS https://api.github.com/repos/nushell/nushell/releases/latest | grep -o '"tag_name": "[^"]*"' | cut -d'"' -f4)
+fi
 
-    curl -sS -L "${DOWNLOAD_URL}" | tar xz -C /usr/local/bin
+if [ -z "${VERSION}" ]; then
+    echo "Failed to determine Nushell version"
+    exit 1
+fi
+
+echo "Downloading Nushell ${VERSION} for ${NU_ARCH}..."
+
+# Create temp directory
+TEMP_DIR=$(mktemp -d)
+trap "rm -rf ${TEMP_DIR}" EXIT
+
+cd "${TEMP_DIR}"
+
+# Download and extract
+DOWNLOAD_URL="https://github.com/nushell/nushell/releases/download/${VERSION}/nu-${VERSION}-${NU_ARCH}.tar.gz"
+if ! curl -fsSL "${DOWNLOAD_URL}" -o nushell.tar.gz; then
+    echo "Failed to download Nushell from ${DOWNLOAD_URL}"
+    exit 1
+fi
+
+tar xzf nushell.tar.gz
+
+# Find and install the nu binary
+NU_BIN=$(find . -name "nu" -type f -executable | head -1)
+if [ -z "${NU_BIN}" ]; then
+    # Try without executable check
+    NU_BIN=$(find . -name "nu" -type f | head -1)
+fi
+
+if [ -n "${NU_BIN}" ]; then
+    chmod +x "${NU_BIN}"
+    mv "${NU_BIN}" /usr/local/bin/nu
+    echo "✓ Nushell installed to /usr/local/bin/nu"
 else
-    echo "✗ Neither brew nor curl found. Please install Nushell manually."
+    echo "Failed to find nu binary in archive"
     exit 1
 fi
 
 # Verify installation
 if command -v nu &> /dev/null; then
-    echo "✓ Nushell installed successfully: $(nu --version)"
-
-    # T101: Verify ZSH remains default shell (not changing default shell)
-    if [ "${SHELL}" = "/bin/zsh" ]; then
-        echo "✓ ZSH remains default shell"
-    fi
-
-    echo "✓ Nushell available as alternative shell - use 'nu' to switch"
-    echo "✓ Nushell Feature installation complete"
+    echo "✓ Nushell $(nu --version) installed successfully"
+    echo "✓ Use 'nu' to start Nushell (ZSH remains default)"
 else
-    echo "✗ Nushell installation failed"
+    echo "Nushell installation verification failed"
     exit 1
 fi
