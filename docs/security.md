@@ -28,6 +28,8 @@ scripts/run-trivy-local.sh [image]
 
 ---
 
-If you'd like, I can also:
-- Add automatic Slack/Teams notifications when the scan fails, and
-- Add a scheduled workflow that regularly scans the `latest` image and notifies stakeholders if something regresses.
+## Notifications (placeholder)
+- Placeholder: add notification integrations (Slack, Teams, or webhook) here when ready. Make these configurable via repository secrets and document usage.
+
+## Scheduled scans (future)
+- Placeholder: add a scheduled workflow to periodically re-scan `latest` and raise alerts if new HIGH/CRITICAL issues appear.
