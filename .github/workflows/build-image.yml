@@ -64,6 +64,7 @@ permissions:
   packages: write
   id-token: write # Required for keyless signing with Cosign
   attestations: write # Required for SBOM attestations
+  security-events: write # Required for SARIF upload
 
 jobs:
   lint:
