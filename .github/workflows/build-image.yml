@@ -148,8 +148,10 @@ jobs:
 
       - name: Build image with devcontainer CLI
         id: devcontainer-build
+        if: github.event_name != 'pull_request'
         run: |
           # Build with devcontainer CLI to properly process features
+          # Skipped on PRs because features aren't published yet
           IMAGE_NAME="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:build-${{ github.run_id }}"
 
           devcontainer build \
@@ -162,6 +164,14 @@ jobs:
           # Get the digest
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE_NAME" 2>/dev/null | cut -d'@' -f2 || echo "")
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
+
+      - name: Skip build on PR
+        if: github.event_name == 'pull_request'
+        run: |
+          echo "### Image Build Skipped" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Image build skipped on PRs - features must be published first." >> $GITHUB_STEP_SUMMARY
+          echo "Image will be built after merge when features are available." >> $GITHUB_STEP_SUMMARY
 
       - name: Tag and push image
         id: build

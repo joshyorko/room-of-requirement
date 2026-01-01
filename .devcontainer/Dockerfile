@@ -16,6 +16,7 @@ FROM ${WOLFI_BASE_IMAGE} AS base
 LABEL maintainer="Josh Yorke <josh@example.com>"
 LABEL org.opencontainers.image.title="Room of Requirement"
 LABEL org.opencontainers.image.description="Modular DevContainer with Wolfi OS - tools via features"
+LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
 
 # UTF-8 locale and timezone
 ENV LANG=en_US.UTF-8 \
