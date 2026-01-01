@@ -1,6 +1,6 @@
 {
   "id": "zoxide",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "name": "zoxide",
   "description": "A smarter cd command that learns your habits",
   "documentationURL": "https://github.com/ajeetdsouza/zoxide",
