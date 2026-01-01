@@ -307,8 +307,8 @@ jobs:
 
               FEATURE_URI="${{ env.REGISTRY }}/${{ env.FEATURES_NAMESPACE }}/${feature}:${VERSION}"
 
-              # Add to published list
-              PUBLISHED_JSON=$(echo "$PUBLISHED_JSON" | jq --arg id "$feature" --arg version "$VERSION" --arg uri "$FEATURE_URI" \
+              # Add to published list (use -c for compact single-line JSON)
+              PUBLISHED_JSON=$(echo "$PUBLISHED_JSON" | jq -c --arg id "$feature" --arg version "$VERSION" --arg uri "$FEATURE_URI" \
                 '. + [{"id": $id, "version": $version, "uri": $uri}]')
 
               echo "- ✅ \`${feature}\` published as \`${FEATURE_URI}\`" >> $GITHUB_STEP_SUMMARY
