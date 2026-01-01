@@ -1,6 +1,5 @@
 # Release Please - Automated Versioning and Changelog
-# Implements US4 - Secure Supply Chain Verification
-# Tasks: T074, T074a
+# Creates releases and PRs for version bumps
 
 name: Release Please
 
@@ -9,43 +8,21 @@ on:
     branches:
       - main
   workflow_dispatch:
-    inputs:
-      release_type:
-        description: "Release type override (major, minor, patch)"
-        type: choice
-        options:
-          - ""
-          - major
-          - minor
-          - patch
-        default: ""
 
 permissions:
   contents: write
   pull-requests: write
-  id-token: write
-  packages: write
 
 jobs:
   release-please:
     name: Release Please
     runs-on: ubuntu-latest
-    outputs:
-      release_created: ${{ steps.release.outputs.release_created }}
-      tag_name: ${{ steps.release.outputs.tag_name }}
-      version: ${{ steps.release.outputs.version }}
-      major: ${{ steps.release.outputs.major }}
-      minor: ${{ steps.release.outputs.minor }}
-      patch: ${{ steps.release.outputs.patch }}
-      sha: ${{ steps.release.outputs.sha }}
-      pr: ${{ steps.release.outputs.pr }}
 
     steps:
       - name: Release Please
         id: release
         uses: googleapis/release-please-action@v4
         with:
-          # Configuration for monorepo with multiple release artifacts
           config-file: release-please-config.json
           manifest-file: .release-please-manifest.json
 
@@ -57,157 +34,4 @@ jobs:
           echo "**Version:** ${{ steps.release.outputs.version }}" >> $GITHUB_STEP_SUMMARY
           echo "**Tag:** ${{ steps.release.outputs.tag_name }}" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
-          echo "The release will trigger image and feature builds with the new version tag." >> $GITHUB_STEP_SUMMARY
-
-  # Trigger image build on release
-  build-image:
-    name: Build Release Image
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    uses: ./.github/workflows/build-image.yml
-    with:
-      push: true
-      sign: true
-      generate_sbom: true
-      scan_cve: true
-      fail_on_critical: true
-    secrets: inherit
-
-  # Trigger feature build on release
-  build-features:
-    name: Build Release Features
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    uses: ./.github/workflows/build-features.yml
-    with:
-      publish: true
-      generate_docs: true
-      sign: true
-    secrets: inherit
-
-  # Trigger template build on release
-  build-templates:
-    name: Build Release Templates
-    needs: release-please
-    if: needs.release-please.outputs.release_created == 'true'
-    uses: ./.github/workflows/build-templates.yml
-    with:
-      publish: true
-      generate_docs: true
-    secrets: inherit
-
-  # Update stable tag monthly (scheduled releases)
-  update-stable:
-    name: Update Stable Tag
-    needs: [release-please, build-image]
-    if: needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@v3.10.1
-
-      - name: Install crane
-        uses: imjasonh/setup-crane@v0.3
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@v3.6.0
-        with:
-          registry: ghcr.io
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Check if stable tag should be updated
-        id: check-stable
-        run: |
-          # Update stable tag on schedule (monthly) or manual trigger
-          # For regular releases, stable is updated less frequently
-          if [ "${{ github.event_name }}" = "schedule" ] || [ "${{ inputs.release_type }}" != "" ]; then
-            echo "update_stable=true" >> $GITHUB_OUTPUT
-          else
-            # Check if this is a major or minor release (update stable)
-            VERSION="${{ needs.release-please.outputs.version }}"
-            PATCH="${{ needs.release-please.outputs.patch }}"
-            if [ "$PATCH" = "0" ]; then
-              echo "update_stable=true" >> $GITHUB_OUTPUT
-            else
-              echo "update_stable=false" >> $GITHUB_OUTPUT
-            fi
-          fi
-
-      - name: Update stable tag
-        if: steps.check-stable.outputs.update_stable == 'true'
-        env:
-          IMAGE: ghcr.io/${{ github.repository }}/ror
-          VERSION: ${{ needs.release-please.outputs.version }}
-        run: |
-          # Get the digest for the released version
-          DIGEST=$(crane digest "${IMAGE}:v${VERSION}")
-
-          # Tag as stable
-          crane tag "${IMAGE}@${DIGEST}" stable
-
-          # Sign the stable tag
-          cosign sign --yes "${IMAGE}:stable@${DIGEST}"
-
-          echo "### Stable Tag Updated" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Image:** \`${IMAGE}:stable\`" >> $GITHUB_STEP_SUMMARY
-          echo "**Version:** v${VERSION}" >> $GITHUB_STEP_SUMMARY
-          echo "**Digest:** \`${DIGEST}\`" >> $GITHUB_STEP_SUMMARY
-
-  release-summary:
-    name: Release Summary
-    needs:
-      [
-        release-please,
-        build-image,
-        build-features,
-        build-templates,
-        update-stable,
-      ]
-    if: always() && needs.release-please.outputs.release_created == 'true'
-    runs-on: ubuntu-latest
-
-    steps:
-      - name: Generate release summary
-        run: |
-          echo "# 🚀 Release v${{ needs.release-please.outputs.version }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Build Status" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Component | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----------|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Image | ${{ needs.build-image.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Features | ${{ needs.build-features.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Templates | ${{ needs.build-templates.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Stable Tag | ${{ needs.update-stable.result || 'skipped' }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Usage" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Pre-built Image" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
-          echo '{' >> $GITHUB_STEP_SUMMARY
-          echo '  "image": "ghcr.io/${{ github.repository }}/ror:v${{ needs.release-please.outputs.version }}"' >> $GITHUB_STEP_SUMMARY
-          echo '}' >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Features" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`json" >> $GITHUB_STEP_SUMMARY
-          echo '{' >> $GITHUB_STEP_SUMMARY
-          echo '  "features": {' >> $GITHUB_STEP_SUMMARY
-          echo '    "ghcr.io/${{ github.repository }}/ror-core:1": {}' >> $GITHUB_STEP_SUMMARY
-          echo '  }' >> $GITHUB_STEP_SUMMARY
-          echo '}' >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "### Verification" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# Verify image signature" >> $GITHUB_STEP_SUMMARY
-          echo 'cosign verify ghcr.io/${{ github.repository }}/ror:v${{ needs.release-please.outputs.version }} \' >> $GITHUB_STEP_SUMMARY
-          echo '  --certificate-identity-regexp="https://github.com/${{ github.repository }}/*" \' >> $GITHUB_STEP_SUMMARY
-          echo '  --certificate-oidc-issuer="https://token.actions.githubusercontent.com"' >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+          echo "Build workflows will be triggered by the release commit." >> $GITHUB_STEP_SUMMARY
