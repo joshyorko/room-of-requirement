@@ -11,6 +11,7 @@ from robocorp.tasks import task
 from maintenance_robot.allowlist_loader import load_allowlist
 from maintenance_robot.downloads import DownloadsUpdater
 from maintenance_robot.github_actions import GitHubActionsUpdater
+from maintenance_robot.homebrew import HomebrewUpdater
 from maintenance_robot.reporter import MaintenanceReport
 from maintenance_robot.devcontainer_lock import update_devcontainer_lockfile
 
@@ -45,6 +46,13 @@ def maintenance() -> None:
     if downloads_allowlist:
         downloads_updater = DownloadsUpdater(downloads_allowlist, repo_root=REPO_ROOT, report=report)
         downloads_updater.update_targets()
+
+    homebrew_allowlist = allowlists.get("homebrew", {})
+    if homebrew_allowlist:
+        homebrew_updater = HomebrewUpdater(homebrew_allowlist, report=report)
+        versions = homebrew_updater.update_formulas()
+        if versions:
+            logging.info("Homebrew formula versions: %s", versions)
 
     # Regenerate devcontainer lockfile to keep feature digests pinned
     update_devcontainer_lockfile(REPO_ROOT, report)
@@ -119,11 +127,24 @@ def test_devcontainer_build() -> None:
         raise
 
 
+@task
+def update_homebrew_only() -> None:
+    """Update Homebrew formula versions only."""
+    allowlists = _load_allowlists()
+    report = MaintenanceReport()
+    homebrew_updater = HomebrewUpdater(allowlists.get("homebrew", {}), report=report)
+    versions = homebrew_updater.update_formulas()
+    if versions:
+        logging.info("Homebrew formula versions: %s", versions)
+    _write_report(report)
+
+
 def _load_allowlists() -> Dict[str, Dict[str, dict]]:
     allowlists_dir = ROBOT_ROOT / "allowlists"
     return {
         "github_actions": load_allowlist(allowlists_dir / "github_actions.json"),
         "downloads": load_allowlist(allowlists_dir / "downloads.json"),
+        "homebrew": load_allowlist(allowlists_dir / "homebrew.json"),
     }
 
 

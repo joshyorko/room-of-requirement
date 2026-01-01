@@ -40,5 +40,23 @@
     "source": "release",
     "max_major": 4,
     "include_prerelease": false
+  },
+  "sigstore/cosign-installer": {
+    "repo": "sigstore/cosign-installer",
+    "source": "release",
+    "max_major": 3,
+    "include_prerelease": false
+  },
+  "anchore/sbom-action": {
+    "repo": "anchore/sbom-action",
+    "source": "release",
+    "max_major": 0,
+    "include_prerelease": false
+  },
+  "anchore/scan-action": {
+    "repo": "anchore/scan-action",
+    "source": "release",
+    "max_major": 3,
+    "include_prerelease": false
   }
 }

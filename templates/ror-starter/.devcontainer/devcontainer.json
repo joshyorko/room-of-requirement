@@ -1,0 +1,25 @@
+{
+  "image": "ghcr.io/joshyorko/ror:latest",
+  "remoteUser": "vscode",
+  "remoteEnv": {
+    "SHELL": "/bin/zsh"
+  },
+  "mounts": [
+    "source=ror-homebrew-cache,target=/home/vscode/.cache/homebrew,type=volume",
+    "source=ror-mise-cache,target=/home/vscode/.cache/mise,type=volume",
+    "source=ror-npm-cache,target=/home/vscode/.cache/npm,type=volume"
+  ],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2.13.0": {}
+  },
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-containers",
+        "ms-python.python",
+        "esbenp.prettier-vscode"
+      ]
+    }
+  },
+  "postCreateCommand": "bash .devcontainer/post-create.sh"
+}

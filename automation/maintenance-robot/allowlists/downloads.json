@@ -1,20 +1,4 @@
 {
-  "kind": {
-    "repo": "kubernetes-sigs/kind",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://kind.sigs.k8s.io/dl/v{version}/kind-linux-amd64",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG KIND_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG KIND_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
   "rcc": {
     "repo": "joshyorko/rcc",
     "source": "release",
@@ -23,166 +7,11 @@
     "download_url_template": "https://github.com/joshyorko/rcc/releases/download/v{version}/rcc-linux64",
     "targets": [
       {
-        "file": ".devcontainer/Dockerfile",
+        "file": "src/ror-specialty/install.sh",
         "patterns": [
-          "ARG RCC_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+          "RCC_VERSION=\"(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)\""
         ],
-        "sha256_pattern": "ARG RCC_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "nodejs": {
-    "repo": "nodejs/node",
-    "source": "release",
-    "max_major": 22,
-    "include_prerelease": false,
-    "version_format": "major_only",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ENV NODE_VERSION=(?P<version>[0-9]+)"
-        ]
-      }
-    ]
-  },
-  "docker-in-docker-feature": {
-    "repo": "devcontainers/features",
-    "source": "tag",
-    "feature_name": "docker-in-docker",
-    "max_major": null,
-    "include_prerelease": false,
-    "targets": [
-      {
-        "file": ".devcontainer/devcontainer.json",
-        "patterns": [
-          "ghcr\\.io/devcontainers/features/docker-in-docker:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
-        ]
-      }
-    ]
-  },
-  "common-utils-feature": {
-    "repo": "devcontainers/features",
-    "source": "tag",
-    "feature_name": "common-utils",
-    "max_major": null,
-    "include_prerelease": false,
-    "targets": [
-      {
-        "file": ".devcontainer/devcontainer.json",
-        "patterns": [
-          "ghcr\\.io/devcontainers/features/common-utils:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
-        ]
-      }
-    ]
-  },
-  "awscli": {
-    "repo": "aws/aws-cli",
-    "source": "tag",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://awscli.amazonaws.com/awscli-exe-linux-x86_64-{version}.zip",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG AWSCLI_VERSION=(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
-        ],
-        "sha256_pattern": "ARG AWSCLI_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "kubectl-helm-minikube-feature": {
-    "repo": "devcontainers/features",
-    "source": "tag",
-    "feature_name": "kubectl-helm-minikube",
-    "max_major": null,
-    "include_prerelease": false,
-    "targets": [
-      {
-        "file": ".devcontainer/devcontainer.json",
-        "patterns": [
-          "ghcr\\.io/devcontainers/features/kubectl-helm-minikube:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
-        ]
-      }
-    ]
-  },
-  "github-cli-feature": {
-    "repo": "devcontainers/features",
-    "source": "tag",
-    "feature_name": "github-cli",
-    "max_major": null,
-    "include_prerelease": false,
-    "targets": [
-      {
-        "file": ".devcontainer/devcontainer.json",
-        "patterns": [
-          "ghcr\\.io/devcontainers/features/github-cli:(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
-        ]
-      }
-    ]
-  },
-  "k3d": {
-    "repo": "k3d-io/k3d",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/k3d-io/k3d/releases/download/v{version}/k3d-linux-amd64",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG K3D_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG K3D_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "k9s": {
-    "repo": "derailed/k9s",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/derailed/k9s/releases/download/v{version}/k9s_linux_amd64.tar.gz",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG K9S_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG K9S_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "uv": {
-    "repo": "astral-sh/uv",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/astral-sh/uv/releases/download/{version}/uv-x86_64-unknown-linux-gnu.tar.gz",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG UV_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG UV_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "duckdb": {
-    "repo": "duckdb/duckdb",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/duckdb/duckdb/releases/download/v{version}/duckdb_cli-linux-amd64.zip",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG DUCKDB_VERSION=v(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG DUCKDB_SHA256=(?P<sha256>\\S+)"
+        "sha256_pattern": "RCC_SHA256=\"(?P<sha256>\\S+)\""
       }
     ]
   },
@@ -194,11 +23,11 @@
     "download_url_template": "https://cdn.sema4.ai/action-server/releases/{version}/linux64/action-server",
     "targets": [
       {
-        "file": ".devcontainer/Dockerfile",
+        "file": "src/ror-specialty/install.sh",
         "patterns": [
-          "ARG ACTION_SERVER_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
+          "ACTION_SERVER_VERSION=\"(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)\""
         ],
-        "sha256_pattern": "ARG ACTION_SERVER_SHA256=(?P<sha256>\\S+)"
+        "sha256_pattern": "ACTION_SERVER_SHA256=\"(?P<sha256>\\S+)\""
       }
     ]
   },
@@ -311,88 +140,6 @@
         "patterns": [
           "hadolintw==(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
         ]
-      }
-    ]
-  },
-  "hauler": {
-    "repo": "hauler-dev/hauler",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/hauler-dev/hauler/releases/download/v{version}/hauler_{version}_linux_amd64.tar.gz",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG HAULER_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG HAULER_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "claude-code": {
-    "source": "npm",
-    "package": "@anthropic-ai/claude-code",
-    "max_major": null,
-    "include_prerelease": false,
-    "manifest_url_template": "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/manifest.json",
-    "download_url_template": "https://storage.googleapis.com/claude-code-dist-86c565f3-f756-42ad-8dfa-d59b1c096819/claude-code-releases/{version}/linux-x64/claude",
-    "platform": "linux-x64",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG CLAUDE_CODE_VERSION=(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
-        ],
-        "sha256_pattern": "ARG CLAUDE_CODE_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "dagger": {
-    "repo": "dagger/dagger",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/dagger/dagger/releases/download/v{version}/dagger_v{version}_linux_amd64.tar.gz",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG DAGGER_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG DAGGER_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "container-use": {
-    "repo": "dagger/container-use",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/dagger/container-use/releases/download/v{version}/container-use_v{version}_linux_amd64.tar.gz",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG CONTAINER_USE_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG CONTAINER_USE_SHA256=(?P<sha256>\\S+)"
-      }
-    ]
-  },
-  "devspace": {
-    "repo": "loft-sh/devspace",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/loft-sh/devspace/releases/download/v{version}/devspace-linux-amd64",
-    "targets": [
-      {
-        "file": ".devcontainer/Dockerfile",
-        "patterns": [
-          "ARG DEVSPACE_VERSION=(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)"
-        ],
-        "sha256_pattern": "ARG DEVSPACE_AMD64_SHA256=(?P<sha256>\\S+)"
       }
     ]
   }

@@ -1,45 +1,80 @@
 {
-  "name": "The Room of Requirement",
+  "name": "Room of Requirement",
+  "version": "0.0.0",
   "build": {
-    "dockerfile": "Dockerfile"
+    "dockerfile": "Dockerfile",
+    "context": ".."
   },
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2.13.0": {},
-    "ghcr.io/devcontainers/features/common-utils:2.5.5": {
-      "installZsh": true,
-      "configureZshAsDefaultShell": true,
-      "installOhMyZsh": true,
-      "upgradePackages": true
-    },
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1.2.2": {
-      "version": "latest",
-      "helm": "latest",
-      "minikube": "none"
-    },
-    "ghcr.io/devcontainers/features/github-cli:1.0.15": {
-      "version": "latest"
-    }
-  },
-  "runArgs": [
-    "--privileged"
-  ],
+  "workspaceFolder": "/workspaces/room-of-requirement",
   "remoteUser": "vscode",
-  "postCreateCommand": "rcc config identity -t",
+  "remoteEnv": {
+    "SHELL": "/bin/zsh",
+    "HOMEBREW_NO_ANALYTICS": "1",
+    "HOMEBREW_NO_AUTO_UPDATE": "1",
+    "DOCKER_BUILDKIT": "1"
+  },
+  "mounts": [
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
+    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.gitconfig,target=/home/vscode/.gitconfig,type=bind,readonly",
+    "source=ror-homebrew-cache,target=/home/linuxbrew/.cache/Homebrew,type=volume",
+    "source=ror-mise-cache,target=/home/vscode/.local/share/mise,type=volume",
+    "source=ror-npm-cache,target=/home/vscode/.npm,type=volume",
+    "source=ror-zsh-history,target=/home/vscode/.zsh_history,type=volume",
+    "source=ror-docker-data,target=/var/lib/docker,type=volume"
+  ],
   "customizations": {
     "vscode": {
-      "settings": {
-        "terminal.integrated.defaultProfile.linux": "zsh"
-      },
-      "mcp": {
-
-      },
       "extensions": [
         "ms-azuretools.vscode-containers",
         "github.vscode-github-actions",
-        "ms-vscode.vscode-websearchforcopilot",
-        "GitHub.vscode-pull-request-github",
-        "ms-python.python"
-      ]
+        "ms-python.python",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh",
+            "args": [
+              "-l"
+            ]
+          },
+          "nushell": {
+            "path": "/home/linuxbrew/.linuxbrew/bin/nu",
+            "args": [
+              "-l"
+            ]
+          }
+        },
+        "editor.defaultFormatter": null,
+        "editor.formatOnSave": true
+      }
     }
-  }
+  },
+  // All features published to ghcr.io/joshyorko/devcontainer-features/<feature>:1
+  "features": {
+    // Core tools
+    "ghcr.io/joshyorko/devcontainer-features/mise:1": {
+      "defaultTools": "node@lts,python@latest,go@latest"
+    },
+    "ghcr.io/joshyorko/devcontainer-features/starship:1": {},
+    "ghcr.io/joshyorko/devcontainer-features/zoxide:1": {},
+    "ghcr.io/joshyorko/devcontainer-features/nushell:1": {},
+    // CLI tools via Homebrew
+    "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1": {
+      "installBrewfile": true
+    },
+    // Specialty tools (RCC, action-server, etc.)
+    "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {},
+    // Docker-in-Docker (Wolfi-compatible)
+    "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind:1": {
+      "installBuildx": true,
+      "installCompose": true
+    }
+  },
+  "privileged": true,
+  "postCreateCommand": "bash .devcontainer/post-create.sh",
+  "postStartCommand": "sudo /usr/local/share/docker-init.sh true",
+  "waitFor": "onCreateCommand"
 }

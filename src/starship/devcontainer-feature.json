@@ -1,0 +1,24 @@
+{
+  "id": "starship",
+  "version": "1.0.0",
+  "name": "Starship",
+  "description": "The minimal, blazing-fast, and infinitely customizable prompt for any shell. Renders in <100ms with support for all popular shells.",
+  "documentationURL": "https://starship.rs",
+  "licenseURL": "https://github.com/starship/starship/blob/master/LICENSE",
+  "options": {
+    "version": {
+      "type": "string",
+      "description": "Starship version to install (e.g., 'latest', 'v1.17.0')",
+      "default": "latest"
+    },
+    "configPath": {
+      "type": "string",
+      "description": "Path to starship.toml configuration file (relative to feature config/)",
+      "default": "starship.toml"
+    }
+  },
+  "containerEnv": {
+    "STARSHIP_CONFIG": "/home/vscode/.config/starship.toml"
+  },
+  "postCreateCommand": "mkdir -p /home/vscode/.config && chown -R vscode:vscode /home/vscode/.config"
+}

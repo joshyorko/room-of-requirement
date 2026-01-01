@@ -1,24 +1,39 @@
 {
   "features": {
-    "ghcr.io/devcontainers/features/common-utils:2.5.5": {
-      "version": "2.5.5",
-      "resolved": "ghcr.io/devcontainers/features/common-utils@sha256:6d22e5475de578a8dadf19ce15c0ed09d82d8e3006b851dae7fe59a959c9b787",
-      "integrity": "sha256:6d22e5475de578a8dadf19ce15c0ed09d82d8e3006b851dae7fe59a959c9b787"
+    "ghcr.io/joshyorko/devcontainer-features/mise:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/mise@sha256:f3a0292d26f064e2d53d57f4716bf5abe9502e0bb43d050ed30a055b5006f9dd",
+      "integrity": "sha256:f3a0292d26f064e2d53d57f4716bf5abe9502e0bb43d050ed30a055b5006f9dd"
     },
-    "ghcr.io/devcontainers/features/docker-in-docker:2.13.0": {
-      "version": "2.13.0",
-      "resolved": "ghcr.io/devcontainers/features/docker-in-docker@sha256:ac0a882e936ba6275d7f4ed5ebfc09e4ddca8cbcaeaad18b412beacddeb2fa91",
-      "integrity": "sha256:ac0a882e936ba6275d7f4ed5ebfc09e4ddca8cbcaeaad18b412beacddeb2fa91"
+    "ghcr.io/joshyorko/devcontainer-features/nushell:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/nushell@sha256:04f1b95ed295c3ac9fc33e2d8df60b0349cce338507980e26a9dfa3d5fb51060",
+      "integrity": "sha256:04f1b95ed295c3ac9fc33e2d8df60b0349cce338507980e26a9dfa3d5fb51060"
     },
-    "ghcr.io/devcontainers/features/github-cli:1.0.15": {
-      "version": "1.0.15",
-      "resolved": "ghcr.io/devcontainers/features/github-cli@sha256:1ad1ec1a806cc9926c84ca5b147427bba03b97e14e91f9df89af83726039ecaf",
-      "integrity": "sha256:1ad1ec1a806cc9926c84ca5b147427bba03b97e14e91f9df89af83726039ecaf"
+    "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools@sha256:5fd7b1d6b9a6c7b47bd6fa9cf3a0536a33cd07b76b84890612b493ce8b5e27d0",
+      "integrity": "sha256:5fd7b1d6b9a6c7b47bd6fa9cf3a0536a33cd07b76b84890612b493ce8b5e27d0"
     },
-    "ghcr.io/devcontainers/features/kubectl-helm-minikube:1.2.2": {
-      "version": "1.2.2",
-      "resolved": "ghcr.io/devcontainers/features/kubectl-helm-minikube@sha256:2127a072a351ef5e9ccf5f98284163f14b8ddbf505663a30b0f7ec99fbd0d7a8",
-      "integrity": "sha256:2127a072a351ef5e9ccf5f98284163f14b8ddbf505663a30b0f7ec99fbd0d7a8"
+    "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/ror-specialty@sha256:3f5a09878190c05b4d0552d03cd6bfec15576ce788ff050774c23f4557e9a2a3",
+      "integrity": "sha256:3f5a09878190c05b4d0552d03cd6bfec15576ce788ff050774c23f4557e9a2a3"
+    },
+    "ghcr.io/joshyorko/devcontainer-features/starship:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/starship@sha256:c6a48bdc94cb6a7ff3637e711545d3390f14db281f7c8cb403486200268897e2",
+      "integrity": "sha256:c6a48bdc94cb6a7ff3637e711545d3390f14db281f7c8cb403486200268897e2"
+    },
+    "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind@sha256:6051a5c2825d3c4114b32f8ee8a3792597fd0a5c08c1670dcf127ebd2b2a0da8",
+      "integrity": "sha256:6051a5c2825d3c4114b32f8ee8a3792597fd0a5c08c1670dcf127ebd2b2a0da8"
+    },
+    "ghcr.io/joshyorko/devcontainer-features/zoxide:1": {
+      "version": "1.0.0",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/zoxide@sha256:e1f1de59bf03d6de17d450c7e37f7b7650d5648f2a9e2c62a34fef027f17463c",
+      "integrity": "sha256:e1f1de59bf03d6de17d450c7e37f7b7650d5648f2a9e2c62a34fef027f17463c"
     }
   }
 }

@@ -1,0 +1,18 @@
+{
+  "id": "ror-core",
+  "version": "1.0.0",
+  "name": "Room of Requirement Core",
+  "description": "Meta-feature that aggregates core development tools: mise for polyglot version management, Starship for modern prompt, and zoxide for smart directory navigation.",
+  "documentationURL": "https://github.com/joshyorko/room-of-requirement",
+  "licenseURL": "https://github.com/joshyorko/room-of-requirement/blob/main/LICENSE",
+  "dependsOn": {
+    "mise": {
+      "defaultTools": "node@lts,python@latest,go@latest"
+    },
+    "starship": {
+      "version": "latest",
+      "configPath": "starship.toml"
+    },
+    "zoxide": {}
+  }
+}

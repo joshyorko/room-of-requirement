@@ -85,7 +85,30 @@ def _read_lockfile(path: Path) -> Dict[str, Dict[str, str]]:
     if not path.exists():
         return {}
     try:
-        return json.loads(path.read_text(encoding="utf-8")).get("features", {})
+        data = json.loads(path.read_text(encoding="utf-8"))
+        features = data.get("features", {})
+
+        # Handle both dict and list formats for features
+        if isinstance(features, dict):
+            return features
+        elif isinstance(features, list):
+            # Convert array format to dict format
+            # Array items should have an 'id' field as the key
+            result = {}
+            for item in features:
+                if isinstance(item, dict) and "id" in item:
+                    feature_id = item["id"]
+                    # Remove 'id' from the entry since it's now the key
+                    entry = {k: v for k, v in item.items() if k != "id"}
+                    result[feature_id] = entry
+            return result
+        else:
+            logger.warning(
+                "Lockfile at %s has unexpected 'features' type %s; treating as empty.",
+                path,
+                type(features).__name__,
+            )
+            return {}
     except json.JSONDecodeError:
         logger.warning("Lockfile at %s is invalid JSON; treating as empty.", path)
         return {}
@@ -98,7 +121,15 @@ def _diff_lockfiles(
     changes: List[LockfileUpdate] = []
     created = not bool(old) and bool(new)
 
-    all_features = sorted(set(old) | set(new))
+    # Defensive check: ensure both old and new are dicts with string keys
+    if not isinstance(old, dict):
+        logger.warning("old lockfile is not a dict (type: %s); treating as empty", type(old).__name__)
+        old = {}
+    if not isinstance(new, dict):
+        logger.warning("new lockfile is not a dict (type: %s); treating as empty", type(new).__name__)
+        new = {}
+
+    all_features = sorted(set(old.keys()) | set(new.keys()))
     for feature in all_features:
         previous = old.get(feature)
         updated = new.get(feature)

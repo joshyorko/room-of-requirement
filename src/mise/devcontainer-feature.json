@@ -1,0 +1,32 @@
+{
+  "id": "mise",
+  "version": "1.0.0",
+  "name": "mise-en-place",
+  "description": "A polyglot version manager for Node.js, Python, Go, and hundreds of other tools. Manages language runtimes and development tools with unified configuration.",
+  "documentationURL": "https://mise.jdx.dev",
+  "licenseURL": "https://github.com/jdx/mise/blob/main/LICENSE",
+  "options": {
+    "defaultTools": {
+      "type": "string",
+      "default": "node@lts,python@latest,go@latest",
+      "description": "Comma-separated list of tools to pre-install during feature installation (e.g., 'node@lts,python@3.11,go@latest')"
+    },
+    "shimPath": {
+      "type": "string",
+      "default": "/usr/local/share/mise/shims",
+      "description": "Path where mise shims will be configured (for PATH precedence)"
+    }
+  },
+  "containerEnv": {
+    "MISE_CONFIG_DIR": "/home/vscode/.config/mise",
+    "MISE_CACHE_DIR": "/home/vscode/.cache/mise"
+  },
+  "mounts": [
+    {
+      "type": "volume",
+      "source": "mise-cache",
+      "target": "/home/vscode/.cache/mise"
+    }
+  ],
+  "postCreateCommand": "mise install --all 2>/dev/null || true"
+}
