@@ -1,0 +1,25 @@
+name: Metrics placeholder (disabled)
+
+# Template to post deployment metrics to a configured endpoint. Disabled by default.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  emit-metrics:
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Emit metric to Metrics endpoint (example)
+        run: |
+          curl -fsS -X POST "$METRICS_ENDPOINT" \
+            -H "Authorization: Bearer $METRICS_API_KEY" \
+            -H "Content-Type: application/json" \
+            -d '{"deploy_success":1, "image":"ghcr.io/joshyorko/ror:latest"}'
+        env:
+          METRICS_ENDPOINT: ${{ secrets.METRICS_ENDPOINT }}
+          METRICS_API_KEY: ${{ secrets.METRICS_API_KEY }}
+
+# Notes:
+# - To enable, change `if: false` to a condition and configure secrets
+# - Consider rate limiting and batching if emitting from many workflows
