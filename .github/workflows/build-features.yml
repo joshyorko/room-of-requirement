@@ -15,6 +15,28 @@ on:
     paths:
       - "src/**"
       - ".github/workflows/build-features.yml"
+  workflow_call:
+    inputs:
+      features:
+        description: "Specific features to build (comma-separated, empty = all)"
+        type: string
+        default: ""
+      publish:
+        description: "Publish features to GHCR"
+        type: boolean
+        default: true
+      generate_docs:
+        description: "Generate README files for features"
+        type: boolean
+        default: true
+      dry_run:
+        description: "Validate without building"
+        type: boolean
+        default: false
+      sign:
+        description: "Sign features with Cosign"
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       features:

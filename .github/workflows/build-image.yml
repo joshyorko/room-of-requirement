@@ -24,6 +24,36 @@ on:
   schedule:
     # Monthly stable release - first day of month at 00:00 UTC
     - cron: "0 0 1 * *"
+  workflow_call:
+    inputs:
+      push:
+        description: "Push image to registry"
+        type: boolean
+        default: true
+      platforms:
+        description: "Target platforms (comma-separated)"
+        type: string
+        default: "linux/amd64"
+      tags:
+        description: "Additional tags (comma-separated)"
+        type: string
+        default: ""
+      sign:
+        description: "Sign image with Cosign"
+        type: boolean
+        default: true
+      generate_sbom:
+        description: "Generate and attach SBOM"
+        type: boolean
+        default: true
+      scan_cve:
+        description: "Run CVE vulnerability scan"
+        type: boolean
+        default: true
+      fail_on_critical:
+        description: "Fail build on Critical CVEs with fixes"
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       push:

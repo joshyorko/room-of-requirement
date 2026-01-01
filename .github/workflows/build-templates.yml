@@ -15,6 +15,20 @@ on:
     paths:
       - "templates/**"
       - ".github/workflows/build-templates.yml"
+  workflow_call:
+    inputs:
+      templates:
+        description: "Specific templates to build (comma-separated, empty = all)"
+        type: string
+        default: ""
+      publish:
+        description: "Publish templates to GHCR"
+        type: boolean
+        default: true
+      generate_docs:
+        description: "Generate README files for templates"
+        type: boolean
+        default: true
   workflow_dispatch:
     inputs:
       templates:
