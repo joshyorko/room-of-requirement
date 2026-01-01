@@ -1,0 +1,326 @@
+# Build and publish DevContainer Templates
+# Implements US4 - Secure Supply Chain Verification
+# Task: T052
+
+name: Build Templates
+
+on:
+  push:
+    branches: [main]
+    paths:
+      - "templates/**"
+      - ".github/workflows/build-templates.yml"
+  pull_request:
+    branches: [main]
+    paths:
+      - "templates/**"
+      - ".github/workflows/build-templates.yml"
+  workflow_dispatch:
+    inputs:
+      templates:
+        description: "Specific templates to build (comma-separated, empty = all)"
+        type: string
+        default: ""
+      publish:
+        description: "Publish templates to GHCR"
+        type: boolean
+        default: false
+      generate_docs:
+        description: "Generate README files for templates"
+        type: boolean
+        default: true
+
+env:
+  REGISTRY: ghcr.io
+
+permissions:
+  contents: read
+  packages: write
+
+jobs:
+  detect-templates:
+    name: Detect Changed Templates
+    runs-on: ubuntu-latest
+    outputs:
+      templates: ${{ steps.detect.outputs.templates }}
+      matrix: ${{ steps.detect.outputs.matrix }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5.0.1
+        with:
+          fetch-depth: 0
+
+      - name: Detect templates to build
+        id: detect
+        run: |
+          # If specific templates are provided, use those
+          if [ -n "${{ inputs.templates }}" ]; then
+            TEMPLATES="${{ inputs.templates }}"
+          # For PRs and pushes, detect changed templates
+          elif [ "${{ github.event_name }}" = "pull_request" ]; then
+            TEMPLATES=$(git diff --name-only ${{ github.event.pull_request.base.sha }} ${{ github.sha }} | \
+              grep '^templates/' | \
+              cut -d'/' -f2 | \
+              sort -u | \
+              tr '\n' ',' | \
+              sed 's/,$//')
+          elif [ "${{ github.event_name }}" = "push" ]; then
+            TEMPLATES=$(git diff --name-only ${{ github.event.before }} ${{ github.sha }} | \
+              grep '^templates/' | \
+              cut -d'/' -f2 | \
+              sort -u | \
+              tr '\n' ',' | \
+              sed 's/,$//')
+          # For workflow dispatch without specific templates, build all
+          else
+            TEMPLATES=$(ls -d templates/*/ 2>/dev/null | xargs -n1 basename | tr '\n' ',' | sed 's/,$//')
+          fi
+
+          # If no templates detected, default to all
+          if [ -z "$TEMPLATES" ]; then
+            TEMPLATES=$(ls -d templates/*/ 2>/dev/null | xargs -n1 basename | tr '\n' ',' | sed 's/,$//')
+          fi
+
+          echo "templates=${TEMPLATES}" >> $GITHUB_OUTPUT
+
+          # Create matrix JSON for parallel builds
+          MATRIX_JSON=$(echo "$TEMPLATES" | tr ',' '\n' | jq -R -s -c 'split("\n") | map(select(length > 0))')
+          echo "matrix=${MATRIX_JSON}" >> $GITHUB_OUTPUT
+
+          echo "### Templates to Build" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "$TEMPLATES" | tr ',' '\n' | while read template; do
+            echo "- \`${template}\`" >> $GITHUB_STEP_SUMMARY
+          done
+
+  validate:
+    name: Validate Templates
+    runs-on: ubuntu-latest
+    needs: detect-templates
+    if: needs.detect-templates.outputs.templates != ''
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Validate template manifests
+        run: |
+          echo "### Template Validation" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          TEMPLATES="${{ needs.detect-templates.outputs.templates }}"
+          FAILED=0
+
+          for template in $(echo "$TEMPLATES" | tr ',' ' '); do
+            echo "Validating template: ${template}"
+
+            MANIFEST="templates/${template}/devcontainer-template.json"
+            DEVCONTAINER="templates/${template}/.devcontainer/devcontainer.json"
+
+            # Check manifest exists and is valid JSON
+            if [ ! -f "$MANIFEST" ]; then
+              echo "::error::Missing manifest for template ${template}"
+              echo "- ❌ \`${template}\`: Missing devcontainer-template.json" >> $GITHUB_STEP_SUMMARY
+              FAILED=1
+              continue
+            fi
+
+            if ! jq empty "$MANIFEST" 2>/dev/null; then
+              echo "::error::Invalid JSON in manifest for template ${template}"
+              echo "- ❌ \`${template}\`: Invalid JSON in manifest" >> $GITHUB_STEP_SUMMARY
+              FAILED=1
+              continue
+            fi
+
+            # Check devcontainer.json exists and is valid JSON
+            if [ ! -f "$DEVCONTAINER" ]; then
+              echo "::error::Missing devcontainer.json for template ${template}"
+              echo "- ❌ \`${template}\`: Missing .devcontainer/devcontainer.json" >> $GITHUB_STEP_SUMMARY
+              FAILED=1
+              continue
+            fi
+
+            if ! jq empty "$DEVCONTAINER" 2>/dev/null; then
+              echo "::error::Invalid JSON in devcontainer.json for template ${template}"
+              echo "- ❌ \`${template}\`: Invalid JSON in devcontainer.json" >> $GITHUB_STEP_SUMMARY
+              FAILED=1
+              continue
+            fi
+
+            # Validate required fields in manifest
+            ID=$(jq -r '.id' "$MANIFEST")
+            VERSION=$(jq -r '.version' "$MANIFEST")
+
+            if [ "$ID" = "null" ] || [ -z "$ID" ]; then
+              echo "::error::Missing 'id' field in manifest for template ${template}"
+              echo "- ❌ \`${template}\`: Missing 'id' field" >> $GITHUB_STEP_SUMMARY
+              FAILED=1
+              continue
+            fi
+
+            if [ "$VERSION" = "null" ] || [ -z "$VERSION" ]; then
+              echo "::error::Missing 'version' field in manifest for template ${template}"
+              echo "- ❌ \`${template}\`: Missing 'version' field" >> $GITHUB_STEP_SUMMARY
+              FAILED=1
+              continue
+            fi
+
+            echo "- ✅ \`${template}\` (v${VERSION})" >> $GITHUB_STEP_SUMMARY
+          done
+
+          if [ $FAILED -ne 0 ]; then
+            echo "::error::Template validation failed"
+            exit 1
+          fi
+
+  build:
+    name: Build Templates
+    runs-on: ubuntu-latest
+    needs: [detect-templates, validate]
+    if: needs.detect-templates.outputs.templates != ''
+    outputs:
+      published: ${{ steps.publish.outputs.published }}
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v5.0.1
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: "20"
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
+      - name: Log in to Container Registry
+        if: github.event_name != 'pull_request'
+        uses: docker/login-action@v3.6.0
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Generate template documentation
+        if: inputs.generate_docs != false
+        run: |
+          # Generate README.md for each template from manifest
+          TEMPLATES="${{ needs.detect-templates.outputs.templates }}"
+
+          for template in $(echo "$TEMPLATES" | tr ',' ' '); do
+            MANIFEST="templates/${template}/devcontainer-template.json"
+            README="templates/${template}/README.md"
+
+            NAME=$(jq -r '.name' "$MANIFEST")
+            DESC=$(jq -r '.description // "No description provided"' "$MANIFEST")
+            VERSION=$(jq -r '.version' "$MANIFEST")
+
+            cat > "$README" << EOF
+          # ${NAME}
+
+          ${DESC}
+
+          ## Usage
+
+          ### Using devcontainer CLI
+
+          \`\`\`bash
+          devcontainer templates apply --template ghcr.io/${{ github.repository }}/templates/${template}:${VERSION}
+          \`\`\`
+
+          ### Manual Setup
+
+          Copy the \`.devcontainer/\` directory to your project root.
+
+          ## Options
+
+          $(jq -r '.options // {} | to_entries | map("| \(.key) | \(.value.type // "string") | \(.value.default // "N/A") | \(.value.description // "No description") |") | ["| Option | Type | Default | Description |", "|--------|------|---------|-------------|"] + . | .[]' "$MANIFEST")
+
+          ---
+
+          *Auto-generated from devcontainer-template.json*
+          EOF
+          done
+
+      - name: Build and publish templates
+        id: publish
+        env:
+          PUBLISH: ${{ github.event_name != 'pull_request' && (inputs.publish || github.event_name == 'push') }}
+        run: |
+          TEMPLATES="${{ needs.detect-templates.outputs.templates }}"
+          PUBLISHED_JSON="[]"
+
+          echo "### Template Build Results" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+
+          for template in $(echo "$TEMPLATES" | tr ',' ' '); do
+            echo "Building template: ${template}"
+
+            VERSION=$(jq -r '.version' "templates/${template}/devcontainer-template.json")
+
+            if [ "$PUBLISH" = "true" ]; then
+              # Build and publish with devcontainer CLI
+              devcontainer templates publish \
+                --registry ${{ env.REGISTRY }} \
+                --namespace ${{ github.repository }}/templates \
+                "templates/${template}"
+
+              TEMPLATE_URI="${{ env.REGISTRY }}/${{ github.repository }}/templates/${template}:${VERSION}"
+
+              # Add to published list
+              PUBLISHED_JSON=$(echo "$PUBLISHED_JSON" | jq --arg id "$template" --arg version "$VERSION" --arg uri "$TEMPLATE_URI" \
+                '. + [{"id": $id, "version": $version, "uri": $uri}]')
+
+              echo "- ✅ \`${template}\` published as \`${TEMPLATE_URI}\`" >> $GITHUB_STEP_SUMMARY
+            else
+              # Validation only - templates CLI doesn't have package command
+              # Just verify the manifest is valid JSON (already done in validate step)
+              echo "- 📦 \`${template}\` validated (not published)" >> $GITHUB_STEP_SUMMARY
+            fi
+          done
+
+          echo "published=${PUBLISHED_JSON}" >> $GITHUB_OUTPUT
+
+      - name: Upload build artifacts
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: template-builds
+          path: output/
+          if-no-files-found: ignore
+
+  summary:
+    name: Build Summary
+    runs-on: ubuntu-latest
+    needs: [detect-templates, validate, build]
+    if: always()
+
+    steps:
+      - name: Generate summary
+        run: |
+          echo "# DevContainer Templates Build" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Status" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
+          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
+          echo "| Detect | ${{ needs.detect-templates.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Validate | ${{ needs.validate.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "## Usage" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Apply a template to your project:" >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
+          echo "devcontainer templates apply --template ghcr.io/${{ github.repository }}/templates/ror-starter" >> $GITHUB_STEP_SUMMARY
+          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY

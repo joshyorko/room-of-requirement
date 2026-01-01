@@ -14,6 +14,9 @@ tasks:
   update-lockfile:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_devcontainer_lock_only
 
+  update-homebrew:
+    shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_homebrew_only
+
   test-devcontainer:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t test_devcontainer_build
 

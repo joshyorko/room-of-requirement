@@ -1,0 +1,22 @@
+# Starter Brewfile for Room of Requirement projects
+# T060: Create example Brewfile for ror-starter Template
+
+# Project-specific CLI tools (customize as needed)
+brew "jq"
+brew "yq"
+brew "gh"
+
+# Development tools
+brew "git-lfs"
+brew "ripgrep"
+brew "fd"
+brew "fzf"
+
+# Optional: Infrastructure as Code
+# brew "terraform"
+# brew "ansible"
+
+# Optional: Container tools
+# brew "kubectl"
+# brew "helm"
+# brew "k9s"

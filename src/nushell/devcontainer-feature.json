@@ -1,0 +1,15 @@
+{
+  "id": "nushell",
+  "version": "1.0.0",
+  "name": "Nushell",
+  "description": "A new type of shell - Nushell is a modern shell written in Rust",
+  "documentationURL": "https://www.nushell.sh",
+  "licenseURL": "https://github.com/nushell/nushell/blob/main/LICENSE",
+  "options": {
+    "version": {
+      "type": "string",
+      "description": "Nushell version to install",
+      "default": "latest"
+    }
+  }
+}

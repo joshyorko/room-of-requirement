@@ -126,9 +126,11 @@ jobs:
           This PR contains automated maintenance updates from the RCC maintenance robot.
 
           ### Changes
-          - Dependency updates
-          - Pre-commit hook fixes
+          - GitHub Actions workflow updates
+          - Direct download tool updates (mise, Starship, zoxide, specialty tools)
+          - Homebrew formula tracking
           - DevContainer lock file updates
+          - Pre-commit hook fixes
 
           ### Affected Files
           DevContainer affected: ${{ steps.check_files.outputs.devcontainer_affected }}

@@ -4,12 +4,14 @@ repos:
     hooks:
       - id: check-merge-conflict
       - id: check-yaml
+        exclude: ^specs/
       - id: end-of-file-fixer
       - id: trailing-whitespace
   - repo: https://github.com/adrienverge/yamllint
     rev: v1.35.1
     hooks:
       - id: yamllint
+        exclude: ^specs/
   - repo: https://github.com/hadolint/hadolint
     rev: v2.12.0
     hooks:

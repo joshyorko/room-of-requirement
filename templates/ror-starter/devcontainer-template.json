@@ -1,0 +1,8 @@
+{
+  "id": "ror-starter",
+  "version": "1.0.0",
+  "name": "Room of Requirement Starter",
+  "description": "Starter template for new projects using Room of Requirement DevContainer",
+  "documentationURL": "https://github.com/joshyorko/room-of-requirement",
+  "licenseURL": "https://github.com/joshyorko/room-of-requirement/blob/main/LICENSE"
+}

@@ -1,0 +1,69 @@
+{
+  "kubectl": {
+    "formula": "kubernetes-cli",
+    "type": "formula",
+    "description": "Kubernetes CLI"
+  },
+  "helm": {
+    "formula": "helm",
+    "type": "formula",
+    "description": "Kubernetes package manager"
+  },
+  "k9s": {
+    "formula": "k9s",
+    "type": "formula",
+    "description": "Kubernetes TUI"
+  },
+  "jq": {
+    "formula": "jq",
+    "type": "formula",
+    "description": "JSON processor"
+  },
+  "yq": {
+    "formula": "yq",
+    "type": "formula",
+    "description": "YAML processor"
+  },
+  "gh": {
+    "formula": "gh",
+    "type": "formula",
+    "description": "GitHub CLI"
+  },
+  "awscli": {
+    "formula": "awscli",
+    "type": "formula",
+    "description": "AWS CLI v2"
+  },
+  "dagger": {
+    "formula": "dagger",
+    "type": "formula",
+    "description": "Portable devkit for CI/CD pipelines"
+  },
+  "devspace": {
+    "formula": "devspace",
+    "type": "formula",
+    "description": "Kubernetes development tool"
+  },
+  "uv": {
+    "formula": "uv",
+    "type": "formula",
+    "description": "Fast Python package installer"
+  },
+  "claude-code": {
+    "formula": "claude-code",
+    "type": "cask",
+    "description": "Terminal-based AI coding assistant"
+  },
+  "hauler": {
+    "formula": "hauler",
+    "type": "cask",
+    "description": "Airgap content management (rancherfederal/rancher-government-hauler tap)",
+    "skip_version_check": true
+  },
+  "container-use": {
+    "formula": "container-use",
+    "type": "cask",
+    "description": "Container MCP (anthropics/tools tap)",
+    "skip_version_check": true
+  }
+}

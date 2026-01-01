@@ -1,0 +1,15 @@
+# Example .mise.toml for Room of Requirement starter projects
+# T061: Create example .mise.toml for ror-starter Template
+
+[tools]
+node = "20"
+python = "3.12"
+go = "1.22"
+
+[settings]
+auto_install = true
+auto_update = false
+
+# Optional: Define custom tasks
+# [tasks.setup]
+# run = "npm install && npm run build"

@@ -1,0 +1,61 @@
+# mise Configuration for Room of Requirement
+# T041: Create default mise global config with node@lts, python@latest, go@latest
+
+# ============================================================================
+# TOOL VERSIONS
+# ============================================================================
+# These define the default versions available in this environment
+# Users can override with project-specific .mise.toml files
+
+[tools]
+node = "lts"
+python = "latest"
+go = "latest"
+rust = "latest"
+ruby = "latest"
+
+# ============================================================================
+# MISE SETTINGS
+# ============================================================================
+[settings]
+# Auto-update tools when versions are specified
+auto_update = false
+
+# Automatically use tools when entering directory
+auto_install = true
+
+# Show prompt messages
+quiet = false
+
+# ============================================================================
+# EXPERIMENTAL & FEATURES (T037)
+# ============================================================================
+[env]
+# Enable experimental direnv integration for environment variable loading
+# This allows .mise.toml files to define environment variables that are
+# automatically loaded when entering a project directory
+_.experimental_direnv = true
+
+# Enable experimental environment file support
+_.experimental_env_file = true
+
+# Precedence: mise shims > Homebrew > standard system paths
+_.path = "/usr/local/share/mise/shims:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+
+# ============================================================================
+# ALIASES
+# ============================================================================
+# Create convenient shortcuts for version selection
+
+[alias.node]
+lts = "20"
+current = "22"
+
+[alias.python]
+"3.13" = "3.13.0"
+"3.12" = "3.12.3"
+"3.11" = "3.11.8"
+
+[alias.go]
+latest = "1.23.0"
+stable = "1.22.0"

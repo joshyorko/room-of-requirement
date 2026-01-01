@@ -1,0 +1,15 @@
+{
+  "id": "zoxide",
+  "version": "1.0.0",
+  "name": "zoxide",
+  "description": "A smarter cd command that learns your habits",
+  "documentationURL": "https://github.com/ajeetdsouza/zoxide",
+  "licenseURL": "https://github.com/ajeetdsouza/zoxide/blob/main/LICENSE",
+  "options": {
+    "version": {
+      "type": "string",
+      "description": "zoxide version to install",
+      "default": "latest"
+    }
+  }
+}

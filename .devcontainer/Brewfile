@@ -1,0 +1,39 @@
+# Room of Requirement DevContainer Brewfile
+# Installed during post-create via brew bundle
+# Tracked by maintenance-robot (see allowlists/homebrew.json)
+
+# ============================================================================
+# CORE: Development Tools (Formulas)
+# ============================================================================
+brew "dagger"              # Portable devkit for CI/CD pipelines
+brew "devspace"            # Kubernetes development tool
+brew "uv"                  # Fast Python package installer
+
+# ============================================================================
+# CORE: Cloud-Native & Kubernetes
+# ============================================================================
+brew "kubernetes-cli"      # kubectl - Kubernetes CLI
+brew "helm"                # Kubernetes package manager
+brew "k9s"                 # Kubernetes TUI
+
+# ============================================================================
+# CORE: CLI Utilities
+# ============================================================================
+brew "jq"                  # JSON processor
+brew "yq"                  # YAML processor
+brew "gh"                  # GitHub CLI
+brew "awscli"              # AWS CLI v2
+
+# ============================================================================
+# SPECIALTY: Cross-Platform Casks (Linux-compatible)
+# ============================================================================
+cask "claude-code"         # Terminal-based AI coding assistant
+cask "hauler"              # Airgap content management (Rancher)
+cask "container-use"       # Container MCP for coding agents
+
+# ============================================================================
+# NOTE: The following tools are installed via Wolfi apk or direct download:
+# - Docker, Docker Compose (Wolfi native packages)
+# - RCC (joshyorko fork - via ror-specialty feature)
+# - action-server (Sema4.AI - via ror-specialty feature)
+# ============================================================================
