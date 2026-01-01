@@ -1,0 +1,27 @@
+name: Notification placeholder (disabled)
+
+# Template workflow to demonstrate how to send deployment notifications.
+# Disabled by default. Enable and edit to match your notification provider.
+
+on:
+  workflow_dispatch: {}
+
+jobs:
+  notify:
+    # This job is intentionally disabled by default; replace `false` with an enabling condition.
+    if: false
+    runs-on: ubuntu-latest
+    steps:
+      - name: Notify via Slack (example)
+        # Example action: when enabling, set secret NOTIFICATIONS_WEBHOOK to the Slack webhook URL
+        uses: 8398a7/action-slack@v4
+        with:
+          status: ${{ job.status }}
+          fields: repo,commit,author
+        env:
+          SLACK_WEBHOOK_URL: ${{ secrets.NOTIFICATIONS_WEBHOOK }}
+
+# NOTES:
+# - To enable: change `if: false` to a condition such as `env.NOTIFICATIONS_ENABLED == 'true'` and set the secret
+# - For Teams: you can replace the step with a simple curl to a Teams incoming webhook or use a maintained action
+# - Keep secrets and webhook URLs in repository or org secrets, and document who can rotate them
