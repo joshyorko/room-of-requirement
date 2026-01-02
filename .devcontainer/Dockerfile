@@ -154,6 +154,7 @@ WORKDIR /workspaces
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD echo "OK" || exit 1
 
-# Entrypoint runs docker-init.sh (from wolfi-docker-dind feature) if present
-ENTRYPOINT ["/sbin/tini", "--", "/bin/sh", "-c", "[ -x /usr/local/share/docker-init.sh ] && /usr/local/share/docker-init.sh \"$@\" || exec \"$@\"", "--"]
-CMD ["/bin/zsh"]
+# Docker-in-Docker entrypoint - starts dockerd then runs CMD
+# For pre-built images, we bake this in since runtime may not apply feature entrypoints
+ENTRYPOINT ["/usr/local/share/docker-init.sh"]
+CMD ["sleep", "infinity"]

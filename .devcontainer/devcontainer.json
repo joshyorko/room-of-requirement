@@ -68,6 +68,8 @@
     }
   },
   "privileged": true,
+  "runArgs": ["--privileged"],
   "postCreateCommand": "bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true",
+  "postStartCommand": "if ! docker info > /dev/null 2>&1; then sudo /usr/local/share/docker-init.sh true & fi",
   "waitFor": "onCreateCommand"
 }
