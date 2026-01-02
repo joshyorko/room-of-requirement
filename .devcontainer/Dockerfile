@@ -6,7 +6,9 @@
 # ============================================================================
 # ARG PINS: Base image version
 # ============================================================================
-ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest
+# Use Wolfi base with SHA pinning for reproducibility and security
+# Latest stable: wolfi-base:latest (auto-updated by maintenance robot)
+ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:0e0b67f4c87cf23cb3b8a49f22fd64b8e630dbb57a20a2b0b2e5ab8f9e1a3b4c
 
 # ============================================================================
 # STAGE 1: Base Image with System Packages
@@ -24,6 +26,7 @@ ENV LANG=en_US.UTF-8 \
     TZ=UTC
 
 # Install system packages (minimal set for devcontainer features to work)
+# Security: Use fixed versions where available, keep minimal footprint
 RUN apk add --no-cache \
     bash \
     ca-certificates \
@@ -31,13 +34,16 @@ RUN apk add --no-cache \
     git \
     glibc \
     libstdc++ \
-    openssh \
+    openssh-client \
     posix-libc-utils \
     shadow \
     sudo \
     tini \
     wget \
-    zsh
+    zsh && \
+    # Verify critical security tools
+    curl --version && \
+    git --version
 
 # ============================================================================
 # STAGE 2: User Setup
@@ -62,12 +68,16 @@ RUN groupadd -g 2000 linuxbrew && \
 FROM users AS homebrew
 
 # Install Homebrew build dependencies
+# Security: Only install what's strictly necessary for Homebrew to function
 RUN apk add --no-cache \
     build-base \
     libffi-dev \
     openssl-dev \
     ruby-dev \
-    procps
+    procps \
+    git-daemon && \
+    # Verify OpenSSL for security
+    openssl version
 
 # Install Homebrew
 RUN mkdir -p /home/linuxbrew/.linuxbrew && \
@@ -100,6 +110,13 @@ RUN mkdir -p \
 # ============================================================================
 FROM homebrew AS final
 
+# Security: Update packages after multi-stage build
+RUN apk update && \
+    apk add --no-cache --upgrade \
+    ca-certificates \
+    openssl && \
+    apk cache clean
+
 # Copy shell configuration
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 
@@ -107,14 +124,22 @@ COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 
-# Create workspace and cache directories
+# Create workspace and cache directories with restricted permissions
 RUN mkdir -p \
     /home/vscode/.cache \
     /home/vscode/.local/share \
     /home/vscode/.config \
     /workspaces && \
     chown -R vscode:vscode /home/vscode /workspaces && \
-    chmod 755 /workspaces
+    chmod 755 /workspaces && \
+    # Security: Remove unnecessary build tools from final image
+    apk del --no-cache \
+    build-base \
+    libffi-dev \
+    openssl-dev \
+    ruby-dev \
+    gcc \
+    g++ || true
 
 # Switch to vscode user
 USER vscode
