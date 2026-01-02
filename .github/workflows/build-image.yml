@@ -87,7 +87,7 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}/ror
+  IMAGE_NAME: ${{ github.repository_owner }}/ror
 
 permissions:
   contents: read
@@ -404,7 +404,7 @@ jobs:
       packages: write
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.0.0
     with:
-      image: ghcr.io/${{ github.repository }}/ror
+      image: ghcr.io/${{ github.repository_owner }}/ror
       digest: ${{ needs.build.outputs.digest }}
       registry-username: ${{ github.actor }}
     secrets:
@@ -435,12 +435,12 @@ jobs:
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
           echo "# Verify image signature" >> $GITHUB_STEP_SUMMARY
-          echo "cosign verify ghcr.io/${{ github.repository }}/ror:latest \\" >> $GITHUB_STEP_SUMMARY
+          echo "cosign verify ghcr.io/${{ github.repository_owner }}/ror:latest \\" >> $GITHUB_STEP_SUMMARY
           echo "  --certificate-identity-regexp=\"https://github.com/${{ github.repository }}/*\" \\" >> $GITHUB_STEP_SUMMARY
           echo "  --certificate-oidc-issuer=\"https://token.actions.githubusercontent.com\"" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "# Verify SBOM attestation" >> $GITHUB_STEP_SUMMARY
-          echo "cosign verify-attestation ghcr.io/${{ github.repository }}/ror:latest \\" >> $GITHUB_STEP_SUMMARY
+          echo "cosign verify-attestation ghcr.io/${{ github.repository_owner }}/ror:latest \\" >> $GITHUB_STEP_SUMMARY
           echo "  --type spdxjson \\" >> $GITHUB_STEP_SUMMARY
           echo "  --certificate-identity-regexp=\"https://github.com/${{ github.repository }}/*\" \\" >> $GITHUB_STEP_SUMMARY
           echo "  --certificate-oidc-issuer=\"https://token.actions.githubusercontent.com\"" >> $GITHUB_STEP_SUMMARY
