@@ -50,6 +50,7 @@ RUN apk add --no-cache \
     zsh \
     # Official Wolfi Docker-in-Docker packages (from Chainguard)
     docker \
+    docker-compose \
     docker-dind \
     dockerd-oci-entrypoint \
     # Playwright/Browser dependencies (headless Chromium support)
@@ -75,6 +76,8 @@ RUN apk add --no-cache \
     mesa-gbm \
     nss \
     pango && \
+    # Enable docker compose plugin (V2 syntax) by symlinking to plugin directory
+    ln -sf /usr/bin/docker-compose /usr/libexec/docker/cli-plugins/docker-compose && \
     # Verify critical security tools
     curl --version && \
     git --version
