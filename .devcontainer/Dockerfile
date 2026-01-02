@@ -154,4 +154,6 @@ WORKDIR /workspaces
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD echo "OK" || exit 1
 
+# Entrypoint runs docker-init.sh (from wolfi-docker-dind feature) if present
+ENTRYPOINT ["/sbin/tini", "--", "/bin/sh", "-c", "[ -x /usr/local/share/docker-init.sh ] && /usr/local/share/docker-init.sh \"$@\" || exec \"$@\"", "--"]
 CMD ["/bin/zsh"]

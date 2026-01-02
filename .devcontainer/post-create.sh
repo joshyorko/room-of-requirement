@@ -30,6 +30,16 @@ WORKSPACE_DIR="${1:-.}"
 cd "$WORKSPACE_DIR" || error "Failed to change to workspace directory"
 
 # ============================================================================
+# OH MY ZSH INSTALLATION (for dotfiles compatibility)
+# ============================================================================
+if [ ! -d "$HOME/.oh-my-zsh" ]; then
+    log "Installing Oh My Zsh for dotfiles compatibility"
+    # Silent unattended install, don't change shell or run zsh
+    RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended 2>/dev/null || warn "Oh My Zsh installation failed"
+    log "✓ Oh My Zsh installed"
+fi
+
+# ============================================================================
 # T026: Brewfile Detection & Installation
 # ============================================================================
 if [ -f "Brewfile" ]; then

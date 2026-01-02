@@ -1,6 +1,6 @@
 {
     "id": "wolfi-docker-dind",
-    "version": "1.0.0",
+    "version": "1.0.1",
     "name": "Docker-in-Docker (Wolfi)",
     "documentationURL": "https://github.com/joshyorko/room-of-requirement",
     "description": "Docker-in-Docker support for Wolfi-based containers. Uses native Wolfi apk packages instead of Debian/Ubuntu repos.",
