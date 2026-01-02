@@ -65,7 +65,7 @@
   "runArgs": [
     "--privileged"
   ],
-  "postCreateCommand": "bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true",
-  "postStartCommand": "if ! docker info > /dev/null 2>&1; then sudo sh -c 'nohup /usr/bin/dockerd-entrypoint.sh sleep infinity > /tmp/docker-init.log 2>&1 &' && sleep 3; fi",
+  "postCreateCommand": "cp /tmp/.zshrc-ror ~/.zshrc 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true",
+  "postStartCommand": "if ! docker info > /dev/null 2>&1; then sudo sh -c 'nohup /usr/bin/dockerd-entrypoint.sh dockerd > /tmp/docker-init.log 2>&1 &' && sleep 5; fi",
   "waitFor": "onCreateCommand"
 }

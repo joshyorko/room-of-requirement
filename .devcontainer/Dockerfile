@@ -131,7 +131,8 @@ RUN apk update && \
 RUN mkdir -p /usr/local/etc/vscode-dev-containers
 COPY .devcontainer/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
 
-# Copy shell configuration
+# Copy shell configuration (to /tmp for postCreate restore after features may overwrite it)
+COPY --chown=vscode:vscode .devcontainer/config/.zshrc /tmp/.zshrc-ror
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 
 # Copy post-create script for pre-built image usage

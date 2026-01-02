@@ -29,10 +29,9 @@ brew "azure-cli"           # Azure CLI
 brew "terraform"           # Infrastructure as code
 
 # ============================================================================
-# CORE: Shell Enhancements
+# NOTE: Shell plugins (autosuggestions, syntax-highlighting) are managed by
+# zinit in .zshrc - no need for Homebrew versions
 # ============================================================================
-brew "zsh-autosuggestions"      # Fish-like autosuggestions for zsh
-brew "zsh-syntax-highlighting"  # Syntax highlighting for zsh
 
 # ============================================================================
 # CORE: Development Utilities
