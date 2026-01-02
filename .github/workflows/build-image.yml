@@ -115,7 +115,7 @@ jobs:
 
       - name: Upload hadolint SARIF
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: hadolint.sarif
           category: hadolint
@@ -217,15 +217,19 @@ jobs:
             docker tag "$BUILT_IMAGE" "$tag"
           done
 
-          # Push all tags
+          # Push all tags and capture digest from first push
+          DIGEST=""
           for tag in $TAGS; do
             echo "Pushing: $tag"
-            docker push "$tag"
+            PUSH_OUTPUT=$(docker push "$tag" 2>&1)
+            echo "$PUSH_OUTPUT"
+            # Capture digest from first push (all tags have same digest)
+            if [ -z "$DIGEST" ]; then
+              DIGEST=$(echo "$PUSH_OUTPUT" | grep -oP 'digest: \Ksha256:[a-f0-9]+' | head -1)
+            fi
           done
 
-          # Get final digest from pushed image
-          FIRST_TAG=$(echo "$TAGS" | head -n1)
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$FIRST_TAG" 2>/dev/null | cut -d'@' -f2 || echo "")
+          echo "Captured digest: $DIGEST"
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
 
       - name: Output image info
@@ -243,7 +247,7 @@ jobs:
     name: Sign Image with Cosign
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name != 'pull_request' && (inputs.sign != false)
+    if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
 
     steps:
       - name: Install Cosign
@@ -280,7 +284,7 @@ jobs:
     name: Generate SBOM
     runs-on: ubuntu-latest
     needs: build
-    if: github.event_name != 'pull_request' && (inputs.generate_sbom != false)
+    if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
     outputs:
       sbom_digest: ${{ steps.attach.outputs.sbom_digest }}
 
@@ -329,7 +333,7 @@ jobs:
     name: CVE Vulnerability Scan
     runs-on: ubuntu-latest
     needs: build
-    if: inputs.scan_cve != false
+    if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
     outputs:
       critical: ${{ steps.scan.outputs.critical }}
       high: ${{ steps.scan.outputs.high }}
@@ -349,7 +353,7 @@ jobs:
 
       - name: Upload SARIF report
         if: always()
-        uses: github/codeql-action/upload-sarif@v3
+        uses: github/codeql-action/upload-sarif@v4
         with:
           sarif_file: ${{ steps.grype.outputs.sarif }}
 
