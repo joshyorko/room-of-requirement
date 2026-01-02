@@ -36,15 +36,11 @@
         "terminal.integrated.profiles.linux": {
           "zsh": {
             "path": "/bin/zsh",
-            "args": [
-              "-l"
-            ]
+            "args": ["-l"]
           },
           "nushell": {
             "path": "/home/linuxbrew/.linuxbrew/bin/nu",
-            "args": [
-              "-l"
-            ]
+            "args": ["-l"]
           }
         },
         "editor.defaultFormatter": null,
@@ -52,22 +48,17 @@
       }
     }
   },
-  // All features published to ghcr.io/joshyorko/devcontainer-features/<feature>:1
   "features": {
-    // Core tools
     "ghcr.io/joshyorko/devcontainer-features/mise:1": {
       "defaultTools": "node@lts,python@latest,go@latest"
     },
     "ghcr.io/joshyorko/devcontainer-features/starship:1": {},
     "ghcr.io/joshyorko/devcontainer-features/zoxide:1": {},
     "ghcr.io/joshyorko/devcontainer-features/nushell:1": {},
-    // CLI tools via Homebrew
     "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1": {
       "installBrewfile": true
     },
-    // Specialty tools (RCC, action-server, etc.)
     "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {},
-    // Docker-in-Docker (Wolfi-compatible)
     "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind:1": {
       "installBuildx": true,
       "installCompose": true
