@@ -26,6 +26,8 @@ ENV LANG=C.UTF-8 \
 
 # Install system packages (minimal set for devcontainer features to work)
 # Security: Use fixed versions where available, keep minimal footprint
+# NOTE: Wolfi uses native glibc (not musl like Alpine), so gcompat is NOT needed
+# VS Code Server works directly without compatibility layers
 RUN apk add --no-cache \
     bash \
     ca-certificates \
@@ -177,7 +179,10 @@ RUN apk update && \
     apk add --no-cache --upgrade \
     ca-certificates \
     openssl && \
-    apk cache clean
+    apk cache clean && \
+    # Remove gcompat from world file if present (VS Code may try to add it)
+    # Wolfi uses native glibc, not musl - gcompat is not needed and not available
+    sed -i '/^gcompat$/d' /etc/apk/world 2>/dev/null || true
 
 # Copy first run notice for VS Code to display
 RUN mkdir -p /usr/local/etc/vscode-dev-containers
