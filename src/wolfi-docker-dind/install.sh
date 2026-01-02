@@ -43,6 +43,7 @@ if [ "${ID}" != "wolfi" ]; then
 fi
 
 # Install Docker packages via Wolfi apk
+# Based on official docker:dind requirements from docker-library/docker
 echo "Installing Docker packages via apk..."
 apk add --no-cache \
     docker \
@@ -51,7 +52,14 @@ apk add --no-cache \
     containerd \
     runc \
     iptables \
-    pigz
+    ip6tables \
+    pigz \
+    e2fsprogs \
+    xfsprogs \
+    xz \
+    openssl \
+    shadow \
+    util-linux
 
 # Install docker-compose if requested
 if [ "${INSTALL_COMPOSE}" = "true" ]; then
@@ -76,23 +84,27 @@ if [ "${USERNAME}" != "root" ]; then
 fi
 
 # Create the docker-init.sh entrypoint script
+# Based on official docker:dind from docker-library/docker and moby/moby hack/dind
 echo "Creating docker-init.sh entrypoint..."
 cat > /usr/local/share/docker-init.sh << 'INITEOF'
 #!/bin/sh
 #-------------------------------------------------------------------------------------------------------------
 # Docker-in-Docker entrypoint for Wolfi containers
-# Starts the Docker daemon and handles cgroup setup
+# Based on official docker:dind from docker-library/docker and moby/moby hack/dind
+# Properly handles cgroup v2, mount propagation, and daemon startup
 #-------------------------------------------------------------------------------------------------------------
 set -e
 
-# Remove stale PID files
+# Remove stale PID files from previous runs
 find /run /var/run -iname 'docker*.pid' -delete 2>/dev/null || :
 find /run /var/run -iname 'container*.pid' -delete 2>/dev/null || :
 
-# Export container variable (required for dind)
+# Export container variable - required for AppArmor to work in nested containers
+# See: https://github.com/moby/moby/commit/de191e86321f7d3136ff42ff75826b8107399497
 export container=docker
 
-# Mount securityfs if available
+# Mount securityfs if available (required for AppArmor)
+# See: https://github.com/moby/moby/blob/master/hack/dind
 if [ -d /sys/kernel/security ] && ! mountpoint -q /sys/kernel/security; then
     mount -t securityfs none /sys/kernel/security || {
         echo >&2 'Could not mount /sys/kernel/security.'
@@ -101,60 +113,70 @@ if [ -d /sys/kernel/security ] && ! mountpoint -q /sys/kernel/security; then
 fi
 
 # Mount /tmp if not already mounted
+# /tmp must be exec,rw,dev for Docker to work properly
 if ! mountpoint -q /tmp; then
-    mount -t tmpfs none /tmp
+    mount -t tmpfs none /tmp || :
 fi
 
-# Set up cgroup v2 nesting
-set_cgroup_nesting() {
-    if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
-        # Move processes from root group to /init group
-        mkdir -p /sys/fs/cgroup/init
+# cgroup v2: enable nesting
+# This is CRITICAL for Docker-in-Docker to work on modern systems
+if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+    echo "Setting up cgroup v2 nesting..."
+    # Move processes from root group to /init group, otherwise writing
+    # subtree_control fails with EBUSY.
+    mkdir -p /sys/fs/cgroup/init
+    # Loop handles race condition where new processes (like docker exec) spawn
+    # while we're moving everything to "init"
+    retries=0
+    while [ $retries -lt 50 ]; do
+        # Move all processes to init cgroup
         xargs -rn1 < /sys/fs/cgroup/cgroup.procs > /sys/fs/cgroup/init/cgroup.procs 2>/dev/null || :
         # Enable controllers
-        sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers \
-            > /sys/fs/cgroup/cgroup.subtree_control 2>/dev/null || :
-    fi
-}
+        if sed -e 's/ / +/g' -e 's/^/+/' < /sys/fs/cgroup/cgroup.controllers \
+            > /sys/fs/cgroup/cgroup.subtree_control 2>/dev/null; then
+            break
+        fi
+        retries=$((retries + 1))
+        sleep 0.1
+    done
+    echo "cgroup v2 nesting configured."
+fi
 
-# Retry cgroup nesting setup
-retry_count=0
-until [ "${retry_count}" -eq "5" ]; do
-    set_cgroup_nesting
-    if [ $? -eq 0 ]; then
-        break
-    fi
-    echo "(*) cgroup v2: Failed to enable nesting, retrying..."
-    retry_count=$((retry_count + 1))
-    sleep 1
-done
+# CRITICAL: Change mount propagation to shared
+# Without this, containers cannot see their mounts properly
+# This makes the environment similar to a modern Linux system with systemd
+# See: https://github.com/moby/moby/blob/master/hack/dind
+mount --make-rshared / 2>/dev/null || echo "Note: Could not set mount propagation to rshared"
 
-# Start containerd first (required by Docker)
-echo "Starting containerd..."
-containerd > /tmp/containerd.log 2>&1 &
+# If no arguments, default to sleep infinity
+if [ "$#" -eq 0 ]; then
+    set -- sleep infinity
+fi
 
-# Wait for containerd to be ready
-sleep 2
-
-# Start Docker daemon
+# Start Docker daemon in background
 echo "Starting Docker daemon..."
 dockerd > /tmp/dockerd.log 2>&1 &
+DOCKER_PID=$!
 
-# Wait for Docker to be ready
+# Wait for Docker to be ready (max 60 seconds)
+echo "Waiting for Docker daemon to be ready..."
 retry_count=0
 docker_ok="false"
-until [ "${docker_ok}" = "true" ] || [ "${retry_count}" -eq "30" ]; do
+while [ "${docker_ok}" != "true" ] && [ "${retry_count}" -lt 60 ]; do
     sleep 1
     if docker info > /dev/null 2>&1; then
         docker_ok="true"
-        echo "Docker daemon is ready."
     fi
     retry_count=$((retry_count + 1))
 done
 
-if [ "${docker_ok}" != "true" ]; then
-    echo "WARNING: Docker daemon may not have started correctly."
-    echo "Check /tmp/dockerd.log for details."
+if [ "${docker_ok}" = "true" ]; then
+    echo "Docker daemon is ready."
+else
+    echo >&2 "ERROR: Docker daemon failed to start within 60 seconds."
+    echo >&2 "Docker logs:"
+    cat /tmp/dockerd.log >&2 2>/dev/null || :
+    exit 1
 fi
 
 # Execute the main command
