@@ -121,9 +121,10 @@ Uses conventional commits with release-please automation:
 
 | Workflow | Trigger | Purpose |
 |----------|---------|---------|
-| `cicd.yaml` | PR merge to main | Build and push DevContainer image to GHCR |
+| `build-image.yml` | Push to main (.devcontainer/**), workflow_run after Build Features | Build and push DevContainer image to GHCR |
+| `build-features.yml` | Push to main (src/**) | Build and publish DevContainer Features |
 | `rcc-maintenance.yml` | Daily cron + dispatch | Auto-update pinned versions via allowlists |
-| `release.yml` | Release-please | Publish semantic versioned releases |
+| `release.yml` | Push to main | Release-please automation for semantic versioning |
 
 ## Adding New Specialty Tools
 
