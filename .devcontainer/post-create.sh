@@ -60,8 +60,9 @@ if [ -n "${BREWFILE_PATH}" ]; then
     else
         log "Homebrew found at $(which brew)"
         log "Installing Brewfile dependencies from ${BREWFILE_PATH}"
-        # Use --no-lock to avoid permission issues with Brewfile.lock.json
-        if brew bundle install --file="${BREWFILE_PATH}" --no-lock; then
+        # Lock file is cleaned up after installation to avoid permission issues
+        if brew bundle install --file="${BREWFILE_PATH}"; then
+            rm -f "${BREWFILE_PATH}.lock.json" 2>/dev/null
             log "✓ Brewfile dependencies installed successfully"
         else
             warn "Some Brewfile dependencies may have failed to install"

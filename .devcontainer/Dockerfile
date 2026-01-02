@@ -146,8 +146,7 @@ RUN mkdir -p \
     libffi-dev \
     openssl-dev \
     ruby-dev \
-    gcc \
-    g++ || true
+    gcc || true
 
 # Switch to vscode user
 USER vscode
@@ -158,7 +157,7 @@ ENV HOME=/home/vscode \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
 
 # Install Brewfile packages as vscode user (bakes tools into image)
-RUN brew bundle install --file=/tmp/Brewfile --no-lock 2>&1 || \
+RUN brew bundle install --file=/tmp/Brewfile 2>&1 || \
     echo "Note: Some brew packages may have failed (casks often fail on Linux)" && \
     rm -f /tmp/Brewfile /tmp/Brewfile.lock.json
 
