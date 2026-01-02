@@ -6,9 +6,9 @@
       "integrity": "sha256:f3a0292d26f064e2d53d57f4716bf5abe9502e0bb43d050ed30a055b5006f9dd"
     },
     "ghcr.io/joshyorko/devcontainer-features/nushell:1": {
-      "version": "1.0.0",
-      "resolved": "ghcr.io/joshyorko/devcontainer-features/nushell@sha256:04f1b95ed295c3ac9fc33e2d8df60b0349cce338507980e26a9dfa3d5fb51060",
-      "integrity": "sha256:04f1b95ed295c3ac9fc33e2d8df60b0349cce338507980e26a9dfa3d5fb51060"
+      "version": "1.0.1",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/nushell@sha256:e907ef0f747de1f6a4763285edd7b300953d4c4e21057873450bd2c92d53e67d",
+      "integrity": "sha256:e907ef0f747de1f6a4763285edd7b300953d4c4e21057873450bd2c92d53e67d"
     },
     "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1": {
       "version": "1.0.0",
@@ -31,9 +31,9 @@
       "integrity": "sha256:6051a5c2825d3c4114b32f8ee8a3792597fd0a5c08c1670dcf127ebd2b2a0da8"
     },
     "ghcr.io/joshyorko/devcontainer-features/zoxide:1": {
-      "version": "1.0.0",
-      "resolved": "ghcr.io/joshyorko/devcontainer-features/zoxide@sha256:e1f1de59bf03d6de17d450c7e37f7b7650d5648f2a9e2c62a34fef027f17463c",
-      "integrity": "sha256:e1f1de59bf03d6de17d450c7e37f7b7650d5648f2a9e2c62a34fef027f17463c"
+      "version": "1.0.1",
+      "resolved": "ghcr.io/joshyorko/devcontainer-features/zoxide@sha256:6a95a5a3a3063165261d5b7b1a5807792a6db88fcf30ec7299326c8b0ef61fa7",
+      "integrity": "sha256:6a95a5a3a3063165261d5b7b1a5807792a6db88fcf30ec7299326c8b0ef61fa7"
     }
   }
 }
