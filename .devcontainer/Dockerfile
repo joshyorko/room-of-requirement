@@ -90,13 +90,18 @@ RUN apk add --no-cache \
     # Verify OpenSSL for security
     openssl version
 
-# Install Homebrew
-RUN mkdir -p /home/linuxbrew/.linuxbrew && \
+# Install Homebrew using the OFFICIAL installer (same as Universal Blue)
+# This ensures proper git remote setup and works correctly with brew update
+RUN mkdir -p /home/linuxbrew && \
     chown -R linuxbrew:linuxbrew /home/linuxbrew && \
-    su - linuxbrew -c 'git clone https://github.com/Homebrew/brew /home/linuxbrew/.linuxbrew/Homebrew' && \
-    su - linuxbrew -c 'mkdir -p /home/linuxbrew/.linuxbrew/bin' && \
-    su - linuxbrew -c 'ln -s ../Homebrew/bin/brew /home/linuxbrew/.linuxbrew/bin/brew' && \
-    su - linuxbrew -c '/home/linuxbrew/.linuxbrew/bin/brew update --force --quiet'
+    # Create .dockerenv to skip some interactive checks in the installer
+    touch /.dockerenv && \
+    # Run official Homebrew installer as linuxbrew user
+    su - linuxbrew -c 'NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' && \
+    # Run initial update to populate formulae
+    su - linuxbrew -c '/home/linuxbrew/.linuxbrew/bin/brew update --force' && \
+    # Configure git safe directory for all users
+    git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
 
 # Homebrew environment
 ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
@@ -107,13 +112,15 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     HOMEBREW_NO_INSTALL_CLEANUP=1
 
 # Configure Homebrew permissions for vscode user
+# vscode user needs full write access to Homebrew repo for `brew update`
 RUN mkdir -p \
     /home/linuxbrew/.linuxbrew/var/homebrew/linked \
     /home/linuxbrew/.linuxbrew/var/homebrew/locks \
     /home/linuxbrew/.linuxbrew/Cellar \
     /home/linuxbrew/.linuxbrew/Caskroom && \
-    chmod -R g+rwX /home/linuxbrew/.linuxbrew && \
-    chgrp -R vscode /home/linuxbrew/.linuxbrew && \
+    # Change ownership to vscode so brew update works (git fetch needs write access)
+    chown -R vscode:vscode /home/linuxbrew/.linuxbrew && \
+    chmod -R u+rwX /home/linuxbrew/.linuxbrew && \
     chmod 775 /home/linuxbrew/.linuxbrew
 
 # ============================================================================

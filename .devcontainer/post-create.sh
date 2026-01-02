@@ -40,6 +40,15 @@ if ! command -v brew &> /dev/null; then
 else
     log "Homebrew found at $(which brew)"
 
+    # Update Homebrew to get latest formulae (image may have stale index)
+    # This ensures new packages like container-use from taps are discoverable
+    log "Updating Homebrew formulae index..."
+    if brew update --quiet; then
+        log "✓ Homebrew updated to $(brew --version | head -1)"
+    else
+        warn "Homebrew update had issues, continuing with existing formulae"
+    fi
+
     # Bluefin-style: Only install bbrew (Bold Brew TUI) for on-demand package management
     # All other packages are available via 'ujust bbrew' or 'ujust brew-install-all'
     if ! command -v bbrew &> /dev/null; then
