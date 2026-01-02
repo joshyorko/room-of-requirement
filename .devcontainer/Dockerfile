@@ -103,6 +103,10 @@ FROM homebrew AS final
 # Copy shell configuration
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 
+# Copy post-create script for pre-built image usage
+COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
+RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
+
 # Create workspace and cache directories
 RUN mkdir -p \
     /home/vscode/.cache \
