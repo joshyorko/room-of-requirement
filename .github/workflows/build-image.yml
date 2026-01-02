@@ -227,7 +227,6 @@ jobs:
           FIRST_TAG=$(echo "$TAGS" | head -n1)
           DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$FIRST_TAG" 2>/dev/null | cut -d'@' -f2 || echo "")
           echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
-          echo "tags=${TAGS}" >> $GITHUB_OUTPUT
 
       - name: Output image info
         run: |
