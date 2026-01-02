@@ -59,9 +59,10 @@ RUN apk add --no-cache \
 # ============================================================================
 FROM base AS users
 
-# Create vscode user (UID 1000)
-RUN groupadd -g 1000 vscode && \
-    useradd -m -u 1000 -g vscode -s /bin/zsh vscode && \
+# Create docker group and vscode user (UID 1000)
+RUN groupadd -g 999 docker && \
+    groupadd -g 1000 vscode && \
+    useradd -m -u 1000 -g vscode -G docker -s /bin/zsh vscode && \
     echo "vscode ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/vscode && \
     chmod 0440 /etc/sudoers.d/vscode
 
@@ -157,13 +158,12 @@ RUN mkdir -p \
     /workspaces && \
     chown -R vscode:vscode /home/vscode /workspaces && \
     chmod 755 /workspaces && \
-    # Security: Remove unnecessary build tools from final image
+    # Keep build-base/gcc for Homebrew source builds (e.g., bbrew)
+    # Remove only Homebrew-specific dev dependencies
     apk del --no-cache \
-    build-base \
     libffi-dev \
     openssl-dev \
-    ruby-dev \
-    gcc || true
+    ruby-dev || true
 
 # Switch to vscode user
 USER vscode

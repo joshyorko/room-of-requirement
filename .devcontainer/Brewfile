@@ -66,19 +66,22 @@ brew "sqlite"              # Lightweight SQL database
 brew "duckdb"              # Embedded analytics database
 
 # ============================================================================
-# SPECIALTY: Custom Taps
+# SPECIALTY: Custom Taps (must be before formulae that use them)
 # ============================================================================
-tap "hauler-dev/homebrew-tap"
 tap "dagger/tap"
-tap "valkyrie00/bbrew"
 
 # ============================================================================
 # SPECIALTY: Cross-Platform Tools
 # ============================================================================
-brew "valkyrie00/bbrew/bbrew"  # Bold Brew - TUI for Homebrew (Bluefin-style)
-cask "claude-code"             # Terminal-based AI coding assistant
-brew "hauler"                  # Airgap content management (Rancher) - from hauler-dev tap
-brew "container-use"           # Container MCP for coding agents - from dagger tap
+brew "dagger/tap/container-use"  # Container MCP for coding agents
+
+# ============================================================================
+# OPTIONAL: Uncomment if needed (may require source build or manual install)
+# ============================================================================
+# tap "hauler-dev/homebrew-tap"
+# brew "hauler-dev/homebrew-tap/hauler"  # Airgap content management (Rancher)
+# tap "valkyrie00/bbrew"
+# brew "valkyrie00/bbrew/bbrew"          # Bold Brew TUI (requires gcc to build)
 
 # ============================================================================
 # NOTE: The following tools are installed via Wolfi apk or direct download:
