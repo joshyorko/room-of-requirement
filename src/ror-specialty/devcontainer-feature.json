@@ -2,30 +2,20 @@
   "id": "ror-specialty",
   "version": "1.0.0",
   "name": "Room of Requirement Specialty Tools",
-  "description": "Specialty development tools not available in Homebrew: Sema4.AI (action-server v2.14.0, rcc v18.5.0), Dagger CI/CD, container-use MCP. All binaries verified with SHA256 checksums.",
+  "description": "Specialty development tools not available in Homebrew: Sema4.AI action-server and joshyorko RCC. All binaries verified with SHA256 checksums.",
   "documentationURL": "https://github.com/joshyorko/room-of-requirement",
   "licenseURL": "https://github.com/joshyorko/room-of-requirement/blob/main/LICENSE",
   "dependsOn": {},
   "options": {
     "installActionServer": {
       "type": "boolean",
-      "description": "Install Sema4.AI action-server (v2.14.0) for AI automation",
+      "description": "Install Sema4.AI action-server for AI automation",
       "default": true
     },
     "installRcc": {
       "type": "boolean",
-      "description": "Install Robocorp RCC (v18.5.0) for automation workflows",
+      "description": "Install joshyorko RCC fork for automation workflows",
       "default": true
-    },
-    "installDagger": {
-      "type": "boolean",
-      "description": "Install Dagger CLI for CI/CD and containerized pipelines",
-      "default": false
-    },
-    "installContainerUse": {
-      "type": "boolean",
-      "description": "Install container-use MCP for sandboxed development environments",
-      "default": false
     }
   }
 }
