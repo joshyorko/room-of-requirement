@@ -183,8 +183,10 @@ COPY .devcontainer/first-run-notice.txt /usr/local/etc/vscode-dev-containers/fir
 # Copy shell configuration (to /tmp for postCreate restore after features may overwrite it)
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /tmp/.zshrc-ror
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
+COPY --chown=vscode:vscode .devcontainer/config/.bashrc /tmp/.bashrc-ror
+COPY --chown=vscode:vscode .devcontainer/config/.bashrc /home/vscode/.bashrc
 
-# Copy starship configuration
+# Copy starship configuration (shared by bash and zsh)
 COPY --chown=vscode:vscode .devcontainer/config/starship.toml /home/vscode/.config/starship.toml
 
 # Copy post-create script for pre-built image usage

@@ -2,22 +2,26 @@
 # Optimized for container environments with minimal module overhead
 # Renders in <100ms with Nerd Font symbols
 
-# Prompt format: status - directory - git info - cmd duration - exit code
+# Prompt format: directory - git - cloud - duration - newline - prompt char
 format = """
 $status\
 $directory\
 $git_branch\
 $git_status\
+$aws\
+$gcloud\
+$azure\
+$kubernetes\
 $cmd_duration\
 $line_break\
 $character """
 
 add_newline = false
 
-# Exit code character
+# Prompt character (❯ style like default bash starship)
 [character]
-success_symbol = "[➜](bold green)"
-error_symbol = "[➜](bold red)"
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
 
 # Exit status from last command
 [status]
@@ -119,3 +123,30 @@ disabled = true
 
 [docker_context]
 disabled = true
+
+# AWS - shows region with cloud emoji (☁️)
+[aws]
+format = "on [$symbol($profile )(\\($region\\) )]($style)"
+symbol = "☁️  "
+style = "bold yellow"
+disabled = false
+
+# Google Cloud
+[gcloud]
+format = "on [$symbol$account(@$domain)(\\($region\\))]($style) "
+symbol = "☁️  "
+style = "bold blue"
+disabled = false
+
+# Azure
+[azure]
+format = "on [$symbol($subscription)]($style) "
+symbol = "☁️  "
+style = "bold blue"
+disabled = false
+
+# Kubernetes context
+[kubernetes]
+format = "on [⛵ $context(\\($namespace\\))]($style) "
+style = "bold blue"
+disabled = false
