@@ -3,6 +3,12 @@
 # Modern, lightweight zsh setup without oh-my-zsh
 
 # ============================================================================
+# DISABLE VS CODE SHELL INTEGRATION (conflicts with Starship prompt)
+# ============================================================================
+# VS Code injects prompt markers that display as %{%}∙%{%} when using Starship
+unset VSCODE_SHELL_INTEGRATION
+
+# ============================================================================
 # ZINIT PLUGIN MANAGER BOOTSTRAP
 # ============================================================================
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"
