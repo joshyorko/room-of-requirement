@@ -45,9 +45,13 @@ zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 # ============================================================================
 # HISTORY CONFIGURATION
 # ============================================================================
-export HISTFILE=~/.zsh_history
+# Use persistent volume directory for history (volume mounts as directory, not file)
+export HISTFILE=~/.zsh_history_dir/.zsh_history
 export HISTSIZE=10000
 export SAVEHIST=10000
+
+# Ensure history directory exists
+[[ -d ~/.zsh_history_dir ]] && touch "$HISTFILE" 2>/dev/null || true
 
 setopt INC_APPEND_HISTORY
 setopt SHARE_HISTORY
@@ -184,6 +188,97 @@ extract() {
         echo "File not found: $1"
     fi
 }
+edir() {
+    local editor_option=$1
+
+    # Check if tools are in PATH first
+    local needs_fzf=0
+    local needs_fd=0
+
+    # Check for fzf in PATH
+    if ! command -v fzf >/dev/null 2>&1; then
+        needs_fzf=1
+    fi
+
+    # Check for fd/fdfind in PATH
+    if ! (command -v fd >/dev/null 2>&1 || command -v fdfind >/dev/null 2>&1); then
+        needs_fd=1
+    fi
+
+    # Install only if needed
+    if [ $needs_fzf -eq 1 ]; then
+        echo "❌ 'fzf' is not installed. Installing..."
+        if command -v apt >/dev/null 2>&1; then
+            sudo apt update && sudo apt install -y fzf
+        elif command -v brew >/dev/null 2>&1; then
+            brew install fzf
+        elif command -v cargo >/dev/null 2>&1; then
+            cargo install fzf
+        else
+            echo "⚠️ Unable to install 'fzf'. Please install it manually."
+            return 1
+        fi
+    fi
+
+    if [ $needs_fd -eq 1 ]; then
+        echo "❌ 'fd' is not installed. Installing..."
+        if command -v apt >/dev/null 2>&1; then
+            sudo apt update && sudo apt install -y fd-find
+            # Link fdfind to fd only if fd doesn't exist
+            if command -v fdfind >/dev/null 2>&1 && ! command -v fd >/dev/null 2>&1; then
+                mkdir -p ~/.local/bin
+                ln -s $(which fdfind) ~/.local/bin/fd
+                export PATH="$HOME/.local/bin:$PATH"
+                echo "Linked 'fdfind' to 'fd'."
+            fi
+        elif command -v brew >/dev/null 2>&1; then
+            brew install fd
+        elif command -v cargo >/dev/null 2>&1; then
+            cargo install fd-find
+        else
+            echo "⚠️ Unable to install 'fd'. Please install it manually."
+            return 1
+        fi
+    fi
+
+    # Use fd or fdfind (whichever is available)
+    local fd_cmd
+    if command -v fd >/dev/null 2>&1; then
+        fd_cmd="fd"
+    else
+        fd_cmd="fdfind"
+    fi
+
+    # Use fd to search directories
+    local selected_dir
+    selected_dir=$(
+        { $fd_cmd . --type d "$PWD" 2>/dev/null; $fd_cmd . --type d /home 2>/dev/null; $fd_cmd . --type d /workspaces 2>/dev/null; } |
+        fzf --prompt="Select a directory: "
+    )
+
+    # Check if a directory was selected
+    if [ -n "$selected_dir" ]; then
+        case $editor_option in
+            -c)
+                if command -v code >/dev/null 2>&1; then
+                    code "$selected_dir"
+                else
+                    echo "❌ 'code' is not installed."
+                    return 1
+                fi
+                ;;
+            -n) nvim "$selected_dir" ;;  # Open in nvim if -n option is provided
+            *) cd "$selected_dir" ;;     # Default behavior: change to the selected directory
+        esac
+    else
+        echo "🚫 No directory selected."
+    fi
+}
+
+# Enable Bedrock integration
+#export CLAUDE_CODE_USE_BEDROCK=1
+#export AWS_REGION=us-east-1  # or your preferred region
+
 
 # ============================================================================
 # STARSHIP PROMPT (must be last)

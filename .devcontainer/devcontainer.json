@@ -18,7 +18,7 @@
     "source=ror-homebrew-cache,target=/home/linuxbrew/.cache/Homebrew,type=volume",
     "source=ror-mise-cache,target=/home/vscode/.local/share/mise,type=volume",
     "source=ror-npm-cache,target=/home/vscode/.npm,type=volume",
-    "source=ror-zsh-history,target=/home/vscode/.zsh_history,type=volume",
+    "source=ror-zsh-history,target=/home/vscode/.zsh_history_dir,type=volume",
     "source=ror-docker-data,target=/var/lib/docker,type=volume"
   ],
   "customizations": {
@@ -46,6 +46,8 @@
             ]
           }
         },
+        "terminal.integrated.shellIntegration.enabled": true,
+        "terminal.integrated.shellIntegration.decorationsEnabled": "never",
         "editor.defaultFormatter": null,
         "editor.formatOnSave": true
       }
