@@ -1,6 +1,6 @@
 {
   "name": "Room of Requirement",
-  "version": "0.0.0",
+  "version": "1.0.0",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
@@ -35,11 +35,15 @@
         "terminal.integrated.profiles.linux": {
           "zsh": {
             "path": "/bin/zsh",
-            "args": ["-l"]
+            "args": [
+              "-l"
+            ]
           },
           "nushell": {
             "path": "/home/linuxbrew/.linuxbrew/bin/nu",
-            "args": ["-l"]
+            "args": [
+              "-l"
+            ]
           }
         },
         "editor.defaultFormatter": null,
