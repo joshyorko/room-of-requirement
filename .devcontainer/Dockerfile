@@ -15,7 +15,7 @@ ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:0e0b67f4c87cf23
 # ============================================================================
 FROM ${WOLFI_BASE_IMAGE} AS base
 
-LABEL maintainer="Josh Yorke <josh@example.com>"
+LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement"
 LABEL org.opencontainers.image.description="Modular DevContainer with Wolfi OS - tools via features"
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
