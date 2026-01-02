@@ -65,9 +65,9 @@ env:
   FEATURES_NAMESPACE: joshyorko/devcontainer-features
 
 permissions:
-  contents: write  # Required for committing lockfile updates
+  contents: write # Required for committing lockfile updates
   packages: write
-  id-token: write  # Required for keyless signing with Cosign
+  id-token: write # Required for keyless signing with Cosign
 
 jobs:
   detect-features:
