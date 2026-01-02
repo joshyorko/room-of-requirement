@@ -49,7 +49,30 @@ RUN apk add --no-cache \
     # Official Wolfi Docker-in-Docker packages (from Chainguard)
     docker \
     docker-dind \
-    dockerd-oci-entrypoint && \
+    dockerd-oci-entrypoint \
+    # Playwright/Browser dependencies (headless Chromium support)
+    # These are the Wolfi equivalents of Ubuntu's browser libs
+    alsa-lib \
+    at-spi2-core \
+    cups-libs \
+    dbus-libs \
+    gtk+3.0 \
+    libdrm \
+    libx11 \
+    libxcb \
+    libxcomposite \
+    libxdamage \
+    libxext \
+    libxfixes \
+    libxkbcommon \
+    libxrandr \
+    libxshmfence \
+    mesa \
+    mesa-gbm \
+    nss \
+    nspr \
+    pango \
+    xclip && \
     # Verify critical security tools
     curl --version && \
     git --version
@@ -147,8 +170,8 @@ COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 
-# Copy Brewfile for on-demand installation
-COPY --chown=vscode:vscode .devcontainer/Brewfile /tmp/Brewfile
+# Copy Brewfiles for on-demand installation (bbrew TUI selects from these)
+COPY --chown=vscode:vscode .devcontainer/brew /tmp/brew
 
 # Copy justfile for Bluefin-style commands (ujust bbrew, etc.)
 RUN mkdir -p /usr/share/ror
@@ -180,8 +203,8 @@ ENV HOME=/home/vscode \
     SHELL=/bin/zsh \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
 
-# Brewfile is available at /tmp/Brewfile for on-demand installation
-# Run: just bbrew (or brew bundle install --file=/tmp/Brewfile)
+# Brewfiles are available at /tmp/brew/ for on-demand installation
+# Run: ujust bbrew (TUI selector) or ujust brew-install-all (install everything)
 
 WORKDIR /workspaces
 
