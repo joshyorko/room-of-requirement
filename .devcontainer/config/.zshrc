@@ -135,9 +135,18 @@ fi
 # ============================================================================
 # PLUGIN LOADING (optional)
 # ============================================================================
-# Add custom Oh My ZSH plugins if available
-if [ -d ~/.oh-my-zsh/custom/plugins ]; then
-    plugins=(zsh-autosuggestions zsh-syntax-highlighting)
+# Load zsh-autosuggestions if installed via Homebrew or oh-my-zsh
+if [ -f "${HOMEBREW_PREFIX}/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
+    source "${HOMEBREW_PREFIX}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
+elif [ -f ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
+    source ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
+fi
+
+# Load zsh-syntax-highlighting if installed via Homebrew or oh-my-zsh
+if [ -f "${HOMEBREW_PREFIX}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
+    source "${HOMEBREW_PREFIX}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
+elif [ -f ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
+    source ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
 fi
 
 # ============================================================================

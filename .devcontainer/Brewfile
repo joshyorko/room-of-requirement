@@ -25,6 +25,12 @@ brew "gh"                  # GitHub CLI
 brew "awscli"              # AWS CLI v2
 
 # ============================================================================
+# CORE: Shell Enhancements
+# ============================================================================
+brew "zsh-autosuggestions"      # Fish-like autosuggestions for zsh
+brew "zsh-syntax-highlighting"  # Syntax highlighting for zsh
+
+# ============================================================================
 # SPECIALTY: Cross-Platform Casks (Linux-compatible)
 # ============================================================================
 cask "claude-code"         # Terminal-based AI coding assistant

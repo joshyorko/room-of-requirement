@@ -29,20 +29,26 @@ ENV LANG=en_US.UTF-8 \
 RUN apk add --no-cache \
     bash \
     ca-certificates \
+    coreutils \
     curl \
+    findutils \
     git \
     glibc \
+    glibc-locales \
     libstdc++ \
     openssh-client \
     posix-libc-utils \
+    procps \
     shadow \
     sudo \
     tini \
+    util-linux \
     wget \
     zsh && \
     # Verify critical security tools
     curl --version && \
-    git --version
+    git --version && \
+    mount --version
 
 # ============================================================================
 # STAGE 2: User Setup
@@ -124,6 +130,9 @@ COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 
+# Copy Brewfile for installation after user switch
+COPY --chown=vscode:vscode .devcontainer/Brewfile /tmp/Brewfile
+
 # Create workspace and cache directories with restricted permissions
 RUN mkdir -p \
     /home/vscode/.cache \
@@ -148,6 +157,11 @@ USER vscode
 ENV HOME=/home/vscode \
     SHELL=/bin/zsh \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
+
+# Install Brewfile packages as vscode user (bakes tools into image)
+RUN brew bundle install --file=/tmp/Brewfile --no-lock 2>&1 || \
+    echo "Note: Some brew packages may have failed (casks often fail on Linux)" && \
+    rm -f /tmp/Brewfile /tmp/Brewfile.lock.json
 
 WORKDIR /workspaces
 

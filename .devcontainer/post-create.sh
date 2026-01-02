@@ -42,36 +42,37 @@ fi
 # ============================================================================
 # T026: Brewfile Detection & Installation
 # ============================================================================
+# Ensure Homebrew is in PATH
+export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
+
+BREWFILE_PATH=""
 if [ -f "Brewfile" ]; then
-    log "Detected Brewfile - installing Homebrew dependencies"
+    BREWFILE_PATH="Brewfile"
+elif [ -f ".devcontainer/Brewfile" ]; then
+    BREWFILE_PATH=".devcontainer/Brewfile"
+fi
+
+if [ -n "${BREWFILE_PATH}" ]; then
+    log "Detected Brewfile at ${BREWFILE_PATH}"
 
     if ! command -v brew &> /dev/null; then
         warn "Homebrew not found in PATH, skipping Brewfile installation"
     else
-        if brew bundle check --file=Brewfile > /dev/null 2>&1; then
-            log "Brewfile dependencies already satisfied"
+        log "Homebrew found at $(which brew)"
+        log "Installing Brewfile dependencies from ${BREWFILE_PATH}"
+        # Use --no-lock to avoid permission issues with Brewfile.lock.json
+        if brew bundle install --file="${BREWFILE_PATH}" --no-lock; then
+            log "✓ Brewfile dependencies installed successfully"
         else
-            log "Installing Brewfile dependencies"
-            if brew bundle install --file=Brewfile; then
-                log "✓ Brewfile dependencies installed successfully"
-            else
-                warn "Some Brewfile dependencies may have failed to install"
-            fi
-        fi
-    fi
-elif [ -f ".devcontainer/Brewfile" ]; then
-    log "Detected .devcontainer/Brewfile - installing Homebrew dependencies"
-
-    if command -v brew &> /dev/null; then
-        if brew bundle check --file=.devcontainer/Brewfile > /dev/null 2>&1; then
-            log "Brewfile dependencies already satisfied"
-        else
-            log "Installing Brewfile dependencies from .devcontainer/Brewfile"
-            if brew bundle install --file=.devcontainer/Brewfile; then
-                log "✓ Brewfile dependencies installed successfully"
-            else
-                warn "Some Brewfile dependencies may have failed to install"
-            fi
+            warn "Some Brewfile dependencies may have failed to install"
+            # Try installing individually for better error messages
+            log "Attempting individual package installation..."
+            while IFS= read -r line; do
+                if [[ "$line" =~ ^brew\ \"([^\"]+)\" ]]; then
+                    pkg="${BASH_REMATCH[1]}"
+                    brew install "$pkg" 2>/dev/null || warn "Failed to install: $pkg"
+                fi
+            done < "${BREWFILE_PATH}"
         fi
     fi
 else
