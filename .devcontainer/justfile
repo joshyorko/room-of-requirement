@@ -5,14 +5,22 @@
 default:
     @just --list
 
-# Launch Bold Brew TUI (Bluefin-style package manager)
+# Install applications from curated Brewfiles
 bbrew:
-    @if command -v bbrew >/dev/null 2>&1; then \
-        bbrew; \
-    else \
-        echo "bbrew not installed. Installing now..."; \
-        brew tap valkyrie00/bbrew && brew install valkyrie00/bbrew/bbrew && bbrew; \
+    #!/usr/bin/env bash
+    BREW_DIR="${BREW_DIR:-.devcontainer/brew}"
+    if ! command -v gum &>/dev/null; then
+        echo "Installing gum..."
+        brew install gum
     fi
+    if ! command -v bbrew &>/dev/null; then
+        if gum confirm "Bold Brew is not installed, would you like to install it?"; then
+            brew install Valkyrie00/homebrew-bbrew/bbrew
+        else
+            exit 0
+        fi
+    fi
+    bbrew -f "${BREW_DIR}/$(gum choose $(find "${BREW_DIR}"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
 
 # Install bbrew TUI only (minimal setup)
 install-bbrew:
