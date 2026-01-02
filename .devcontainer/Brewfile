@@ -12,6 +12,7 @@ brew "uv"                  # Fast Python package installer
 # ============================================================================
 # CORE: Cloud-Native & Kubernetes
 # ============================================================================
+brew "k3d"                 # k3s in Docker - local Kubernetes clusters
 brew "kubernetes-cli"      # kubectl - Kubernetes CLI
 brew "helm"                # Kubernetes package manager
 brew "k9s"                 # Kubernetes TUI

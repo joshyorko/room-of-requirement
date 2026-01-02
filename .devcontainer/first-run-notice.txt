@@ -9,13 +9,14 @@ This container has manifested itself as your development environment.
 
 ┌──────────────────── DEVELOPMENT ENVIRONMENT ──────────────────┐
 │                                                                    │
-│  Ubuntu Noble (24.04) - A foundation that adapts to your needs     │
-│  Docker (host socket) - Containers within containers, a paradox    │
+│  Wolfi OS           - Minimal, secure container-native foundation  │
+│  Docker-in-Docker   - Containers within containers, a paradox      │
 │  k3d & k9s          - Orchestrating clusters in miniature worlds   │
 │  DevSpace           - Streamlined Kubernetes development workflows │
+│  mise               - Polyglot tool manager (Node, Python, Go)     │
 │  UV                 - Python's swift shadow, installing dependencies│
 │  GitHub CLI (gh)    - Command your repositories with mystical powers│
-│  Zsh + Oh My Zsh    - Shell that echoes your commands back to you  │
+│  Zsh + Starship     - Modern shell with a stellar prompt           │
 │  container-use      - Sandboxed dev environments for coding agents │
 │                                                                    │
 └────────────────────────────────────────────────────────────────────┘
@@ -26,10 +27,12 @@ USEFUL COMMANDS TO TRY
   $ k3d cluster create       # Conjure a Kubernetes cluster from nothing
   $ k9s                      # Navigate the ethereal dashboard
   $ devspace version         # Check your Kubernetes development accelerator
+  $ mise --version           # Verify your polyglot tool manager
   $ gh repo list             # List your GitHub repositories
   $ uv --version             # Verify the version of your package conjurer
   $ container-use version    # Check your sandboxed environment manager
   $ dagger version           # Verify your CI/CD pipeline orchestrator
+  $ starship bug-report      # Verify Starship prompt configuration
 
 
 

@@ -122,6 +122,10 @@ RUN apk update && \
     openssl && \
     apk cache clean
 
+# Copy first run notice for VS Code to display
+RUN mkdir -p /usr/local/etc/vscode-dev-containers
+COPY .devcontainer/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
+
 # Copy shell configuration
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 
