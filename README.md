@@ -194,7 +194,9 @@ brew bundle --file=<path-to-Brewfile>
 ### Wolfi OS Foundation
 - **Minimal attack surface**: Only essential packages installed
 - **Rapid CVE patching**: Chainguard's security-focused distribution
-- **glibc compatible**: Works with most Linux binaries
+- **glibc compatible**: Works with most Linux binaries (native glibc, not musl like Alpine)
+  - **Note**: `gcompat` is not needed and not available in Wolfi repos
+  - VS Code DevContainer gcompat installation is disabled via `DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true`
 
 ### Supply Chain Security
 - **SBOM generation**: Every image includes a Software Bill of Materials
