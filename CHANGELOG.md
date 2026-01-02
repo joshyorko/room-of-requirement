@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.2.0](https://github.com/joshyorko/room-of-requirement/compare/v1.1.2...v1.2.0) (2026-01-02)
+
+
+### ✨ Features
+
+* add bash configuration and enhance starship prompt for cloud integration ([bdb7d60](https://github.com/joshyorko/room-of-requirement/commit/bdb7d6016f33ff27e38e72038d6e971edc697bd5))
+
+
+### 🐛 Bug Fixes
+
+* update Dockerfile dependencies for Playwright and enhance justfile output ([981f4e5](https://github.com/joshyorko/room-of-requirement/commit/981f4e5c4c08b3a7ea0dc5a4ee944a7cc6483600))
+
+
+### ♻️ Refactoring
+
+* update devcontainer feature description and remove unused options ([01f9893](https://github.com/joshyorko/room-of-requirement/commit/01f989363b3d510e8475580e0515ae4780fb22b3))
+
 ## [1.1.2](https://github.com/joshyorko/room-of-requirement/compare/v1.1.1...v1.1.2) (2026-01-02)
 
 

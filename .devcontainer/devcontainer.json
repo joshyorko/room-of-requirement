@@ -1,6 +1,6 @@
 {
   "name": "Room of Requirement",
-  "version": "1.1.2",
+  "version": "1.2.0",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
