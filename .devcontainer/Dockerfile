@@ -182,7 +182,8 @@ RUN apk update && \
     apk cache clean && \
     # Remove gcompat from world file if present (VS Code may try to add it)
     # Wolfi uses native glibc, not musl - gcompat is not needed and not available
-    sed -i '/^gcompat$/d' /etc/apk/world 2>/dev/null || true
+    # Use broader pattern to catch gcompat with or without version constraints
+    sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true
 
 # Copy first run notice for VS Code to display
 RUN mkdir -p /usr/local/etc/vscode-dev-containers
