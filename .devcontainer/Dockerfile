@@ -47,8 +47,7 @@ RUN apk add --no-cache \
     zsh && \
     # Verify critical security tools
     curl --version && \
-    git --version && \
-    mount --version
+    git --version
 
 # ============================================================================
 # STAGE 2: User Setup
