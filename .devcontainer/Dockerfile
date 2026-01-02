@@ -71,6 +71,7 @@ FROM users AS homebrew
 RUN apk add --no-cache \
     build-base \
     libffi-dev \
+    openssl \
     openssl-dev \
     ruby-dev \
     procps \
