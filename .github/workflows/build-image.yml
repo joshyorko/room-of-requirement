@@ -352,11 +352,8 @@ jobs:
           fail-build: ${{ inputs.fail_on_critical != false }}
           severity-cutoff: critical
           output-format: sarif
+          config: .grype.yaml
         continue-on-error: true
-        env:
-          # Prevent Grype from looking for language-specific dependency files
-          # This container has no Go, Node.js, or Python dependencies at build time
-          GRYPE_MATCH_GO_BINARY_ONLY: "true"
 
       - name: Upload SARIF report
         if: always()

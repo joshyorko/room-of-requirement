@@ -6,9 +6,8 @@
 # ============================================================================
 # ARG PINS: Base image version
 # ============================================================================
-# Use Wolfi base with SHA pinning for reproducibility and security
-# Latest stable: wolfi-base:latest (auto-updated by maintenance robot)
-ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:0e0b67f4c87cf23cb3b8a49f22fd64b8e630dbb57a20a2b0b2e5ab8f9e1a3b4c
+# Wolfi base image - kept current by maintenance robot for security patches
+ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest
 
 # ============================================================================
 # STAGE 1: Base Image with System Packages
