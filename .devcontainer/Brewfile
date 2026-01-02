@@ -76,12 +76,16 @@ tap "dagger/tap"
 brew "dagger/tap/container-use"  # Container MCP for coding agents
 
 # ============================================================================
-# OPTIONAL: Uncomment if needed (may require source build or manual install)
+# SPECIALTY: TUI Tools (built from source)
+# ============================================================================
+tap "valkyrie00/bbrew"
+brew "bbrew"                             # Bold Brew TUI for Homebrew
+
+# ============================================================================
+# OPTIONAL: Uncomment if needed
 # ============================================================================
 # tap "hauler-dev/homebrew-tap"
 # brew "hauler-dev/homebrew-tap/hauler"  # Airgap content management (Rancher)
-# tap "valkyrie00/bbrew"
-# brew "valkyrie00/bbrew/bbrew"          # Bold Brew TUI (requires gcc to build)
 
 # ============================================================================
 # NOTE: The following tools are installed via Wolfi apk or direct download:
