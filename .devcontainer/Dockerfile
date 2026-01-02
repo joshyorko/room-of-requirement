@@ -51,12 +51,11 @@ RUN apk add --no-cache \
     docker-dind \
     dockerd-oci-entrypoint \
     # Playwright/Browser dependencies (headless Chromium support)
-    # These are the Wolfi equivalents of Ubuntu's browser libs
+    # Only packages available in Wolfi - nss includes nspr, gtk3 not available
     alsa-lib \
     at-spi2-core \
     cups-libs \
     dbus-libs \
-    gtk+3.0 \
     libdrm \
     libx11 \
     libxcb \
@@ -70,9 +69,7 @@ RUN apk add --no-cache \
     mesa \
     mesa-gbm \
     nss \
-    nspr \
-    pango \
-    xclip && \
+    pango && \
     # Verify critical security tools
     curl --version && \
     git --version
