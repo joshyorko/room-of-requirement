@@ -1,133 +1,145 @@
-# Copilot Instructions for Room of Requirement
+# Room of Requirement - AI Agent Guidelines
 
 ## Project Overview
-This is a production-ready DevContainer template called "Room of Requirement" - a magical cloud-native development environment. The project provides a customizable Ubuntu Noble (24.04) container with Docker, Kubernetes (k3d), and development tools pre-configured.
 
-## Architecture & Key Components
+A modular DevContainer platform built on Wolfi OS with **Homebrew as the first-class package manager**. Most tools are installed via curated Brewfiles rather than custom DevContainer Features.
 
-### Multi-stage Dockerfile (`.devcontainer/Dockerfile`)
-- **Base stage**: Ubuntu 24.04 with first-run notice
-- **System deps**: Essential packages including browser dependencies for GUI testing
-- **Dev tools**: C/C++ development, debugging tools (gdb, lldb, valgrind)
-- **Cloud tools**: kubectl, AWS CLI, k3d, k9s, MinIO client, Sema4.AI tools
-- **Final stage**: ZSH setup with custom dotfiles from external repo
+**Architecture**: Wolfi OS (system deps) → Homebrew (CLI tools + language runtimes via mise)
 
-### DevContainer Configuration
-- Uses docker-in-docker feature (v2.12.4) for Docker daemon access
-- In Kubernetes/DevPod: Docker runs in a sidecar container sharing network/storage
-- Runs with `--privileged` flag for container-in-container capabilities
-- Custom `postCreateCommand` runs post-create.sh script with resilient error handling
-- Volume mount for UV cache to persist Python package downloads
-- Remote user: `vscode` with ZSH as default shell
+## Repository Structure
 
-## Critical Workflows
-
-### Building & Publishing
-```bash
-# Local development - use VS Code Dev Containers extension
-# Production - GitHub Actions automatically builds and pushes to GHCR
-
-# Manual CLI build (if needed):
-npx @devcontainers/cli build --workspace-folder . --image-name ghcr.io/joshyorko/ror:latest
+```
+.devcontainer/          # Container definition
+  ├── Dockerfile        # Wolfi OS + Homebrew base
+  ├── brew/             # Curated Brewfiles (core, cli, k8s, cloud, security, data, dev)
+  ├── justfile          # ujust commands
+  └── post-create.sh    # Hydration script
+automation/maintenance-robot/  # RCC automation for dependency updates
+src/ror-specialty/      # ONLY feature - tools NOT in Homebrew (Sema4.AI)
+templates/ror-starter/  # Starter template
+specs/                  # Feature specifications (SpecKit workflow)
 ```
 
-### CI/CD Pipeline (`.github/workflows/cicd.yaml`)
-- Triggered on push to `main` or manual dispatch
-- Builds DevContainer using `@devcontainers/cli`
-- Pushes to GitHub Container Registry (`ghcr.io/joshyorko/ror`)
-- Tags both SHA and `latest`
-- Generates detailed build summary with usage examples
+## Homebrew-First Philosophy
 
-## Project-Specific Conventions
+**Prefer Homebrew over custom Features.** Only use `src/ror-specialty/` for tools that:
+1. Are NOT available in Homebrew
+2. Require SHA256 checksum verification for security
 
-### File Organization
-- `.devcontainer/`: Core container configuration
-- `.github/workflows/`: CI/CD automation
-- `first-run-notice.txt`: Welcome message shown on container startup
+Tools like dagger, container-use, kubectl, etc. are now in Brewfiles, not Features.
 
-### External Dependencies
-- **Dotfiles**: Pulls ZSH config from `joshyorko/.dotfiles` repo
-  - Downloads `.zshrc` and `scrapeCrawl.py` from external repo during build
-  - Clones ZSH plugins: `zsh-autosuggestions` and `zsh-syntax-highlighting`
-  - Sets proper ownership for `vscode` user in `/home/vscode/.oh-my-zsh/custom/plugins`
-- **Cloud Tools**: Direct downloads from official sources (not package managers)
-- **Sema4.AI**: Specific version pinning for `action-server` (v2.14.0) and `rcc` (v18.5.0)
-  - `action-server`: AI automation server from Sema4.AI platform
-  - `rcc`: Robocorp Control Room client for task automation
-  - Both installed to `/usr/local/bin/` with execute permissions
+### Pre-installed (core.Brewfile, baked into image)
+- mise, starship, zoxide, nushell
 
-### Magic Commands & Features
+### On-demand Brewfiles (.devcontainer/brew/)
+- `cli.Brewfile` - bat, eza, fzf, ripgrep, jq, yq
+- `k8s.Brewfile` - kubectl, helm, k9s, dagger, devspace
+- `cloud.Brewfile` - aws-cli, azure-cli, terraform
+- `security.Brewfile` - cosign, grype, syft, trivy
+- `data.Brewfile` - duckdb, sqlite, httpie
+
+## Key Patterns
+
+### ror-specialty Feature (src/ror-specialty/)
+The ONLY custom Feature - for tools not in Homebrew. Each tool requires:
+- `devcontainer-feature.json` - manifest with options
+- `install.sh` - installation with **mandatory SHA256 checksum verification**
+
+**Example pattern** from [src/ror-specialty/install.sh](src/ror-specialty/install.sh):
 ```bash
-# Post-create auto-installs these tools:
-k3d --version          # Kubernetes in Docker
-k9s version           # Kubernetes CLI UI
-uv --version          # Python package manager
-duckdb --version      # Embedded analytics database
-
-# Sema4.AI automation tools:
-action-server version    # AI action automation server
-rcc --version              # Robocorp Control Room client
-# Example usage:
-# action-server new      # Create new action project
-# rcc create             # Create new robot/automation
-
-# Container Use (sandboxed dev environments for coding agents):
-container-use version    # Check container-use version
-# Example usage with Claude Code:
-# claude mcp add container-use -- container-use stdio
-# container-use list     # List all environments
-# container-use checkout {id}  # Inspect agent's work
-# container-use merge {id}     # Accept agent's changes
-
-# Custom shell enhancement:
-# - ZSH autosuggestions and syntax highlighting plugins
-# - Custom .zshrc from external dotfiles repo
-# - scrapeCrawl.py utility script in home directory
+# All direct downloads MUST include checksum verification
+download_and_verify "$url" "$dest" "$sha256"
 ```
 
-## Integration Points
+### Adding New Tools
 
-### Docker Integration
-- Docker-in-Docker pattern using DevContainer feature
-- In local environments: Starts Docker daemon inside the container
-- In Kubernetes/DevPod: Uses sidecar container pattern for Docker daemon
-- Runs with privileged mode for full container capabilities
-- Compatible with Docker Desktop, DevPod on Kubernetes, and other container runtimes
+**If available in Homebrew**: Add to appropriate Brewfile in `.devcontainer/brew/`
 
-### Kubernetes Development
-- k3d for local cluster creation
-- kubectl pre-configured
-- k9s for interactive cluster management
+**If NOT in Homebrew**: Add to `src/ror-specialty/install.sh` with:
+1. Version and SHA256 checksum variables
+2. Allowlist entry in `automation/maintenance-robot/allowlists/downloads.json`
 
-### VS Code Extensions
-- `ms-azuretools.vscode-containers`: DevContainer management
-- `sema4ai.sema4ai`: AI/automation development
-  - Provides project templates for AI actions and automations
-  - Integrates with `action-server` and `rcc` tools
-  - Supports robot framework development
-- `github.vscode-github-actions`: Workflow editing
-- `ms-python.python`: Python development with uv integration
+### Maintenance Robot (Automated Dependency Updates)
+The Python-based maintenance robot in `automation/maintenance-robot/` automatically updates:
+- **ror-specialty tools** - versions + SHA256 checksums (via `downloads.json`)
+- **PyPI packages** - for the maintenance robot itself (via `downloads.json`)
+- **GitHub Actions** - workflow `uses:` references (via `github_actions.json`)
+- **Devcontainer lockfile** - feature digest pinning
 
-### Sema4.AI Integration Patterns
-- **Version Strategy**: Pin exact versions in Dockerfile for reproducibility
-- **Installation**: Direct binary downloads to `/usr/local/bin/` (not package managers)
-- **Development Flow**:
-  - Use `action-server new` to create AI action projects
-  - Use `rcc` for Robocorp automation workflows
-  - VS Code extension provides templates and debugging support
+**Note**: Homebrew tools are NOT auto-updated. They're managed via curated Brewfiles.
 
-## Development Patterns
-
-When modifying this DevContainer:
-1. **Dockerfile changes**: Use multi-stage pattern to keep images lean
-2. **Tool versions**: Pin specific versions for reproducibility (see Sema4.AI example)
-3. **Package management**: Prefer official installers over apt packages for cloud tools
-4. **Customization**: Edit `devcontainer.json` features rather than Dockerfile for common tools
-5. **Testing**: Use the CI/CD pipeline to validate changes before merging
-
-## Quick Start for Contributors
+**Run locally:**
 ```bash
-# Open in VS Code with Dev Containers extension
-# Container will auto-build and install all dependencies
-# First-run notice provides helpful commands to try
+rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
 ```
+
+### Version Pinning Convention
+Tool versions in `src/ror-specialty/install.sh` are pinned with checksums:
+```bash
+RCC_VERSION="18.12.1"
+RCC_SHA256="ec11807a08b23a098959a717e8011bcb776c56c2f0eaeded80b5a7dc0cb0da3a"
+```
+The maintenance robot updates these via regex patterns defined in allowlists.
+
+## Developer Workflows
+
+### Building the DevContainer
+```bash
+# Test build locally
+devcontainer build --workspace-folder .
+
+# Lint Dockerfile
+hadolint .devcontainer/Dockerfile
+```
+
+### Running Maintenance Tasks
+```bash
+# Full maintenance run
+rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
+
+# Individual targets
+rcc run -r automation/maintenance-robot/robot.yaml -t update-workflows
+rcc run -r automation/maintenance-robot/robot.yaml -t update-downloads
+rcc run -r automation/maintenance-robot/robot.yaml -t update-lockfile
+```
+
+### Homebrew Tools (via ujust)
+```bash
+ujust bbrew          # TUI to select and install from curated Brewfiles
+ujust brew-install-all  # Install all packages from all Brewfiles
+```
+
+## Commit Convention
+
+Uses conventional commits with release-please automation:
+- `feat:` → ✨ Features (triggers minor version)
+- `fix:` → 🐛 Bug Fixes (triggers patch)
+- `security:` → 🔒 Security
+- `deps:` → 📦 Dependencies
+
+## CI/CD Workflows
+
+| Workflow | Trigger | Purpose |
+|----------|---------|---------|
+| `cicd.yaml` | PR merge to main | Build and push DevContainer image to GHCR |
+| `rcc-maintenance.yml` | Daily cron + dispatch | Auto-update pinned versions via allowlists |
+| `release.yml` | Release-please | Publish semantic versioned releases |
+
+## Adding New Specialty Tools
+
+1. Add version/checksum to [src/ror-specialty/install.sh](src/ror-specialty/install.sh)
+2. Add allowlist entry to [automation/maintenance-robot/allowlists/downloads.json](automation/maintenance-robot/allowlists/downloads.json) with:
+   - `repo` or `source` (github/pypi/npm)
+   - `download_url_template`
+   - `targets[].file` and `targets[].patterns` (regex with named group `(?P<version>...)`)
+   - `targets[].sha256_pattern` for checksum fields
+
+## SpecKit Workflow
+
+Feature development follows the SpecKit pattern in `specs/`:
+1. `spec.md` - User stories and requirements
+2. `plan.md` - Implementation plan with constitution checks
+3. `tasks.md` - Actionable task breakdown
+4. Supporting docs: `research.md`, `data-model.md`, `contracts/`
+
+Use the speckit agents (`@speckit.specify`, `@speckit.plan`, `@speckit.tasks`) for structured feature development.

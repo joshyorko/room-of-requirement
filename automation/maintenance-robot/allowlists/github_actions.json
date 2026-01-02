@@ -5,6 +5,12 @@
     "max_major": 5,
     "include_prerelease": false
   },
+  "actions/cache": {
+    "repo": "actions/cache",
+    "source": "release",
+    "max_major": 4,
+    "include_prerelease": false
+  },
   "docker/login-action": {
     "repo": "docker/login-action",
     "source": "release",

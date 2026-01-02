@@ -2,21 +2,27 @@
 # https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-robotyaml
 
 tasks:
+  # Full maintenance run - updates workflows, ror-specialty tools, PyPI packages, and lockfile
   maintenance:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t maintenance
 
+  # Update GitHub Actions workflow versions only
   update-workflows:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_workflows_only
 
+  # Update ror-specialty tools and PyPI packages with version/checksum updates
   update-downloads:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_downloads_only
 
+  # Regenerate devcontainer-lock.json only
   update-lockfile:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_devcontainer_lock_only
 
+  # Log Homebrew versions (informational only - no file updates)
   update-homebrew:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_homebrew_only
 
+  # Test devcontainer build
   test-devcontainer:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t test_devcontainer_build
 

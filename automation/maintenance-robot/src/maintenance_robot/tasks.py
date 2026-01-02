@@ -25,13 +25,24 @@ OUTPUT_DIR = ROBOT_ROOT / "output"
 
 @task
 def maintenance() -> None:
-    """Run all maintenance tasks: update workflows and devcontainer assets."""
+    """Run all maintenance tasks: update workflows, specialty tools, and devcontainer lock.
+
+    This robot focuses on:
+    1. GitHub Actions workflow version updates (github_actions.json)
+    2. ror-specialty tool version updates with SHA256 checksums (downloads.json)
+    3. PyPI package updates for the maintenance robot itself (downloads.json)
+    4. Devcontainer lockfile regeneration
+
+    Homebrew tools are NOT auto-updated - they're managed via curated Brewfiles
+    and updated manually or via `brew update && brew upgrade`.
+    """
 
     allowlists = _load_allowlists()
     OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
 
     report = MaintenanceReport()
 
+    # Update GitHub Actions workflows
     actions_allowlist = allowlists.get("github_actions", {})
     workflows_dir = REPO_ROOT / ".github" / "workflows"
     if workflows_dir.exists():
@@ -42,17 +53,19 @@ def maintenance() -> None:
     else:
         logging.info("No workflows directory found; skipping workflow updates.")
 
+    # Update ror-specialty tools and PyPI packages
     downloads_allowlist = allowlists.get("downloads", {})
     if downloads_allowlist:
         downloads_updater = DownloadsUpdater(downloads_allowlist, repo_root=REPO_ROOT, report=report)
         downloads_updater.update_targets()
 
+    # Log Homebrew versions for informational purposes (no updates)
     homebrew_allowlist = allowlists.get("homebrew", {})
     if homebrew_allowlist:
         homebrew_updater = HomebrewUpdater(homebrew_allowlist, report=report)
         versions = homebrew_updater.update_formulas()
         if versions:
-            logging.info("Homebrew formula versions: %s", versions)
+            logging.info("Homebrew formula versions (baked into image): %s", versions)
 
     # Regenerate devcontainer lockfile to keep feature digests pinned
     update_devcontainer_lockfile(REPO_ROOT, report)
@@ -78,7 +91,7 @@ def update_workflows_only() -> None:
 
 @task
 def update_downloads_only() -> None:
-    """Update download URLs only."""
+    """Update ror-specialty tools and PyPI packages with version/checksum updates."""
     allowlists = _load_allowlists()
     report = MaintenanceReport()
     downloads_updater = DownloadsUpdater(
@@ -129,13 +142,17 @@ def test_devcontainer_build() -> None:
 
 @task
 def update_homebrew_only() -> None:
-    """Update Homebrew formula versions only."""
+    """Query and log Homebrew formula versions (informational only - no file updates).
+
+    Since we use Homebrew-first with curated Brewfiles, tools are updated via
+    `brew update && brew upgrade`, not via this maintenance robot.
+    """
     allowlists = _load_allowlists()
     report = MaintenanceReport()
     homebrew_updater = HomebrewUpdater(allowlists.get("homebrew", {}), report=report)
     versions = homebrew_updater.update_formulas()
     if versions:
-        logging.info("Homebrew formula versions: %s", versions)
+        logging.info("Homebrew formula versions (baked into image): %s", versions)
     _write_report(report)
 
 

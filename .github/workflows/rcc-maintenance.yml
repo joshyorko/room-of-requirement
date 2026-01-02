@@ -43,7 +43,7 @@ jobs:
           rcc version
 
       - name: Cache ROBOCORP_HOME
-        uses: actions/cache@v4
+        uses: actions/cache@v4.3.0
         with:
           path: ${{ env.ROBOCORP_HOME }}
           key: rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('automation/maintenance-robot/robot.yaml', 'automation/maintenance-robot/conda.yaml') }}
@@ -126,9 +126,9 @@ jobs:
           This PR contains automated maintenance updates from the RCC maintenance robot.
 
           ### Changes
-          - GitHub Actions workflow updates
-          - Direct download tool updates (mise, Starship, zoxide, specialty tools)
-          - Homebrew formula tracking
+          - GitHub Actions workflow version updates
+          - ror-specialty tool updates (action-server, rcc) with SHA256 checksums
+          - PyPI package updates for maintenance robot
           - DevContainer lock file updates
           - Pre-commit hook fixes
 

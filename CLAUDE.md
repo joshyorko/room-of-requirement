@@ -4,56 +4,82 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Project Overview
 
-Room of Requirement is a cloud-native DevContainer setup providing a pre-configured development environment. It's not an application to build/test/run - it's a container image definition with automated maintenance tooling.
+Room of Requirement is a modular DevContainer platform built on Wolfi OS (Chainguard). It provides instant-startup development environments with polyglot tooling, supply chain security, and composable features.
 
-## Repository Structure
+## Architecture
 
-- `.devcontainer/` - Container definition (Dockerfile, devcontainer.json)
-- `automation/maintenance-robot/` - RCC-powered maintenance bot that keeps dependencies updated
-- `.github/workflows/` - CI/CD for automated maintenance
+```
+┌────────────────────────────────────────────────────────┐
+│  Wolfi OS Base (cgr.dev/chainguard/wolfi-base)        │
+│  └── Homebrew Foundation (/home/linuxbrew/.linuxbrew) │
+│       └── Core Tools: mise, starship, zoxide, nushell │
+├────────────────────────────────────────────────────────┤
+│  DevContainer Features (composable, published to GHCR)│
+│  • ror-core (meta), ror-cli-tools, ror-specialty      │
+│  • wolfi-docker-dind (rootless Docker-in-Docker)      │
+└────────────────────────────────────────────────────────┘
+```
 
-## Key Commands
+**Key components:**
+- `.devcontainer/Dockerfile` - Multi-stage Wolfi OS image with Homebrew
+- `.devcontainer/brew/*.Brewfile` - Categorized tool bundles (cli, cloud, k8s, security, data, dev)
+- `.devcontainer/justfile` - Bluefin-style commands exposed via `ujust`
+- `automation/maintenance-robot/` - RCC-powered automated maintenance
 
-### Run Maintenance Robot (full update)
-```shell
+## Commands
+
+### Development (ujust)
+
+```bash
+ujust bbrew              # Interactive Homebrew package selection (TUI)
+ujust brew-install-all   # Install all packages from all Brewfiles
+ujust brew-update        # Update Homebrew and packages
+ujust docker-status      # Check Docker daemon status
+ujust docker-start       # Start Docker daemon
+ujust docker-clean       # Prune Docker resources
+ujust info               # Display system configuration
+ujust playwright-install # Install Playwright browsers
+```
+
+### Maintenance Robot (rcc)
+
+```bash
+# Full maintenance (updates versions, checksums, lockfile)
 rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
-```
 
-### Run Specific Maintenance Tasks
-```shell
-# Update only GitHub Actions workflows
+# Individual tasks
 rcc run -r automation/maintenance-robot/robot.yaml -t update-workflows
-
-# Update only download URLs in Dockerfile
 rcc run -r automation/maintenance-robot/robot.yaml -t update-downloads
+rcc run -r automation/maintenance-robot/robot.yaml -t update-lockfile
+rcc run -r automation/maintenance-robot/robot.yaml -t update-homebrew
+
+# Test container build
+rcc run -r automation/maintenance-robot/robot.yaml -t test-devcontainer
 ```
 
-### Inspect RCC Environment
-```shell
-rcc holotree vars -r automation/maintenance-robot/robot.yaml
+### Python (maintenance robot)
+
+```bash
+cd automation/maintenance-robot
+pytest                   # Run tests
+ruff check .             # Lint Python code
 ```
 
-### Lint Dockerfile
-```shell
-hadolint .devcontainer/Dockerfile
-```
+## Key Patterns
 
-## Architecture Notes
+**Homebrew ownership:** The vscode user (UID 1000) owns `/home/linuxbrew/.linuxbrew` for `brew update` to work. The linuxbrew user is only for initial installation.
 
-### Dockerfile Pattern
-The Dockerfile uses multi-stage builds with version pinning via build ARGs at the top. All tool downloads include SHA256 checksum verification. When updating versions, both the version ARG and its corresponding SHA256 ARG must be updated together.
+**Tool versioning:** Uses mise-en-place for polyglot version management. Default runtimes (node@lts, python@latest, go@latest) are pre-configured in the image.
 
-### Maintenance Robot
-Python-based automation in `automation/maintenance-robot/src/maintenance_robot/` that:
-- Reads allowlists from `automation/maintenance-robot/allowlists/` (JSON files)
-- Queries GitHub API for latest allowed versions
-- Updates version strings in Dockerfile and workflow files via regex patterns
-- Outputs report to `automation/maintenance-robot/output/maintenance_report.json`
+**Shell configuration:** `.devcontainer/config/.zshrc` is copied to both `/tmp/.zshrc-ror` (backup) and `/home/vscode/.zshrc`. The postCreate command restores it if features overwrite it.
 
-### Allowlist Strategy
-- `allowlists/github_actions.json` - Actions constrained by max major version
-- `allowlists/downloads.json` - Download URLs with regex patterns for version capture
+**Docker-in-Docker:** Uses Wolfi's official dockerd-oci-entrypoint. The container runs with `--privileged` for DinD support.
 
-## CI/CD
+**Allowlist-driven updates:** Maintenance robot uses JSON allowlists (`automation/maintenance-robot/allowlists/`) to constrain which versions can be automatically updated.
 
-Daily maintenance runs via `.github/workflows/rcc-maintenance.yml` at 06:00 UTC. Creates PRs with changes automatically.
+## Security Considerations
+
+- Wolfi OS provides minimal attack surface and rapid CVE patching
+- Direct downloads verified with SHA256 checksums
+- Homebrew analytics disabled (`HOMEBREW_NO_ANALYTICS=1`)
+- All artifacts cryptographically signed via cosign

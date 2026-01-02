@@ -54,12 +54,6 @@
     }
   },
   "features": {
-    "ghcr.io/joshyorko/devcontainer-features/mise:1": {
-      "defaultTools": "node@lts,python@latest,go@latest"
-    },
-    "ghcr.io/joshyorko/devcontainer-features/starship:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/zoxide:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/nushell:1": {},
     "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {}
   },
   "privileged": true,

@@ -1,29 +1,9 @@
 {
   "features": {
-    "ghcr.io/joshyorko/devcontainer-features/mise:1": {
-      "version": "1.0.0",
-      "resolved": "ghcr.io/joshyorko/devcontainer-features/mise@sha256:f3a0292d26f064e2d53d57f4716bf5abe9502e0bb43d050ed30a055b5006f9dd",
-      "integrity": "sha256:f3a0292d26f064e2d53d57f4716bf5abe9502e0bb43d050ed30a055b5006f9dd"
-    },
-    "ghcr.io/joshyorko/devcontainer-features/nushell:1": {
-      "version": "1.0.1",
-      "resolved": "ghcr.io/joshyorko/devcontainer-features/nushell@sha256:e907ef0f747de1f6a4763285edd7b300953d4c4e21057873450bd2c92d53e67d",
-      "integrity": "sha256:e907ef0f747de1f6a4763285edd7b300953d4c4e21057873450bd2c92d53e67d"
-    },
     "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {
       "version": "1.0.0",
       "resolved": "ghcr.io/joshyorko/devcontainer-features/ror-specialty@sha256:3f5a09878190c05b4d0552d03cd6bfec15576ce788ff050774c23f4557e9a2a3",
       "integrity": "sha256:3f5a09878190c05b4d0552d03cd6bfec15576ce788ff050774c23f4557e9a2a3"
-    },
-    "ghcr.io/joshyorko/devcontainer-features/starship:1": {
-      "version": "1.0.0",
-      "resolved": "ghcr.io/joshyorko/devcontainer-features/starship@sha256:c6a48bdc94cb6a7ff3637e711545d3390f14db281f7c8cb403486200268897e2",
-      "integrity": "sha256:c6a48bdc94cb6a7ff3637e711545d3390f14db281f7c8cb403486200268897e2"
-    },
-    "ghcr.io/joshyorko/devcontainer-features/zoxide:1": {
-      "version": "1.0.1",
-      "resolved": "ghcr.io/joshyorko/devcontainer-features/zoxide@sha256:6a95a5a3a3063165261d5b7b1a5807792a6db88fcf30ec7299326c8b0ef61fa7",
-      "integrity": "sha256:6a95a5a3a3063165261d5b7b1a5807792a6db88fcf30ec7299326c8b0ef61fa7"
     }
   }
 }

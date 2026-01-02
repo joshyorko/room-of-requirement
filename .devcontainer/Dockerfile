@@ -144,9 +144,30 @@ RUN mkdir -p \
     chmod 775 /home/linuxbrew/.linuxbrew
 
 # ============================================================================
+# STAGE 3.5: Install Core Shell Tools (mise, starship, zoxide, nushell)
+# ============================================================================
+# Pre-install foundational shell/dev tools so they're baked into the image
+# These are required by .zshrc and should be available immediately
+FROM homebrew AS core-tools
+
+# Copy core.Brewfile for installation
+COPY .devcontainer/brew/core.Brewfile /tmp/core.Brewfile
+
+USER vscode
+
+# Install core shell tools via Homebrew using the Brewfile
+RUN /home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile && \
+    /home/linuxbrew/.linuxbrew/bin/brew cleanup
+
+# Configure mise with default language runtimes
+RUN /home/linuxbrew/.linuxbrew/bin/mise use -g node@lts python@latest go@latest
+
+USER root
+
+# ============================================================================
 # STAGE 4: Final Image
 # ============================================================================
-FROM homebrew AS final
+FROM core-tools AS final
 
 # Security: Update packages after multi-stage build
 RUN apk update && \
@@ -162,6 +183,9 @@ COPY .devcontainer/first-run-notice.txt /usr/local/etc/vscode-dev-containers/fir
 # Copy shell configuration (to /tmp for postCreate restore after features may overwrite it)
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /tmp/.zshrc-ror
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
+
+# Copy starship configuration
+COPY --chown=vscode:vscode .devcontainer/config/starship.toml /home/vscode/.config/starship.toml
 
 # Copy post-create script for pre-built image usage
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh

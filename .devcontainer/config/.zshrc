@@ -25,6 +25,12 @@ source "${ZINIT_HOME}/zinit.zsh"
 # ============================================================================
 # ZINIT PLUGINS (turbo mode for fast startup)
 # ============================================================================
+# Oh-My-Zsh plugins via zinit (aliases + completions)
+zinit snippet OMZP::git
+zinit snippet OMZP::kubectl
+zinit snippet OMZP::ansible
+zinit snippet OMZP::python
+
 # Autosuggestions - suggests commands as you type based on history
 zinit light zsh-users/zsh-autosuggestions
 

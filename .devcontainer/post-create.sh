@@ -30,13 +30,13 @@ WORKSPACE_DIR="${1:-.}"
 cd "$WORKSPACE_DIR" || error "Failed to change to workspace directory"
 
 # ============================================================================
-# T026: Bluefin-Style Homebrew Setup (Only install bbrew TUI)
+# T026: Bluefin-Style Homebrew Setup
 # ============================================================================
 # Ensure Homebrew is in PATH
 export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 if ! command -v brew &> /dev/null; then
-    warn "Homebrew not found in PATH, skipping bbrew installation"
+    warn "Homebrew not found in PATH, skipping Homebrew setup"
 else
     log "Homebrew found at $(which brew)"
 
@@ -49,8 +49,28 @@ else
         warn "Homebrew update had issues, continuing with existing formulae"
     fi
 
-    # Bluefin-style: Only install bbrew (Bold Brew TUI) for on-demand package management
-    # All other packages are available via 'ujust bbrew' or 'ujust brew-install-all'
+    # =========================================================================
+    # CORE SHELL TOOLS - Pre-installed in image
+    # =========================================================================
+    # mise, starship, zoxide, nushell are now baked into the image
+    # Verify they're available
+    for tool in mise starship zoxide nu; do
+        if command -v "$tool" &> /dev/null; then
+            log "✓ $tool available"
+        else
+            warn "$tool not found - may need image rebuild"
+        fi
+    done
+
+    # =========================================================================
+    # MISE: Install project-specific runtimes if .mise.toml exists
+    # =========================================================================
+    # Default runtimes (node@lts, python@latest, go@latest) are already
+    # configured globally in the image. This only runs for project overrides.
+
+    # =========================================================================
+    # BBREW TUI - For on-demand package management
+    # =========================================================================
     if ! command -v bbrew &> /dev/null; then
         log "Installing bbrew (Bold Brew TUI) for on-demand package management..."
         if brew tap valkyrie00/bbrew && brew install valkyrie00/bbrew/bbrew; then
@@ -67,15 +87,15 @@ else
 fi
 
 # ============================================================================
-# T027: .mise.toml Detection & Installation
+# T027: .mise.toml Detection & Installation (Project-specific runtimes)
 # ============================================================================
 if [ -f ".mise.toml" ]; then
-    log "Detected .mise.toml - installing tool versions"
+    log "Detected .mise.toml - installing project-specific tool versions"
 
     if ! command -v mise &> /dev/null; then
         warn "mise not found in PATH, skipping mise install"
     else
-        log "Installing mise dependencies"
+        log "Installing mise dependencies from .mise.toml"
         if mise install; then
             log "✓ mise dependencies installed successfully"
         else
@@ -83,7 +103,7 @@ if [ -f ".mise.toml" ]; then
         fi
     fi
 else
-    log "No .mise.toml found - using default mise configuration"
+    log "No .mise.toml found - using default mise runtimes"
 fi
 
 # ============================================================================

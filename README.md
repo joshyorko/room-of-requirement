@@ -4,7 +4,7 @@
 
 > _A modular, secure, bleeding-edge DevContainer platform built on Wolfi OS_
 
-**Instant startup. Polyglot tooling. Supply chain security. Composable features.**
+**Instant startup. Homebrew-first tooling. Supply chain security. Curated Brewfiles.**
 
 ---
 
@@ -16,14 +16,11 @@ Add to your project's `.devcontainer/devcontainer.json`:
 
 ```json
 {
-  "image": "ghcr.io/joshyorko/ror:latest",
-  "features": {
-    "ghcr.io/joshyorko/devcontainer-features/ror-core:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind:1": {}
-  }
+  "image": "ghcr.io/joshyorko/ror:latest"
 }
 ```
+
+Everything is pre-baked into the image - no features required! Core tools (mise, starship, zoxide, nushell) and Sema4.AI tools (action-server, rcc) are ready to use.
 
 ### Option 2: Open This Repository
 
@@ -51,64 +48,83 @@ devpod up https://github.com/joshyorko/room-of-requirement
 │  │  • Rapid CVE patching      • UTF-8 locale configured   ││
 │  └─────────────────────────────────────────────────────────┘│
 │  ┌─────────────────────────────────────────────────────────┐│
-│  │  Homebrew Foundation                                    ││
-│  │  • Pre-installed for instant Brewfile hydration        ││
+│  │  Homebrew Foundation (First-Class Package Manager)     ││
+│  │  • Core tools pre-installed: mise, starship, zoxide    ││
+│  │  • Curated Brewfiles for on-demand tool installation   ││
 │  │  • /home/linuxbrew/.linuxbrew in PATH                  ││
+│  └─────────────────────────────────────────────────────────┘│
+│  ┌─────────────────────────────────────────────────────────┐│
+│  │  Curated Brewfiles (.devcontainer/brew/)               ││
+│  │  • core.Brewfile    - mise, starship, zoxide, nushell  ││
+│  │  • cli.Brewfile     - bat, eza, fzf, ripgrep, jq, yq   ││
+│  │  • k8s.Brewfile     - kubectl, helm, k9s, dagger       ││
+│  │  • cloud.Brewfile   - aws-cli, azure-cli, terraform    ││
+│  │  • security.Brewfile - cosign, grype, syft, trivy      ││
+│  │  • data.Brewfile    - duckdb, sqlite, httpie           ││
 │  └─────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────┘
                             ▼
 ┌─────────────────────────────────────────────────────────────┐
-│              DevContainer Features (Composable)             │
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐│
-│  │   ror-core   │ │ ror-cli-tools│ │    ror-specialty     ││
-│  │  (Meta)      │ │  (Homebrew)  │ │    (Direct DL)       ││
-│  │  • mise      │ │  • kubectl   │ │  • action-server     ││
-│  │  • starship  │ │  • helm      │ │  • rcc               ││
-│  │  • zoxide    │ │  • k9s, jq   │ │  • dagger            ││
-│  │              │ │  • gh, aws   │ │  • container-use     ││
-│  └──────────────┘ └──────────────┘ └──────────────────────┘│
-│  ┌──────────────┐ ┌──────────────┐ ┌──────────────────────┐│
-│  │    mise      │ │   starship   │ │  wolfi-docker-dind   ││
-│  │  Polyglot    │ │   Prompt     │ │  Docker-in-Docker    ││
-│  │  • Node LTS  │ │  • Git info  │ │  • Secure rootless   ││
-│  │  • Python    │ │  • Tool ver  │ │  • No --privileged   ││
-│  │  • Go        │ │  • Fast <100ms│ │                      ││
-│  └──────────────┘ └──────────────┘ └──────────────────────┘│
+│              DevContainer Features (Minimal)                │
+│  ┌──────────────────────────────────────────────────────┐  │
+│  │                  ror-specialty                        │  │
+│  │   Tools NOT available in Homebrew:                   │  │
+│  │   • action-server (Sema4.AI)                         │  │
+│  │   • rcc (joshyorko fork)                             │  │
+│  │   All binaries verified with SHA256 checksums        │  │
+│  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
 ---
 
-## 🧩 DevContainer Features
+## 🍺 Homebrew-First Philosophy
 
-### Core Features
+Room of Requirement uses **Homebrew as the first-class package manager**. Instead of custom DevContainer Features for each tool, we leverage Homebrew's vast ecosystem with curated Brewfiles.
 
-| Feature | Description | Registry |
-|---------|-------------|----------|
-| **ror-core** | Meta-feature: mise + starship + zoxide | `ghcr.io/joshyorko/devcontainer-features/ror-core:1` |
-| **mise** | Polyglot version manager (Node, Python, Go, etc.) | `ghcr.io/joshyorko/devcontainer-features/mise:1` |
-| **starship** | Cross-shell prompt with git/tool status | `ghcr.io/joshyorko/devcontainer-features/starship:1` |
-| **zoxide** | Smart directory navigation (`z` command) | `ghcr.io/joshyorko/devcontainer-features/zoxide:1` |
+### Why Homebrew-First?
 
-### Tool Features
+- **Simplified maintenance** - No custom install scripts to maintain
+- **Faster updates** - Tools update via `brew upgrade`, not image rebuilds
+- **User choice** - Install only what you need via `ujust bbrew`
+- **Familiar workflow** - Standard Homebrew commands work everywhere
 
-| Feature | Description | Registry |
-|---------|-------------|----------|
-| **ror-cli-tools** | Homebrew bundle: kubectl, helm, k9s, jq, yq, gh, aws-cli, terraform, ripgrep, fzf, bat, eza, cosign, grype, syft | `ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1` |
-| **ror-specialty** | Sema4.AI (action-server, rcc), Dagger, container-use | `ghcr.io/joshyorko/devcontainer-features/ror-specialty:1` |
-| **nushell** | Modern shell alternative | `ghcr.io/joshyorko/devcontainer-features/nushell:1` |
+### Pre-installed Tools (Baked into Image)
 
-### Infrastructure Features
+These are baked into the image for instant availability:
 
-| Feature | Description | Registry |
-|---------|-------------|----------|
-| **wolfi-docker-dind** | Docker-in-Docker for Wolfi OS (secure, rootless) | `ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind:1` |
+| Tool | Purpose |
+|------|---------|
+| **mise** | Polyglot version manager (Node, Python, Go, etc.) |
+| **starship** | Cross-shell prompt with git/tool status |
+| **zoxide** | Smart directory navigation (`z` command) |
+| **nushell** | Modern shell alternative |
+| **action-server** | Sema4.AI AI automation server |
+| **rcc** | Robocorp/Sema4.AI automation runtime |
+
+### On-Demand Brewfiles
+
+Install additional tool bundles using the TUI:
+
+```bash
+ujust bbrew          # Interactive TUI to select Brewfiles
+ujust brew-install-all  # Install everything
+```
+
+| Brewfile | Tools Included |
+|----------|----------------|
+| **cli** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux |
+| **k8s** | kubectl, helm, k9s, k3d, skaffold, dagger, devspace |
+| **cloud** | aws-cli, azure-cli, terraform |
+| **security** | cosign, grype, syft, trivy |
+| **data** | duckdb, sqlite, httpie |
+| **dev** | gh, git-lfs, pre-commit |
 
 ---
 
 ## 🛠️ Tool Management with mise
 
-Room of Requirement uses [mise-en-place](https://mise.jdx.dev/) for polyglot version management:
+Room of Requirement uses [mise-en-place](https://mise.jdx.dev/) (installed via Homebrew) for polyglot version management:
 
 ```bash
 # Check active tool versions
@@ -140,9 +156,11 @@ Tool versions automatically switch when you `cd` into the project directory.
 
 ---
 
-## 📋 CLI Tools via Homebrew
+## 📋 Adding Custom Tools
 
-The `ror-cli-tools` feature installs a curated bundle via Homebrew. Override by adding your own `Brewfile` to your project root:
+### Option 1: Project-Level Brewfile
+
+Add a `Brewfile` to your project root - it will be automatically installed on container creation:
 
 ```ruby
 # Your project's Brewfile
@@ -151,13 +169,23 @@ brew "helm"
 brew "your-custom-tool"
 ```
 
-### Default Tools Included
+### Option 2: Use Curated Brewfiles
 
-**Cloud & Kubernetes**: kubectl, helm, k9s, aws-cli, azure-cli, terraform, skaffold
-**Development**: jq, yq, ripgrep, fd, fzf, bat, eza, httpie, sqlite, duckdb
-**Git**: gh, git-lfs
-**Security**: cosign, grype, syft
-**System**: htop, tmux, tree, tldr
+Select from the pre-configured bundles:
+
+```bash
+ujust bbrew  # Opens TUI to select Brewfiles
+```
+
+### Option 3: Direct Homebrew
+
+Just use Homebrew directly:
+
+```bash
+brew install <package>
+brew tap <tap-name>
+brew bundle --file=<path-to-Brewfile>
+```
 
 ---
 
@@ -172,11 +200,11 @@ brew "your-custom-tool"
 - **SBOM generation**: Every image includes a Software Bill of Materials
 - **Cosign signatures**: All artifacts cryptographically signed
 - **CVE scanning**: Critical vulnerabilities block releases
-- **SHA256 verification**: Direct downloads verified with checksums
+- **SHA256 verification**: Direct downloads in ror-specialty verified with checksums
 
-### Rootless Docker
-- Docker-in-Docker runs without `--privileged` flag
-- Follows principle of least privilege
+### Docker-in-Docker
+- Built-in via Wolfi's official `docker-dind` package
+- Uses `--privileged` mode (required for DinD functionality)
 
 ---
 
@@ -184,23 +212,25 @@ brew "your-custom-tool"
 
 ```
 room-of-requirement/
-├── .devcontainer/           # DevContainer configuration for this repo
-│   ├── devcontainer.json    # Feature references
-│   ├── Dockerfile           # Wolfi OS base image
-│   └── post-create.sh       # Post-creation hooks
+├── .devcontainer/           # DevContainer configuration
+│   ├── devcontainer.json    # Container configuration
+│   ├── Dockerfile           # Wolfi OS + Homebrew base image
+│   ├── post-create.sh       # Post-creation hydration script
+│   ├── justfile             # ujust commands (bbrew, etc.)
+│   └── brew/                # Curated Brewfiles
+│       ├── core.Brewfile    # mise, starship, zoxide, nushell
+│       ├── cli.Brewfile     # Terminal utilities
+│       ├── k8s.Brewfile     # Kubernetes tools
+│       ├── cloud.Brewfile   # Cloud provider CLIs
+│       ├── security.Brewfile # Security scanning tools
+│       ├── data.Brewfile    # Data tools
+│       └── dev.Brewfile     # Git and development tools
 ├── src/                     # DevContainer Features source
-│   ├── mise/                # Polyglot version manager
-│   ├── starship/            # Cross-shell prompt
-│   ├── zoxide/              # Smart directory navigation
-│   ├── nushell/             # Modern shell
-│   ├── ror-core/            # Meta-feature aggregator
-│   ├── ror-cli-tools/       # Homebrew CLI bundle
-│   ├── ror-specialty/       # Sema4.AI, Dagger tools
-│   └── wolfi-docker-dind/   # Docker-in-Docker for Wolfi
+│   └── ror-specialty/       # Non-Homebrew tools (Sema4.AI)
 ├── templates/               # Project starter templates
 │   └── ror-starter/         # Basic RoR template
 ├── automation/              # Maintenance automation
-│   └── maintenance-robot/   # RCC-powered updater
+│   └── maintenance-robot/   # RCC-powered version updater
 └── specs/                   # Architecture specifications
 ```
 
@@ -208,48 +238,35 @@ room-of-requirement/
 
 ## 🎛️ Customization Examples
 
-### Minimal Setup (Just Tools)
+### Standard Setup (Everything Pre-baked)
+
+```json
+{
+  "image": "ghcr.io/joshyorko/ror:latest"
+}
+```
+
+All tools are pre-installed: mise, starship, zoxide, nushell, action-server, rcc. Use `ujust bbrew` for additional Homebrew tools.
+
+### With Additional Kubernetes Tools
 
 ```json
 {
   "image": "ghcr.io/joshyorko/ror:latest",
-  "features": {
-    "ghcr.io/joshyorko/devcontainer-features/ror-core:1": {}
-  }
+  "postCreateCommand": "brew bundle --file=/tmp/brew/k8s.Brewfile"
 }
 ```
 
-### Full Cloud-Native Setup
+### With Project-Level Brewfile
 
 ```json
 {
   "image": "ghcr.io/joshyorko/ror:latest",
-  "features": {
-    "ghcr.io/joshyorko/devcontainer-features/ror-core:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {
-      "installDagger": true,
-      "installContainerUse": true
-    },
-    "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind:1": {}
-  }
+  "postCreateCommand": "brew bundle --file=Brewfile"
 }
 ```
 
-### AI/Automation Development
-
-```json
-{
-  "image": "ghcr.io/joshyorko/ror:latest",
-  "features": {
-    "ghcr.io/joshyorko/devcontainer-features/ror-core:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {
-      "installActionServer": true,
-      "installRcc": true
-    }
-  }
-}
-```
+Create a `Brewfile` in your project root with your custom tools.
 
 ---
 
@@ -257,17 +274,14 @@ room-of-requirement/
 
 The repository includes an RCC-powered maintenance robot that:
 
-- Updates tool versions with SHA256 checksum verification
-- Tracks Homebrew formula versions
+- Updates tool versions in `ror-specialty` with SHA256 checksum verification
+- Tracks PyPI package versions for the maintenance robot itself
 - Updates GitHub Actions workflow dependencies
-- Generates maintenance reports
+- Regenerates devcontainer lockfiles
 
 ```bash
 # Run full maintenance
 rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
-
-# Test devcontainer build
-rcc run -r automation/maintenance-robot/robot.yaml -t test-devcontainer-build
 ```
 
 See [automation/maintenance-robot/README.md](automation/maintenance-robot/README.md) for details.
@@ -300,8 +314,8 @@ See [automation/maintenance-robot/README.md](automation/maintenance-robot/README
 
 1. Fork the repository
 2. Create a feature branch
-3. Make changes following [AGENTS.md](AGENTS.md) guidelines
-4. Test with `rcc run -r automation/maintenance-robot/robot.yaml -t test-devcontainer-build`
+3. Make changes following [.github/copilot-instructions.md](.github/copilot-instructions.md) guidelines
+4. Test with `devcontainer build --workspace-folder .`
 5. Submit a PR with conventional commit messages
 
 ---

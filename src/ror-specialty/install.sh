@@ -100,9 +100,7 @@ echo_info "Installing Room of Requirement Specialty Tools..."
 echo_info "Feature options:"
 echo_info "  INSTALL_ACTION_SERVER=$INSTALL_ACTION_SERVER"
 echo_info "  INSTALL_RCC=$INSTALL_RCC"
-echo_info ""
-echo_info "NOTE: dagger, claude-code, devspace, hauler, uv, container-use"
-echo_info "      are installed via Homebrew (see homebrew.json allowlist)"
+
 
 INSTALL_DIR="/usr/local/bin"
 TMP_DIR="$(mktemp -d)"
