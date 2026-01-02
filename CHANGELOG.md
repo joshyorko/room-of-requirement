@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.1.1](https://github.com/joshyorko/room-of-requirement/compare/v1.1.0...v1.1.1) (2026-01-02)
+
+
+### ♻️ Refactoring
+
+* remove direct push trigger from build-image workflow to prevent duplicate builds ([d5fed99](https://github.com/joshyorko/room-of-requirement/commit/d5fed999f66d9ae7c2e3a5fcd50bcf202352411e))
+* update build-image workflow to trigger on specific paths to prevent duplicate builds ([7e1c8a4](https://github.com/joshyorko/room-of-requirement/commit/7e1c8a4c23f3d1700f4a304a8cff589cf7276636))
+
 ## [1.1.0](https://github.com/joshyorko/room-of-requirement/compare/v1.0.1...v1.1.0) (2026-01-02)
 
 
