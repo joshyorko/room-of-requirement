@@ -51,15 +51,18 @@ RUN apk add --no-cache \
     docker-dind \
     dockerd-oci-entrypoint \
     # Playwright/Browser dependencies (headless Chromium support)
-    # Only packages available in Wolfi - nss includes nspr, gtk3 not available
+    # Note: Some deps like atk, gtk-3 aren't in Wolfi - Playwright may show warnings
     alsa-lib \
     at-spi2-core \
+    cairo \
     cups-libs \
     dbus-libs \
+    gdk-pixbuf \
     libdrm \
     libx11 \
     libxcb \
     libxcomposite \
+    libxcursor \
     libxdamage \
     libxext \
     libxfixes \

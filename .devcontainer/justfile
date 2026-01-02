@@ -95,6 +95,7 @@ playwright-install:
     if command -v npx &>/dev/null; then
         npx playwright install
         echo "✓ Playwright browsers installed"
+        echo "Note: System dependencies are pre-installed in this container."
     else
         echo "✗ npx not found. Install Node.js first (mise install node@lts)"
         exit 1
