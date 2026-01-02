@@ -352,7 +352,7 @@ jobs:
           fail-build: ${{ inputs.fail_on_critical != false }}
           severity-cutoff: critical
           output-format: sarif
-          config: .grype.yaml
+          # Note: .grype.yaml is automatically read from the working directory
         continue-on-error: true
 
       - name: Upload SARIF report
