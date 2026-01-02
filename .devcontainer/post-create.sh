@@ -53,9 +53,8 @@ else
         log "✓ bbrew already installed"
     fi
 
-    # Also install zsh plugins since they're needed for the shell experience
-    log "Installing zsh shell enhancements..."
-    brew install zsh-autosuggestions zsh-syntax-highlighting 2>/dev/null || warn "Some zsh plugins failed to install"
+    # NOTE: zsh plugins (autosuggestions, syntax-highlighting) are now managed by
+    # zinit in .zshrc - no need to install via Homebrew
 fi
 
 # ============================================================================
