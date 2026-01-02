@@ -1,6 +1,6 @@
 {
   "name": "Room of Requirement",
-  "version": "1.0.0",
+  "version": "1.0.1",
   "build": {
     "dockerfile": "Dockerfile",
     "context": ".."
@@ -68,7 +68,9 @@
     }
   },
   "privileged": true,
-  "runArgs": ["--privileged"],
+  "runArgs": [
+    "--privileged"
+  ],
   "postCreateCommand": "bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true",
   "postStartCommand": "if ! docker info > /dev/null 2>&1; then sudo /usr/local/share/docker-init.sh true & fi",
   "waitFor": "onCreateCommand"

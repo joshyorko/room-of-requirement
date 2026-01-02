@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.0.1](https://github.com/joshyorko/room-of-requirement/compare/v1.0.0...v1.0.1) (2026-01-02)
+
+
+### 🐛 Bug Fixes
+
+* add ENTRYPOINT for docker-init.sh and install Oh My Zsh ([289ce98](https://github.com/joshyorko/room-of-requirement/commit/289ce98cffe7250d0032b4ca452cf199d5c27051))
+* update Dockerfile entrypoint and devcontainer configuration for improved Docker-in-Docker support ([bb045ff](https://github.com/joshyorko/room-of-requirement/commit/bb045ff1135429274fbd0ab80e10b076354946b4))
+
 ## 1.0.0 (2026-01-02)
 
 
