@@ -1,5 +1,32 @@
 # Changelog
 
+## [1.1.0](https://github.com/joshyorko/room-of-requirement/compare/v1.0.1...v1.1.0) (2026-01-02)
+
+
+### ✨ Features
+
+* Add Brewfiles for CLI tools, cloud tools, data tools, development tools, Kubernetes tools, and security tools ([0411e07](https://github.com/joshyorko/room-of-requirement/commit/0411e073f71ff6257ffcc71df115e50c92f49273))
+* add k3d to Brewfile and update first-run notice with new environment details ([7ed370a](https://github.com/joshyorko/room-of-requirement/commit/7ed370a8e5af64bff1ea703c1a8d0db283252b7d))
+* Disable VS Code shell integration to resolve conflicts with Starship prompt ([e63639f](https://github.com/joshyorko/room-of-requirement/commit/e63639f87e88b8cbea1990c7489b7bcf17e5aa85))
+* enhance DevContainer setup with zsh plugins and improved Brewfile handling ([73c3197](https://github.com/joshyorko/room-of-requirement/commit/73c3197425fe718e2ec763ae97a04b23dec21818))
+* Enhance Dockerfile and justfile for improved Playwright support and Brewfile management ([7ad1b04](https://github.com/joshyorko/room-of-requirement/commit/7ad1b0438a596be82d8718d9a9799462738d632e))
+* Re-add bbrew to Brewfile (gcc now available for source builds) ([ed1b454](https://github.com/joshyorko/room-of-requirement/commit/ed1b4541f0e299ca30716f1a585b2d6a62a4fd66))
+* Replace oh-my-zsh with zinit for modern zsh plugin management ([6aa92cb](https://github.com/joshyorko/room-of-requirement/commit/6aa92cb138be25a7f0862ef269efd14fe76f59f5))
+* Update Dockerfile to refine Playwright dependencies for Wolfi compatibility ([72aa796](https://github.com/joshyorko/room-of-requirement/commit/72aa796eff99e2c5c165e98cd6b5591110071007))
+* Update Homebrew installation and configuration for improved usability ([2af944b](https://github.com/joshyorko/room-of-requirement/commit/2af944b635b3747e64491c4eb1939b10bfef03b8))
+* Update zsh history configuration and add directory-based history management ([46f9a65](https://github.com/joshyorko/room-of-requirement/commit/46f9a65d37e9c8a36dc139c4bf130bd66dbb8743))
+
+
+### 🐛 Bug Fixes
+
+* add explicit openssl package for CLI binary ([eb7274d](https://github.com/joshyorko/room-of-requirement/commit/eb7274d563b4fd932895297ea09b8baf1f4520bf))
+* Docker permissions, Brewfile errors, and enable source builds ([c4ce609](https://github.com/joshyorko/room-of-requirement/commit/c4ce609400a841e76e4fe5a5d74f7602d0606baf))
+* enhance Docker-in-Docker installation script with additional packages and improved cgroup v2 handling ([b8342f5](https://github.com/joshyorko/room-of-requirement/commit/b8342f538893a13fec1d78fa6a9ca8a0fc3f7d07))
+* remove redundant version checks for git and mount in Dockerfile ([17f4b1c](https://github.com/joshyorko/room-of-requirement/commit/17f4b1ccbf4ccef7f1b015a9e88530bdca1eedff))
+* remove unsupported config input from anchore/scan-action ([f9d0fdf](https://github.com/joshyorko/room-of-requirement/commit/f9d0fdf1bc127fc7d5cf2a2873e6745134cc5fab))
+* streamline Dockerfile and post-create script by removing redundant flags and improving error handling ([95d0ff3](https://github.com/joshyorko/room-of-requirement/commit/95d0ff36311efa515d12aa19eccca9f49acd2628))
+* use literal image name in SLSA workflow call ([9b33074](https://github.com/joshyorko/room-of-requirement/commit/9b330741ddbca9845ce4d477312b20792d6e42a4))
+
 ## [1.0.1](https://github.com/joshyorko/room-of-requirement/compare/v1.0.0...v1.0.1) (2026-01-02)
 
 
