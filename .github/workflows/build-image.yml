@@ -5,8 +5,13 @@
 name: Build Image
 
 on:
-  # NOTE: No direct push trigger - we rely on workflow_run after Build Features
-  # This prevents duplicate builds when both workflows would trigger on the same push
+  push:
+    branches: [main]
+    paths:
+      # Only trigger directly for devcontainer changes (not src/**)
+      # src/** changes trigger Build Features first, which then triggers this via workflow_run
+      - ".devcontainer/**"
+      - ".github/workflows/build-image.yml"
   pull_request:
     branches: [main]
     paths:
