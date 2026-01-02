@@ -1,0 +1,64 @@
+# Room of Requirement DevContainer Commands
+# Usage: just <command> (or ujust <command>)
+
+# Default recipe - show available commands
+default:
+    @just --list
+
+# Launch Bold Brew TUI (Bluefin-style package manager)
+bbrew:
+    @if command -v bbrew >/dev/null 2>&1; then \
+        bbrew; \
+    else \
+        echo "bbrew not installed. Installing now..."; \
+        brew tap valkyrie00/bbrew && brew install valkyrie00/bbrew/bbrew && bbrew; \
+    fi
+
+# Install bbrew TUI only (minimal setup)
+install-bbrew:
+    @echo "Installing bbrew (Bold Brew TUI)..."
+    brew tap valkyrie00/bbrew
+    brew install valkyrie00/bbrew/bbrew
+    @echo "Done! Run 'ujust bbrew' to launch the TUI."
+
+# Install all Homebrew packages from Brewfile (full setup)
+brew-install-all:
+    @echo "Installing ALL Homebrew packages from Brewfile..."
+    @echo "This may take a while..."
+    brew bundle install --file=/tmp/Brewfile || brew bundle install --file=.devcontainer/Brewfile
+    @echo "Done! Run 'ujust bbrew' for the TUI or 'brew list' to see packages."
+
+# Install specific brew formula
+brew-install formula:
+    brew install {{formula}}
+
+# Update Homebrew and upgrade packages
+brew-update:
+    brew update && brew upgrade
+
+# Show Docker status
+docker-status:
+    @docker info 2>/dev/null && echo "Docker is running" || echo "Docker is not running"
+
+# Start Docker daemon (if not running)
+docker-start:
+    @if ! docker info >/dev/null 2>&1; then \
+        echo "Starting Docker daemon..."; \
+        sudo /usr/bin/dockerd-entrypoint.sh dockerd &; \
+        sleep 3; \
+    else \
+        echo "Docker is already running"; \
+    fi
+
+# Clean up Docker resources
+docker-clean:
+    docker system prune -af
+
+# Show system info
+info:
+    @echo "=== Room of Requirement DevContainer ==="
+    @echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2)"
+    @echo "Shell: $SHELL"
+    @echo "Homebrew: $(brew --version | head -1)"
+    @echo "Docker: $(docker --version 2>/dev/null || echo 'not running')"
+    @echo "Just: $(just --version)"

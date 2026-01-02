@@ -412,13 +412,13 @@ jobs:
     runs-on: ubuntu-latest
     needs: [build, scan]
     if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
-    
+
     steps:
       - name: Verify digest format
         run: |
           DIGEST="${{ needs.build.outputs.digest }}"
           echo "Validating digest: ${DIGEST}"
-          
+
           # Digest should be in format: sha256:hexhexhex...
           if [[ ${DIGEST} =~ ^sha256:[a-f0-9]{64}$ ]]; then
             echo "✓ Digest format valid"
@@ -427,21 +427,21 @@ jobs:
             echo "Expected format: sha256:hexhexhex... (64 hex chars)"
             exit 1
           fi
-      
+
       - name: Log in to Container Registry
         uses: docker/login-action@v3.6.0
         with:
           registry: ${{ env.REGISTRY }}
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-      
+
       - name: Verify image exists in registry
         run: |
           DIGEST="${{ needs.build.outputs.digest }}"
           IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-          
+
           echo "Checking if image exists: ${IMAGE}@${DIGEST}"
-          
+
           # Use skopeo to verify image exists
           if skopeo inspect "docker://${IMAGE}@${DIGEST}" > /dev/null 2>&1; then
             echo "✓ Image verified in registry"

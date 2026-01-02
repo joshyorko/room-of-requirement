@@ -10,11 +10,6 @@
       "resolved": "ghcr.io/joshyorko/devcontainer-features/nushell@sha256:e907ef0f747de1f6a4763285edd7b300953d4c4e21057873450bd2c92d53e67d",
       "integrity": "sha256:e907ef0f747de1f6a4763285edd7b300953d4c4e21057873450bd2c92d53e67d"
     },
-    "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1": {
-      "version": "1.0.0",
-      "resolved": "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools@sha256:5fd7b1d6b9a6c7b47bd6fa9cf3a0536a33cd07b76b84890612b493ce8b5e27d0",
-      "integrity": "sha256:5fd7b1d6b9a6c7b47bd6fa9cf3a0536a33cd07b76b84890612b493ce8b5e27d0"
-    },
     "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {
       "version": "1.0.0",
       "resolved": "ghcr.io/joshyorko/devcontainer-features/ror-specialty@sha256:3f5a09878190c05b4d0552d03cd6bfec15576ce788ff050774c23f4557e9a2a3",
@@ -24,11 +19,6 @@
       "version": "1.0.0",
       "resolved": "ghcr.io/joshyorko/devcontainer-features/starship@sha256:c6a48bdc94cb6a7ff3637e711545d3390f14db281f7c8cb403486200268897e2",
       "integrity": "sha256:c6a48bdc94cb6a7ff3637e711545d3390f14db281f7c8cb403486200268897e2"
-    },
-    "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind:1": {
-      "version": "1.0.0",
-      "resolved": "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind@sha256:6051a5c2825d3c4114b32f8ee8a3792597fd0a5c08c1670dcf127ebd2b2a0da8",
-      "integrity": "sha256:6051a5c2825d3c4114b32f8ee8a3792597fd0a5c08c1670dcf127ebd2b2a0da8"
     },
     "ghcr.io/joshyorko/devcontainer-features/zoxide:1": {
       "version": "1.0.1",

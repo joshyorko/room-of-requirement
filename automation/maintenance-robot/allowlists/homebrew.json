@@ -14,6 +14,16 @@
     "type": "formula",
     "description": "Kubernetes TUI"
   },
+  "k3d": {
+    "formula": "k3d",
+    "type": "formula",
+    "description": "k3s in Docker - local Kubernetes clusters"
+  },
+  "skaffold": {
+    "formula": "skaffold",
+    "type": "formula",
+    "description": "Kubernetes development workflow"
+  },
   "jq": {
     "formula": "jq",
     "type": "formula",
@@ -34,6 +44,16 @@
     "type": "formula",
     "description": "AWS CLI v2"
   },
+  "azure-cli": {
+    "formula": "azure-cli",
+    "type": "formula",
+    "description": "Azure CLI"
+  },
+  "terraform": {
+    "formula": "terraform",
+    "type": "formula",
+    "description": "Infrastructure as code"
+  },
   "dagger": {
     "formula": "dagger",
     "type": "formula",
@@ -49,21 +69,117 @@
     "type": "formula",
     "description": "Fast Python package installer"
   },
+  "zsh-autosuggestions": {
+    "formula": "zsh-autosuggestions",
+    "type": "formula",
+    "description": "Fish-like autosuggestions for zsh"
+  },
+  "zsh-syntax-highlighting": {
+    "formula": "zsh-syntax-highlighting",
+    "type": "formula",
+    "description": "Syntax highlighting for zsh"
+  },
+  "ripgrep": {
+    "formula": "ripgrep",
+    "type": "formula",
+    "description": "Fast recursive grep (rg)"
+  },
+  "fd": {
+    "formula": "fd",
+    "type": "formula",
+    "description": "Fast find alternative"
+  },
+  "fzf": {
+    "formula": "fzf",
+    "type": "formula",
+    "description": "Fuzzy finder"
+  },
+  "bat": {
+    "formula": "bat",
+    "type": "formula",
+    "description": "cat with syntax highlighting"
+  },
+  "eza": {
+    "formula": "eza",
+    "type": "formula",
+    "description": "Modern ls replacement"
+  },
+  "tldr": {
+    "formula": "tldr",
+    "type": "formula",
+    "description": "Simplified man pages"
+  },
+  "httpie": {
+    "formula": "httpie",
+    "type": "formula",
+    "description": "User-friendly HTTP client"
+  },
+  "git-lfs": {
+    "formula": "git-lfs",
+    "type": "formula",
+    "description": "Git Large File Storage"
+  },
+  "htop": {
+    "formula": "htop",
+    "type": "formula",
+    "description": "Interactive process viewer"
+  },
+  "tmux": {
+    "formula": "tmux",
+    "type": "formula",
+    "description": "Terminal multiplexer"
+  },
+  "tree": {
+    "formula": "tree",
+    "type": "formula",
+    "description": "Directory tree viewer"
+  },
+  "cosign": {
+    "formula": "cosign",
+    "type": "formula",
+    "description": "Container image signing"
+  },
+  "grype": {
+    "formula": "grype",
+    "type": "formula",
+    "description": "CVE scanner for images"
+  },
+  "syft": {
+    "formula": "syft",
+    "type": "formula",
+    "description": "SBOM generator"
+  },
+  "sqlite": {
+    "formula": "sqlite",
+    "type": "formula",
+    "description": "Lightweight SQL database"
+  },
+  "duckdb": {
+    "formula": "duckdb",
+    "type": "formula",
+    "description": "Embedded analytics database"
+  },
+  "bbrew": {
+    "formula": "valkyrie00/bbrew/bbrew",
+    "type": "formula",
+    "description": "Bold Brew - TUI for Homebrew",
+    "skip_version_check": true
+  },
   "claude-code": {
     "formula": "claude-code",
     "type": "cask",
     "description": "Terminal-based AI coding assistant"
   },
   "hauler": {
-    "formula": "hauler",
-    "type": "cask",
-    "description": "Airgap content management (rancherfederal/rancher-government-hauler tap)",
+    "formula": "hauler-dev/homebrew-tap/hauler",
+    "type": "formula",
+    "description": "Airgap content management (Rancher)",
     "skip_version_check": true
   },
   "container-use": {
-    "formula": "container-use",
-    "type": "cask",
-    "description": "Container MCP (anthropics/tools tap)",
+    "formula": "dagger/tap/container-use",
+    "type": "formula",
+    "description": "Container MCP for coding agents",
     "skip_version_check": true
   }
 }

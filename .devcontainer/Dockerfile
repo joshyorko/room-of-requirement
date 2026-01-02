@@ -20,8 +20,8 @@ LABEL org.opencontainers.image.description="Modular DevContainer with Wolfi OS -
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
 
 # UTF-8 locale and timezone
-ENV LANG=en_US.UTF-8 \
-    LC_ALL=en_US.UTF-8 \
+ENV LANG=C.UTF-8 \
+    LC_ALL=C.UTF-8 \
     TZ=UTC
 
 # Install system packages (minimal set for devcontainer features to work)
@@ -35,6 +35,7 @@ RUN apk add --no-cache \
     git \
     glibc \
     glibc-locales \
+    just \
     libstdc++ \
     openssh-client \
     posix-libc-utils \
@@ -44,7 +45,11 @@ RUN apk add --no-cache \
     tini \
     util-linux \
     wget \
-    zsh && \
+    zsh \
+    # Official Wolfi Docker-in-Docker packages (from Chainguard)
+    docker \
+    docker-dind \
+    dockerd-oci-entrypoint && \
     # Verify critical security tools
     curl --version && \
     git --version
@@ -133,8 +138,15 @@ COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 
-# Copy Brewfile for installation after user switch
+# Copy Brewfile for on-demand installation
 COPY --chown=vscode:vscode .devcontainer/Brewfile /tmp/Brewfile
+
+# Copy justfile for Bluefin-style commands (ujust bbrew, etc.)
+RUN mkdir -p /usr/share/ror
+COPY .devcontainer/justfile /usr/share/ror/justfile
+RUN chmod 644 /usr/share/ror/justfile && \
+    printf '#!/bin/bash\nexec just --justfile /usr/share/ror/justfile --working-directory /usr/share/ror "$@"\n' > /usr/local/bin/ujust && \
+    chmod +x /usr/local/bin/ujust
 
 # Create workspace and cache directories with restricted permissions
 RUN mkdir -p \
@@ -160,10 +172,8 @@ ENV HOME=/home/vscode \
     SHELL=/bin/zsh \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
 
-# Install Brewfile packages as vscode user (bakes tools into image)
-RUN brew bundle install --file=/tmp/Brewfile 2>&1 || \
-    echo "Note: Some brew packages may have failed (casks often fail on Linux)" && \
-    rm -f /tmp/Brewfile /tmp/Brewfile.lock.json
+# Brewfile is available at /tmp/Brewfile for on-demand installation
+# Run: just bbrew (or brew bundle install --file=/tmp/Brewfile)
 
 WORKDIR /workspaces
 
@@ -171,7 +181,7 @@ WORKDIR /workspaces
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD echo "OK" || exit 1
 
-# Docker-in-Docker entrypoint - starts dockerd then runs CMD
-# For pre-built images, we bake this in since runtime may not apply feature entrypoints
-ENTRYPOINT ["/usr/local/share/docker-init.sh"]
+# Docker-in-Docker entrypoint - official Wolfi/Chainguard dockerd entrypoint
+# From dockerd-oci-entrypoint package (ported from docker-library/docker)
+ENTRYPOINT ["/usr/bin/dockerd-entrypoint.sh"]
 CMD ["sleep", "infinity"]

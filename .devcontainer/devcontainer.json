@@ -58,14 +58,7 @@
     "ghcr.io/joshyorko/devcontainer-features/starship:1": {},
     "ghcr.io/joshyorko/devcontainer-features/zoxide:1": {},
     "ghcr.io/joshyorko/devcontainer-features/nushell:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/ror-cli-tools:1": {
-      "installBrewfile": true
-    },
-    "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {},
-    "ghcr.io/joshyorko/devcontainer-features/wolfi-docker-dind:1": {
-      "installBuildx": true,
-      "installCompose": true
-    }
+    "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {}
   },
   "privileged": true,
   "overrideCommand": false,
@@ -73,6 +66,6 @@
     "--privileged"
   ],
   "postCreateCommand": "bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true",
-  "postStartCommand": "if ! docker info > /dev/null 2>&1; then sudo sh -c 'nohup /usr/local/share/docker-init.sh sleep infinity > /tmp/docker-init.log 2>&1 &' && sleep 3; fi",
+  "postStartCommand": "if ! docker info > /dev/null 2>&1; then sudo sh -c 'nohup /usr/bin/dockerd-entrypoint.sh sleep infinity > /tmp/docker-init.log 2>&1 &' && sleep 3; fi",
   "waitFor": "onCreateCommand"
 }

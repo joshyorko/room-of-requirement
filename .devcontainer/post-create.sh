@@ -30,54 +30,32 @@ WORKSPACE_DIR="${1:-.}"
 cd "$WORKSPACE_DIR" || error "Failed to change to workspace directory"
 
 # ============================================================================
-# OH MY ZSH INSTALLATION (for dotfiles compatibility)
-# ============================================================================
-if [ ! -d "$HOME/.oh-my-zsh" ]; then
-    log "Installing Oh My Zsh for dotfiles compatibility"
-    # Silent unattended install, don't change shell or run zsh
-    RUNZSH=no CHSH=no sh -c "$(curl -fsSL https://raw.githubusercontent.com/ohmyzsh/ohmyzsh/master/tools/install.sh)" "" --unattended 2>/dev/null || warn "Oh My Zsh installation failed"
-    log "✓ Oh My Zsh installed"
-fi
-
-# ============================================================================
-# T026: Brewfile Detection & Installation
+# T026: Bluefin-Style Homebrew Setup (Only install bbrew TUI)
 # ============================================================================
 # Ensure Homebrew is in PATH
 export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
-BREWFILE_PATH=""
-if [ -f "Brewfile" ]; then
-    BREWFILE_PATH="Brewfile"
-elif [ -f ".devcontainer/Brewfile" ]; then
-    BREWFILE_PATH=".devcontainer/Brewfile"
-fi
-
-if [ -n "${BREWFILE_PATH}" ]; then
-    log "Detected Brewfile at ${BREWFILE_PATH}"
-
-    if ! command -v brew &> /dev/null; then
-        warn "Homebrew not found in PATH, skipping Brewfile installation"
-    else
-        log "Homebrew found at $(which brew)"
-        log "Installing Brewfile dependencies from ${BREWFILE_PATH}"
-        # Lock file is cleaned up after installation to avoid permission issues
-        if brew bundle install --file="${BREWFILE_PATH}"; then
-            rm -f "${BREWFILE_PATH}.lock.json" 2>/dev/null
-            log "✓ Brewfile dependencies installed successfully"
-        else
-            warn "Some Brewfile dependencies may have failed to install"
-            # Try installing individually for better error messages
-            log "Attempting individual package installation..."
-            while IFS= read -r line; do
-                if [[ "$line" =~ ^brew\ \"([^\"]+)\" ]]; then
-                    pkg="${BASH_REMATCH[1]}"
-                    brew install "$pkg" 2>/dev/null || warn "Failed to install: $pkg"
-                fi
-            done < "${BREWFILE_PATH}"
-        fi
-    fi
+if ! command -v brew &> /dev/null; then
+    warn "Homebrew not found in PATH, skipping bbrew installation"
 else
-    log "No Brewfile found - skipping Homebrew installation"
+    log "Homebrew found at $(which brew)"
+
+    # Bluefin-style: Only install bbrew (Bold Brew TUI) for on-demand package management
+    # All other packages are available via 'ujust bbrew' or 'ujust brew-install-all'
+    if ! command -v bbrew &> /dev/null; then
+        log "Installing bbrew (Bold Brew TUI) for on-demand package management..."
+        if brew tap valkyrie00/bbrew && brew install valkyrie00/bbrew/bbrew; then
+            log "✓ bbrew installed - use 'ujust bbrew' to install packages"
+        else
+            warn "Failed to install bbrew - packages can still be installed via 'ujust brew-install-all'"
+        fi
+    else
+        log "✓ bbrew already installed"
+    fi
+
+    # Also install zsh plugins since they're needed for the shell experience
+    log "Installing zsh shell enhancements..."
+    brew install zsh-autosuggestions zsh-syntax-highlighting 2>/dev/null || warn "Some zsh plugins failed to install"
 fi
 
 # ============================================================================
@@ -171,10 +149,10 @@ fi
 log "✓ Post-create hydration completed successfully"
 log ""
 log "Environment ready! You can now:"
+log "  • Run 'ujust bbrew' to launch Bold Brew TUI and install packages"
+log "  • Run 'ujust brew-install-all' to install all packages from Brewfile"
+log "  • Run 'ujust' to see all available commands"
 log "  • Run 'mise --version' to verify tool management"
-log "  • Run 'which node' to check Node.js installation"
-log "  • Run 'which python' to check Python installation"
-log "  • Run 'starship bug' to verify Starship configuration"
-log "  • Run 'z' to test zoxide navigation"
+log "  • Run 'docker info' to check Docker status"
 
 exit 0

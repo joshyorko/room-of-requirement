@@ -153,10 +153,10 @@ brew "your-custom-tool"
 
 ### Default Tools Included
 
-**Cloud & Kubernetes**: kubectl, helm, k9s, aws-cli, azure-cli, terraform, skaffold  
-**Development**: jq, yq, ripgrep, fd, fzf, bat, eza, httpie, sqlite, duckdb  
-**Git**: gh, git-lfs  
-**Security**: cosign, grype, syft  
+**Cloud & Kubernetes**: kubectl, helm, k9s, aws-cli, azure-cli, terraform, skaffold
+**Development**: jq, yq, ripgrep, fd, fzf, bat, eza, httpie, sqlite, duckdb
+**Git**: gh, git-lfs
+**Security**: cosign, grype, syft
 **System**: htop, tmux, tree, tldr
 
 ---

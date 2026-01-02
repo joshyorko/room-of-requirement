@@ -67,8 +67,8 @@ export PATH="/usr/local/share/mise/shims:${HOMEBREW_PREFIX}/bin:${HOMEBREW_PREFI
 # ============================================================================
 # ENVIRONMENT VARIABLES
 # ============================================================================
-export LANG=en_US.UTF-8
-export LC_ALL=en_US.UTF-8
+export LANG=C.UTF-8
+export LC_ALL=C.UTF-8
 export TZ=UTC
 export EDITOR=vim
 export VISUAL=vim
@@ -80,9 +80,32 @@ export HOMEBREW_NO_AUTO_UPDATE=1
 # ============================================================================
 # COMMON ALIASES
 # ============================================================================
-alias ll='ls -lah'
-alias la='ls -la'
-alias l='ls -l'
+# Modern CLI tool aliases (use if installed via Homebrew)
+if command -v eza &> /dev/null; then
+    alias ls='eza'
+    alias ll='eza -lah --icons'
+    alias la='eza -la --icons'
+    alias l='eza -l --icons'
+    alias tree='eza --tree --icons'
+else
+    alias ll='ls -lah'
+    alias la='ls -la'
+    alias l='ls -l'
+fi
+
+if command -v bat &> /dev/null; then
+    alias cat='bat --paging=never'
+    alias less='bat'
+fi
+
+if command -v rg &> /dev/null; then
+    alias grep='rg'
+fi
+
+if command -v fd &> /dev/null; then
+    alias find='fd'
+fi
+
 alias ..='cd ..'
 alias ...='cd ../..'
 alias clear='clear && echo "Welcome to Room of Requirement"'
@@ -92,8 +115,17 @@ alias g='git'
 alias ga='git add'
 alias gc='git commit'
 alias gp='git push'
-alias gl='git log'
+alias gl='git log --oneline --graph'
 alias gst='git status'
+alias gd='git diff'
+
+# Kubernetes aliases (if kubectl installed)
+if command -v kubectl &> /dev/null; then
+    alias k='kubectl'
+    alias kgp='kubectl get pods'
+    alias kgs='kubectl get services'
+    alias kgn='kubectl get nodes'
+fi
 
 # ============================================================================
 # FUNCTIONS
@@ -133,20 +165,21 @@ if ! command -v starship &> /dev/null; then
 fi
 
 # ============================================================================
-# PLUGIN LOADING (optional)
+# PLUGIN LOADING (from Homebrew)
 # ============================================================================
-# Load zsh-autosuggestions if installed via Homebrew or oh-my-zsh
+# Load zsh-autosuggestions from Homebrew
 if [ -f "${HOMEBREW_PREFIX}/share/zsh-autosuggestions/zsh-autosuggestions.zsh" ]; then
     source "${HOMEBREW_PREFIX}/share/zsh-autosuggestions/zsh-autosuggestions.zsh"
-elif [ -f ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh ]; then
-    source ~/.oh-my-zsh/custom/plugins/zsh-autosuggestions/zsh-autosuggestions.zsh
 fi
 
-# Load zsh-syntax-highlighting if installed via Homebrew or oh-my-zsh
+# Load zsh-syntax-highlighting from Homebrew (must be loaded last)
 if [ -f "${HOMEBREW_PREFIX}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh" ]; then
     source "${HOMEBREW_PREFIX}/share/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh"
-elif [ -f ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh ]; then
-    source ~/.oh-my-zsh/custom/plugins/zsh-syntax-highlighting/zsh-syntax-highlighting.zsh
+fi
+
+# Load fzf key bindings if installed
+if [ -f "${HOMEBREW_PREFIX}/opt/fzf/shell/key-bindings.zsh" ]; then
+    source "${HOMEBREW_PREFIX}/opt/fzf/shell/key-bindings.zsh"
 fi
 
 # ============================================================================
