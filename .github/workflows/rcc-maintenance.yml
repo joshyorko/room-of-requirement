@@ -127,9 +127,7 @@ jobs:
 
           ### Changes
           - GitHub Actions workflow version updates
-          - ror-specialty tool updates (action-server, rcc) with SHA256 checksums
           - PyPI package updates for maintenance robot
-          - DevContainer lock file updates
           - Pre-commit hook fixes
 
           ### Affected Files

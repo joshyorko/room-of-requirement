@@ -1,36 +1,4 @@
 {
-  "rcc": {
-    "repo": "joshyorko/rcc",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://github.com/joshyorko/rcc/releases/download/v{version}/rcc-linux64",
-    "targets": [
-      {
-        "file": "src/ror-specialty/install.sh",
-        "patterns": [
-          "RCC_VERSION=\"(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)\""
-        ],
-        "sha256_pattern": "RCC_SHA256=\"(?P<sha256>\\S+)\""
-      }
-    ]
-  },
-  "action-server": {
-    "repo": "sema4ai/actions",
-    "source": "release",
-    "max_major": null,
-    "include_prerelease": false,
-    "download_url_template": "https://cdn.sema4.ai/action-server/releases/{version}/linux64/action-server",
-    "targets": [
-      {
-        "file": "src/ror-specialty/install.sh",
-        "patterns": [
-          "ACTION_SERVER_VERSION=\"(?P<version>[0-9]+\\.[0-9]+(?:\\.[0-9]+)?)\""
-        ],
-        "sha256_pattern": "ACTION_SERVER_SHA256=\"(?P<sha256>\\S+)\""
-      }
-    ]
-  },
   "requests": {
     "source": "pypi",
     "package": "requests",

@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-Everything is pre-baked into the image - no features required! Core tools (mise, starship, zoxide, nushell) and Sema4.AI tools (action-server, rcc) are ready to use.
+Everything is pre-baked into the image - no features required! Core tools (mise, starship, zoxide, nushell) are ready to use. Additional tools like rcc are available via `ujust bbrew` → select `ror`.
 
 ### Option 2: Open This Repository
 
@@ -55,24 +55,11 @@ devpod up https://github.com/joshyorko/room-of-requirement
 │  └─────────────────────────────────────────────────────────┘│
 │  ┌─────────────────────────────────────────────────────────┐│
 │  │  Curated Brewfiles (.devcontainer/brew/)               ││
-│  │  • core.Brewfile    - mise, starship, zoxide, nushell  ││
-│  │  • cli.Brewfile     - bat, eza, fzf, ripgrep, jq, yq   ││
-│  │  • k8s.Brewfile     - kubectl, helm, k9s, dagger       ││
-│  │  • cloud.Brewfile   - aws-cli, azure-cli, terraform    ││
-│  │  • security.Brewfile - cosign, grype, syft, trivy      ││
-│  │  • data.Brewfile    - duckdb, sqlite, httpie           ││
+│  │  • core.Brewfile  - mise, starship, zoxide, nushell    ││
+│  │  • dev.Brewfile   - bat, eza, fzf, ripgrep, jq, yq     ││
+│  │  • cloud.Brewfile - aws, azure, terraform, k8s tools   ││
+│  │  • ror.Brewfile   - rcc, uv, gh, duckdb, sqlite        ││
 │  └─────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────┘
-                            ▼
-┌─────────────────────────────────────────────────────────────┐
-│              DevContainer Features (Minimal)                │
-│  ┌──────────────────────────────────────────────────────┐  │
-│  │                  ror-specialty                        │  │
-│  │   Tools NOT available in Homebrew:                   │  │
-│  │   • action-server (Sema4.AI)                         │  │
-│  │   • rcc (joshyorko fork)                             │  │
-│  │   All binaries verified with SHA256 checksums        │  │
-│  └──────────────────────────────────────────────────────┘  │
 └─────────────────────────────────────────────────────────────┘
 ```
 
@@ -99,8 +86,7 @@ These are baked into the image for instant availability:
 | **starship** | Cross-shell prompt with git/tool status |
 | **zoxide** | Smart directory navigation (`z` command) |
 | **nushell** | Modern shell alternative |
-| **action-server** | Sema4.AI AI automation server |
-| **rcc** | Robocorp/Sema4.AI automation runtime |
+
 
 ### On-Demand Brewfiles
 
@@ -113,12 +99,10 @@ ujust brew-install-all  # Install everything
 
 | Brewfile | Tools Included |
 |----------|----------------|
-| **cli** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux |
-| **k8s** | kubectl, helm, k9s, k3d, skaffold, dagger, devspace |
-| **cloud** | aws-cli, azure-cli, terraform |
-| **security** | cosign, grype, syft, trivy |
-| **data** | duckdb, sqlite, httpie |
-| **dev** | gh, git-lfs, pre-commit |
+| **core** | mise, starship, zoxide, nushell |
+| **dev** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux, git-lfs |
+| **cloud** | aws-cli, azure-cli, terraform, kubectl, helm, k9s, k3d, dagger, devspace |
+| **ror** | rcc, uv, gh, duckdb, sqlite |
 
 ---
 
@@ -202,7 +186,6 @@ brew bundle --file=<path-to-Brewfile>
 - **SBOM generation**: Every image includes a Software Bill of Materials
 - **Cosign signatures**: All artifacts cryptographically signed
 - **CVE scanning**: Critical vulnerabilities block releases
-- **SHA256 verification**: Direct downloads in ror-specialty verified with checksums
 
 ### Docker-in-Docker
 - Built-in via Wolfi's official `docker-dind` package
@@ -221,14 +204,9 @@ room-of-requirement/
 │   ├── justfile             # ujust commands (bbrew, etc.)
 │   └── brew/                # Curated Brewfiles
 │       ├── core.Brewfile    # mise, starship, zoxide, nushell
-│       ├── cli.Brewfile     # Terminal utilities
-│       ├── k8s.Brewfile     # Kubernetes tools
-│       ├── cloud.Brewfile   # Cloud provider CLIs
-│       ├── security.Brewfile # Security scanning tools
-│       ├── data.Brewfile    # Data tools
-│       └── dev.Brewfile     # Git and development tools
-├── src/                     # DevContainer Features source
-│   └── ror-specialty/       # Non-Homebrew tools (Sema4.AI)
+│       ├── dev.Brewfile     # CLI tools, terminal utilities
+│       ├── cloud.Brewfile   # Cloud CLIs, Kubernetes, IaC
+│       └── ror.Brewfile     # rcc, uv, gh, databases
 ├── templates/               # Project starter templates
 │   └── ror-starter/         # Basic RoR template
 ├── automation/              # Maintenance automation
@@ -248,7 +226,7 @@ room-of-requirement/
 }
 ```
 
-All tools are pre-installed: mise, starship, zoxide, nushell, action-server, rcc. Use `ujust bbrew` for additional Homebrew tools.
+All tools are pre-installed: mise, starship, zoxide, nushell. Use `ujust bbrew` for additional tools (rcc, uv, gh available via `ror` Brewfile).
 
 ### With Additional Kubernetes Tools
 
@@ -276,10 +254,9 @@ Create a `Brewfile` in your project root with your custom tools.
 
 The repository includes an RCC-powered maintenance robot that:
 
-- Updates tool versions in `ror-specialty` with SHA256 checksum verification
 - Tracks PyPI package versions for the maintenance robot itself
 - Updates GitHub Actions workflow dependencies
-- Regenerates devcontainer lockfiles
+- Tracks Homebrew formula versions
 
 ```bash
 # Run full maintenance
@@ -287,38 +264,6 @@ rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
 ```
 
 See [automation/maintenance-robot/README.md](automation/maintenance-robot/README.md) for details.
-
----
-
-## 📊 Performance Targets
-
-| Metric | Target |
-|--------|--------|
-| First pull startup | < 60 seconds (100Mbps) |
-| Cached container start | < 15 seconds |
-| Image size (compressed) | < 500MB |
-| Starship prompt render | < 100ms |
-| mise tool switch (cached) | < 500ms |
-
----
-
-## 🏷️ Image Tags
-
-| Tag | Description |
-|-----|-------------|
-| `latest` | Most recent build (daily updates) |
-| `stable` | Monthly release (recommended for teams) |
-| `v2.x.x` | Specific semantic version (pinned) |
-
----
-
-## 🤝 Contributing
-
-1. Fork the repository
-2. Create a feature branch
-3. Make changes following [.github/copilot-instructions.md](.github/copilot-instructions.md) guidelines
-4. Test with `devcontainer build --workspace-folder .`
-5. Submit a PR with conventional commit messages
 
 ---
 

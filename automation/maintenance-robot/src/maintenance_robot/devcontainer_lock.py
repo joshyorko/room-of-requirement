@@ -40,6 +40,17 @@ def update_devcontainer_lockfile(repo_root: Path, report: MaintenanceReport) -> 
         logger.info("No devcontainer configuration found; skipping lockfile update.")
         return
 
+    # Check if there are any features to lock
+    try:
+        config_data = json.loads(config_file.read_text())
+        features = config_data.get("features", {})
+        if not features:
+            logger.info("No features defined in devcontainer.json; skipping lockfile update.")
+            return
+    except (json.JSONDecodeError, IOError) as exc:
+        logger.warning("Could not parse devcontainer.json: %s", exc)
+        return
+
     lockfile_path = config_dir / "devcontainer-lock.json"
     old_lock = _read_lockfile(lockfile_path)
 

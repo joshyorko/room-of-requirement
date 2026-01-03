@@ -25,13 +25,12 @@ OUTPUT_DIR = ROBOT_ROOT / "output"
 
 @task
 def maintenance() -> None:
-    """Run all maintenance tasks: update workflows, specialty tools, and devcontainer lock.
+    """Run all maintenance tasks: update workflows, PyPI packages, and run pre-commit.
 
     This robot focuses on:
     1. GitHub Actions workflow version updates (github_actions.json)
-    2. ror-specialty tool version updates with SHA256 checksums (downloads.json)
-    3. PyPI package updates for the maintenance robot itself (downloads.json)
-    4. Devcontainer lockfile regeneration
+    2. PyPI package updates for the maintenance robot itself (downloads.json)
+    3. Homebrew version tracking (informational only)
 
     Homebrew tools are NOT auto-updated - they're managed via curated Brewfiles
     and updated manually or via `brew update && brew upgrade`.
@@ -53,7 +52,7 @@ def maintenance() -> None:
     else:
         logging.info("No workflows directory found; skipping workflow updates.")
 
-    # Update ror-specialty tools and PyPI packages
+    # Update PyPI packages
     downloads_allowlist = allowlists.get("downloads", {})
     if downloads_allowlist:
         downloads_updater = DownloadsUpdater(downloads_allowlist, repo_root=REPO_ROOT, report=report)
@@ -91,7 +90,7 @@ def update_workflows_only() -> None:
 
 @task
 def update_downloads_only() -> None:
-    """Update ror-specialty tools and PyPI packages with version/checksum updates."""
+    """Update PyPI packages with version updates."""
     allowlists = _load_allowlists()
     report = MaintenanceReport()
     downloads_updater = DownloadsUpdater(

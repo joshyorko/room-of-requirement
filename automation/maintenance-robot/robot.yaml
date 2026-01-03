@@ -2,7 +2,7 @@
 # https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-robotyaml
 
 tasks:
-  # Full maintenance run - updates workflows, ror-specialty tools, PyPI packages, and lockfile
+  # Full maintenance run - updates workflows, PyPI packages, and runs pre-commit
   maintenance:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t maintenance
 
@@ -10,7 +10,7 @@ tasks:
   update-workflows:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_workflows_only
 
-  # Update ror-specialty tools and PyPI packages with version/checksum updates
+  # Update PyPI packages with version updates
   update-downloads:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_downloads_only
 

@@ -54,9 +54,7 @@
       }
     }
   },
-  "features": {
-    "ghcr.io/joshyorko/devcontainer-features/ror-specialty:1": {}
-  },
+  "features": {},
   "privileged": true,
   "overrideCommand": false,
   "runArgs": [

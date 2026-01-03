@@ -1,16 +1,3 @@
-# Development Tools
-
-# Python
-brew "uv"                  # Fast Python package installer
-
-
-# Data and Database Tools
-
-# Databases
-brew "sqlite"              # Lightweight SQL database
-brew "duckdb"              # Embedded analytics database
-
-
 # CLI Tools and Utilities
 tap "valkyrie00/bbrew"
 
@@ -32,8 +19,7 @@ brew "httpie"              # User-friendly HTTP client
 brew "htop"                # Interactive process viewer
 brew "tmux"                # Terminal multiplexer
 
-# VCS and Git tools
-brew "gh"                  # GitHub CLI
+
 brew "git-lfs"             # Git Large File Storage
 
 # Bold Brew TUI

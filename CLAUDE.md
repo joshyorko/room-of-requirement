@@ -14,9 +14,8 @@ Room of Requirement is a modular DevContainer platform built on Wolfi OS (Chaing
 │  └── Homebrew Foundation (/home/linuxbrew/.linuxbrew) │
 │       └── Core Tools: mise, starship, zoxide, nushell │
 ├────────────────────────────────────────────────────────┤
-│  DevContainer Features (composable, published to GHCR)│
-│  • ror-core (meta), ror-cli-tools, ror-specialty      │
-│  • wolfi-docker-dind (rootless Docker-in-Docker)      │
+│  Homebrew Brewfiles (curated tool bundles)            │
+│  • cli, cloud, k8s, security, data, dev, ror          │
 └────────────────────────────────────────────────────────┘
 ```
 
