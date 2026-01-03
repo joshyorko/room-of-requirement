@@ -302,7 +302,12 @@ jobs:
             fi
           done
 
-          echo "published=${PUBLISHED_JSON}" >> $GITHUB_OUTPUT
+          # Use heredoc for multi-line JSON output
+          {
+            echo "published<<EOF"
+            echo "$PUBLISHED_JSON"
+            echo "EOF"
+          } >> $GITHUB_OUTPUT
 
       - name: Upload build artifacts
         if: always()
