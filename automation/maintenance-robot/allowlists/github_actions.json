@@ -16,7 +16,7 @@
   "actions/setup-node": {
     "repo": "actions/setup-node",
     "source": "release",
-    "max_major": 4,
+    "max_major": 5,
     "include_prerelease": false,
     "pin_to_sha": true
   },
@@ -108,6 +108,13 @@
     "repo": "googleapis/release-please-action",
     "source": "release",
     "max_major": 4,
+    "include_prerelease": false,
+    "pin_to_sha": true
+  },
+  "slsa-framework/slsa-github-generator": {
+    "repo": "slsa-framework/slsa-github-generator",
+    "source": "release",
+    "max_major": 2,
     "include_prerelease": false,
     "pin_to_sha": true
   }

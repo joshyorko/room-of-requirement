@@ -102,20 +102,29 @@ class GitHubActionsUpdater:
             ref = match.group("ref")
             comment_version = match.group("comment")
 
-        if action not in self.allowlist:
+        # Extract base action path (owner/repo) for allowlist lookup
+        # Actions like github/codeql-action/upload-sarif should match github/codeql-action
+        action_parts = action.split("/")
+        if len(action_parts) >= 2:
+            base_action = f"{action_parts[0]}/{action_parts[1]}"
+        else:
+            base_action = action
+
+        if base_action not in self.allowlist:
             return None
 
         ref = ref.strip()
-        new_release = self._get_release(action)
+        new_release = self._get_release(base_action)
         if new_release is None:
-            logger.debug("No release info available for %s", action)
+            logger.debug("No release info available for %s", base_action)
             return None
 
         # Determine current version from either the ref or the comment
         current_version = None
+        is_sha_pinned = len(ref) == 40 and all(c in "0123456789abcdef" for c in ref.lower())
 
         # If ref is a SHA (40 hex chars), look for version in comment
-        if len(ref) == 40 and all(c in "0123456789abcdef" for c in ref.lower()):
+        if is_sha_pinned:
             if comment_version:
                 current_version = self._to_version(comment_version.strip())
             # If already pinned to the same SHA, no update needed
@@ -128,8 +137,20 @@ class GitHubActionsUpdater:
             logger.debug("Skipping non-version reference %s in %s", ref, path)
             return None
 
-        if new_release.version <= current_version:
+        # Update if:
+        # 1. There's a newer version available, OR
+        # 2. The action is not SHA-pinned but should be (same version, needs pinning)
+        needs_sha_pinning = new_release.sha and not is_sha_pinned
+        has_newer_version = new_release.version > current_version
+
+        if not has_newer_version and not needs_sha_pinning:
             return None
+
+        # If same version but just needs SHA pinning, verify versions match
+        if not has_newer_version and needs_sha_pinning:
+            if new_release.version != current_version:
+                # Version mismatch - skip to avoid downgrade
+                return None
 
         # Build new value with SHA pinning if available
         if new_release.sha:
