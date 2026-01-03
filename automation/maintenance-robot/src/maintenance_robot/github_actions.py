@@ -1,8 +1,10 @@
 from __future__ import annotations
 
 import logging
+import re
+from dataclasses import dataclass
 from pathlib import Path
-from typing import Dict, Iterable, Optional, Set
+from typing import Any, Dict, Iterable, Optional, Set
 
 from packaging.version import InvalidVersion, Version
 from ruamel.yaml import YAML
@@ -12,6 +14,19 @@ from .github_api import ReleaseInfo, fetch_latest_version
 from .reporter import GitHubActionUpdate, MaintenanceReport
 
 logger = logging.getLogger(__name__)
+
+# Regex to parse action references with optional SHA and comment
+# Matches: action@sha # tag or action@tag
+ACTION_REF_PATTERN = re.compile(
+    r"^(?P<action>[^@]+)@(?P<ref>[a-f0-9]{40}|[^\s#]+)(?:\s*#\s*(?P<comment>.*))?$"
+)
+
+
+@dataclass
+class UpdateResult:
+    """Result of an action update with separate value and comment."""
+    value: str
+    comment: Optional[str] = None
 
 
 class GitHubActionsUpdater:
@@ -42,15 +57,18 @@ class GitHubActionsUpdater:
 
         changed = False
 
-        def _walk(node: object) -> None:
+        def _walk(node: Any) -> None:
             nonlocal changed
             if isinstance(node, CommentedMap):
                 for key in list(node.keys()):
                     value = node[key]
                     if key == "uses" and isinstance(value, str):
-                        new_value = self._maybe_update_uses(value, path)
-                        if new_value and new_value != value:
-                            node[key] = new_value
+                        result = self._maybe_update_uses(value, path)
+                        if result and result.value != value:
+                            node[key] = result.value
+                            # Add version as end-of-line comment using ruamel.yaml
+                            if result.comment:
+                                node.yaml_add_eol_comment(result.comment, key)
                             changed = True
                     else:
                         _walk(value)
@@ -65,7 +83,7 @@ class GitHubActionsUpdater:
                 self.yaml.dump(data, stream)
         return changed
 
-    def _maybe_update_uses(self, value: str, path: Path) -> Optional[str]:
+    def _maybe_update_uses(self, value: str, path: Path) -> Optional[UpdateResult]:
         original = value.strip()
         if "@" not in original:
             return None
@@ -74,7 +92,16 @@ class GitHubActionsUpdater:
         if original.startswith("docker://"):
             return None
 
-        action, _, ref = original.partition("@")
+        # Parse the action reference (handles both SHA-pinned and tag-based refs)
+        match = ACTION_REF_PATTERN.match(original)
+        if not match:
+            action, _, ref = original.partition("@")
+            comment_version = None
+        else:
+            action = match.group("action")
+            ref = match.group("ref")
+            comment_version = match.group("comment")
+
         if action not in self.allowlist:
             return None
 
@@ -84,7 +111,19 @@ class GitHubActionsUpdater:
             logger.debug("No release info available for %s", action)
             return None
 
-        current_version = self._to_version(ref)
+        # Determine current version from either the ref or the comment
+        current_version = None
+
+        # If ref is a SHA (40 hex chars), look for version in comment
+        if len(ref) == 40 and all(c in "0123456789abcdef" for c in ref.lower()):
+            if comment_version:
+                current_version = self._to_version(comment_version.strip())
+            # If already pinned to the same SHA, no update needed
+            if new_release.sha and ref.lower() == new_release.sha.lower():
+                return None
+        else:
+            current_version = self._to_version(ref)
+
         if current_version is None:
             logger.debug("Skipping non-version reference %s in %s", ref, path)
             return None
@@ -92,17 +131,26 @@ class GitHubActionsUpdater:
         if new_release.version <= current_version:
             return None
 
-        new_value = f"{action}@{new_release.tag}"
-        logger.info("Updating %s: %s -> %s", path, original, new_value)
+        # Build new value with SHA pinning if available
+        if new_release.sha:
+            new_value = f"{action}@{new_release.sha}"
+            version_comment = new_release.tag
+            updated_display = f"{new_release.sha[:7]} # {new_release.tag}"
+        else:
+            new_value = f"{action}@{new_release.tag}"
+            version_comment = None
+            updated_display = new_release.tag
+
+        logger.info("Updating %s: %s -> %s", path, original, f"{new_value} # {version_comment}" if version_comment else new_value)
         self.report.add_action_update(
             GitHubActionUpdate(
                 file=path,
                 action=action,
-                previous=ref,
-                updated=new_release.tag,
+                previous=ref if len(ref) != 40 else f"{ref[:7]} # {comment_version or 'unknown'}",
+                updated=updated_display,
             )
         )
-        return new_value
+        return UpdateResult(value=new_value, comment=version_comment)
 
     def _get_release(self, action: str) -> Optional[ReleaseInfo]:
         if action not in self._release_cache:
@@ -117,6 +165,7 @@ class GitHubActionsUpdater:
                     source=config.get("source", "release"),
                     include_prerelease=bool(config.get("include_prerelease", False)),
                     max_major=config.get("max_major"),
+                    pin_to_sha=config.get("pin_to_sha", True),
                 )
         return self._release_cache[action]
 

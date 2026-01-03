@@ -23,6 +23,7 @@ class GitHubAPIError(RuntimeError):
 class ReleaseInfo:
     tag: str
     version: Version
+    sha: Optional[str] = None  # Commit SHA for pinning
 
 
 def _headers() -> dict[str, str]:
@@ -76,7 +77,7 @@ def _get(url: str, per_page: int = 100, max_pages: int = 3) -> list[dict]:
     return all_results
 
 
-def _normalize_tag(tag: str) -> Optional[ReleaseInfo]:
+def _normalize_tag(tag: str, sha: Optional[str] = None) -> Optional[ReleaseInfo]:
     if not tag:
         return None
     normalized = tag.strip()
@@ -84,7 +85,7 @@ def _normalize_tag(tag: str) -> Optional[ReleaseInfo]:
         normalized = normalized[len("refs/tags/"):]
     try:
         version = Version(normalized.lstrip("v"))
-        return ReleaseInfo(tag=normalized, version=version)
+        return ReleaseInfo(tag=normalized, version=version, sha=sha)
     except InvalidVersion:
         pass
 
@@ -96,7 +97,7 @@ def _normalize_tag(tag: str) -> Optional[ReleaseInfo]:
             if version_part:
                 try:
                     version = Version(version_part.lstrip("v"))
-                    return ReleaseInfo(tag=normalized, version=version)
+                    return ReleaseInfo(tag=normalized, version=version, sha=sha)
                 except InvalidVersion:
                     logger.debug("Skipping invalid feature tag: %s", normalized)
                     return None
@@ -107,12 +108,48 @@ def _normalize_tag(tag: str) -> Optional[ReleaseInfo]:
         if version_part:
             try:
                 version = Version(version_part.lstrip("v"))
-                return ReleaseInfo(tag=normalized, version=version)
+                return ReleaseInfo(tag=normalized, version=version, sha=sha)
             except InvalidVersion:
                 logger.debug("Skipping invalid action-server tag: %s", normalized)
                 return None
 
     logger.debug("Skipping invalid semantic version tag: %s", normalized)
+    return None
+
+
+def _get_tag_sha(repo: str, tag: str) -> Optional[str]:
+    """Fetch the commit SHA for a specific tag.
+
+    Args:
+        repo: GitHub repository in format owner/repo
+        tag: Tag name (e.g., 'v4.0.0')
+
+    Returns:
+        The full commit SHA if found, None otherwise
+    """
+    # First try refs/tags endpoint
+    url = f"{GITHUB_API_ROOT}/repos/{repo}/git/refs/tags/{tag}"
+    try:
+        response = requests.get(url, headers=_headers(), timeout=30)
+        if response.status_code == 200:
+            data = response.json()
+            obj = data.get("object", {})
+            # If it's a tag object, we need to dereference it
+            if obj.get("type") == "tag":
+                # Annotated tag - need to fetch the tag object to get commit SHA
+                tag_url = obj.get("url")
+                if tag_url:
+                    tag_response = requests.get(tag_url, headers=_headers(), timeout=30)
+                    if tag_response.status_code == 200:
+                        tag_data = tag_response.json()
+                        commit_obj = tag_data.get("object", {})
+                        return commit_obj.get("sha")
+            elif obj.get("type") == "commit":
+                # Lightweight tag - points directly to commit
+                return obj.get("sha")
+    except (requests.RequestException, ValueError) as exc:
+        logger.debug("Failed to fetch tag SHA for %s@%s: %s", repo, tag, exc)
+
     return None
 
 
@@ -123,6 +160,7 @@ def fetch_latest_version(
     include_prerelease: bool = False,
     max_major: Optional[int] = None,
     feature_name: Optional[str] = None,
+    pin_to_sha: bool = True,
 ) -> Optional[ReleaseInfo]:
     """Fetch the latest release/tag for a repository respecting constraints.
 
@@ -132,6 +170,7 @@ def fetch_latest_version(
         include_prerelease: Whether to include prereleases
         max_major: Maximum major version to consider
         feature_name: For devcontainers/features repo, filter by feature name (e.g., 'docker-in-docker')
+        pin_to_sha: Whether to fetch the commit SHA for pinning (default True)
     """
     if source not in {"release", "tag"}:
         raise ValueError(f"Unsupported source type: {source}")
@@ -147,7 +186,13 @@ def fetch_latest_version(
             if not tag_name or not tag_name.startswith(f"feature_{feature_name}_"):
                 continue
 
-        release_info = _normalize_tag(tag_name or "")
+        # Get SHA from the entry if available (tags endpoint includes commit info)
+        sha = None
+        if source == "tag":
+            commit_info = entry.get("commit", {})
+            sha = commit_info.get("sha")
+
+        release_info = _normalize_tag(tag_name or "", sha=sha)
         if release_info is None:
             continue
 
@@ -164,6 +209,17 @@ def fetch_latest_version(
             if entry.get("prerelease") or entry.get("draft"):
                 logger.debug("Skipping pre-release/draft: %s %s", repo, release_info.tag)
                 continue
+
+        # Fetch SHA if not available and pinning is enabled
+        if pin_to_sha and release_info.sha is None:
+            sha = _get_tag_sha(repo, release_info.tag)
+            if sha:
+                release_info = ReleaseInfo(
+                    tag=release_info.tag,
+                    version=release_info.version,
+                    sha=sha,
+                )
+
         return release_info
 
     return None

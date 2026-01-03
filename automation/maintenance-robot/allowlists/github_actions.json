@@ -3,66 +3,112 @@
     "repo": "actions/checkout",
     "source": "release",
     "max_major": 5,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "actions/cache": {
     "repo": "actions/cache",
     "source": "release",
     "max_major": 4,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
+  },
+  "actions/setup-node": {
+    "repo": "actions/setup-node",
+    "source": "release",
+    "max_major": 4,
+    "include_prerelease": false,
+    "pin_to_sha": true
+  },
+  "actions/upload-artifact": {
+    "repo": "actions/upload-artifact",
+    "source": "release",
+    "max_major": 4,
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "docker/login-action": {
     "repo": "docker/login-action",
     "source": "release",
     "max_major": 3,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "docker/metadata-action": {
     "repo": "docker/metadata-action",
     "source": "release",
     "max_major": 5,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
+  },
+  "docker/setup-qemu-action": {
+    "repo": "docker/setup-qemu-action",
+    "source": "release",
+    "max_major": 3,
+    "include_prerelease": false,
+    "pin_to_sha": true
+  },
+  "docker/setup-buildx-action": {
+    "repo": "docker/setup-buildx-action",
+    "source": "release",
+    "max_major": 3,
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "devcontainers/ci": {
     "repo": "devcontainers/ci",
     "source": "tag",
     "max_major": 0,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "hadolint/hadolint-action": {
     "repo": "hadolint/hadolint-action",
     "source": "release",
     "max_major": 3,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "aquasecurity/trivy-action": {
     "repo": "aquasecurity/trivy-action",
     "source": "release",
     "max_major": 1,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "github/codeql-action": {
     "repo": "github/codeql-action",
     "source": "release",
     "max_major": 4,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "sigstore/cosign-installer": {
     "repo": "sigstore/cosign-installer",
     "source": "release",
     "max_major": 3,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "anchore/sbom-action": {
     "repo": "anchore/sbom-action",
     "source": "release",
     "max_major": 0,
-    "include_prerelease": false
+    "include_prerelease": false,
+    "pin_to_sha": true
   },
   "anchore/scan-action": {
     "repo": "anchore/scan-action",
     "source": "release",
-    "max_major": 3,
-    "include_prerelease": false
+    "max_major": 5,
+    "include_prerelease": false,
+    "pin_to_sha": true
+  },
+  "googleapis/release-please-action": {
+    "repo": "googleapis/release-please-action",
+    "source": "release",
+    "max_major": 4,
+    "include_prerelease": false,
+    "pin_to_sha": true
   }
 }
