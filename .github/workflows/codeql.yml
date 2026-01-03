@@ -1,5 +1,5 @@
 # CodeQL Code Scanning for Room of Requirement
-# Detects security vulnerabilities in JavaScript/TypeScript code
+# Detects security vulnerabilities in Python code and GitHub Actions
 
 name: CodeQL
 
@@ -27,18 +27,18 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        language: [javascript-typescript]
+        # Scan Python code (maintenance robot) and GitHub Actions workflows
+        language: [python, actions]
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v5.0.1
+        uses: actions/checkout@v4
 
       - name: Initialize CodeQL
         uses: github/codeql-action/init@v3
         with:
-          languages:
-            ${{ matrix.language }}
-            # Use default queries plus security-extended for more coverage
+          languages: ${{ matrix.language }}
+          # Use default queries plus security-extended for more coverage
           queries: security-extended,security-and-quality
 
       - name: Autobuild
