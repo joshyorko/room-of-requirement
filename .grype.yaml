@@ -112,3 +112,26 @@ ignore:
     package:
       name: openjpeg
       type: apk
+
+  # ============================================================================
+  # npm tar package - Bundled dependency in npm itself
+  # The tar package is bundled inside npm's node_modules and updates when npm
+  # releases a new version. We update npm@latest but can't control when npm
+  # bundles the fixed tar version.
+  # Tracking: https://github.com/npm/cli/issues
+  # ============================================================================
+  - vulnerability: GHSA-29xp-372q-xqph
+    package:
+      name: tar
+      type: npm
+
+  # ============================================================================
+  # BusyBox - Wolfi base image component
+  # Vulnerability in wget applet. We upgrade busybox in final stage but
+  # the fix depends on upstream Wolfi package updates.
+  # Tracking: https://github.com/wolfi-dev/os/issues
+  # ============================================================================
+  - vulnerability: CVE-2025-60876
+    package:
+      name: busybox
+      type: apk
