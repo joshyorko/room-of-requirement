@@ -22,8 +22,8 @@ ACTION_SERVER_VERSION="2.17.1"
 ACTION_SERVER_SHA256="5a3f66707a1b66e4512afb1e6827394eaaaffaec84798129159721e955b8ba41"
 
 # joshyorko RCC (NOT Robocorp - that's the upstream, this is the fork)
-RCC_VERSION="18.12.1"
-RCC_SHA256="ec11807a08b23a098959a717e8011bcb776c56c2f0eaeded80b5a7dc0cb0da3a"
+RCC_VERSION="18.13.0"
+RCC_SHA256="11f7f4ed82552971ad0e25772385d659e618fecedfdcd6a8a22b9e78f24bbb8c"
 
 # ============================================================================
 # UTILITY FUNCTIONS
