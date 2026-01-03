@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.3.0](https://github.com/joshyorko/room-of-requirement/compare/v1.2.2...v1.3.0) (2026-01-03)
+
+
+### ✨ Features
+
+* Add CodeQL workflow for security vulnerability scanning and update Dockerfile for npm and package security ([9792dae](https://github.com/joshyorko/room-of-requirement/commit/9792dae2bc5d730e4922537c04ed5268032545ac))
+* Update GitHub Actions workflows and maintenance scripts for improved version pinning and SHA handling ([cbbe87a](https://github.com/joshyorko/room-of-requirement/commit/cbbe87a61ea11a1dc5817b98acc33bbe4161f99e))
+
+
+### 🐛 Bug Fixes
+
+* Add vulnerability ignore rules for npm tar package and BusyBox ([173765d](https://github.com/joshyorko/room-of-requirement/commit/173765d19d99f0d9fb7793798a7c08448eac402e))
+* Refactor output handling to use heredoc for multi-line JSON in build process ([6e934c1](https://github.com/joshyorko/room-of-requirement/commit/6e934c1056b0e02f1aea5cf0baeaa1f5dbca8396))
+* Update build-image workflow to trigger on merged PRs and refine path conditions ([554c7c9](https://github.com/joshyorko/room-of-requirement/commit/554c7c9d2f1ba2ba4dd11f9454c0bc40fb73e090))
+* Update CodeQL workflow to scan Python code and GitHub Actions ([35e72b1](https://github.com/joshyorko/room-of-requirement/commit/35e72b10b6e6018eb81eb7c21ee0f2eea80a9517))
+* Update GitHub Actions cleanup action version and add it to allowlist ([5ba1c83](https://github.com/joshyorko/room-of-requirement/commit/5ba1c8361955affcc1604c5116efdde713fb8660))
+* Update GitHub Actions workflows to pin action versions and improve SHA handling ([cab092c](https://github.com/joshyorko/room-of-requirement/commit/cab092c71f03e269315dcd1e4d025710032d8609))
+
 ## [1.2.2](https://github.com/joshyorko/room-of-requirement/compare/v1.2.1...v1.2.2) (2026-01-03)
 
 
