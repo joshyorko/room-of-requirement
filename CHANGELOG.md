@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.1](https://github.com/joshyorko/room-of-requirement/compare/v1.2.0...v1.2.1) (2026-01-03)
+
+
+### 🐛 Bug Fixes
+
+* Skip VS Code gcompat installation on Wolfi OS ([#96](https://github.com/joshyorko/room-of-requirement/issues/96)) ([f559507](https://github.com/joshyorko/room-of-requirement/commit/f55950706dec65e542e69fb2ae345d397acb822c))
+
 ## [1.2.0](https://github.com/joshyorko/room-of-requirement/compare/v1.1.2...v1.2.0) (2026-01-02)
 
 
