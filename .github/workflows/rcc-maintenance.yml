@@ -22,7 +22,7 @@ jobs:
       committed: ${{ steps.commit.outputs.committed }}
       files_changed: ${{ steps.check_files.outputs.devcontainer_affected }}
     env:
-      RCC_VERSION: v18.12.1
+      RCC_VERSION: v18.13.0
       MAINTENANCE_PUSH: true
       MAINTENANCE_TARGET_BRANCH: main
     steps:
@@ -33,13 +33,13 @@ jobs:
 
       - name: Install RCC
         run: |
-          if [ ! -x .tools/rcc/v18.12.1/rcc ]; then
-            mkdir -p .tools/rcc/v18.12.1
-            curl -sSL https://github.com/joshyorko/rcc/releases/download/v18.12.1/rcc-linux64 -o .tools/rcc/v18.12.1/rcc
-            chmod +x .tools/rcc/v18.12.1/rcc
+          if [ ! -x .tools/rcc/v18.13.0/rcc ]; then
+            mkdir -p .tools/rcc/v18.13.0
+            curl -sSL https://github.com/joshyorko/rcc/releases/download/v18.13.0/rcc-linux64 -o .tools/rcc/v18.13.0/rcc
+            chmod +x .tools/rcc/v18.13.0/rcc
           fi
-          echo "${GITHUB_WORKSPACE}/.tools/rcc/v18.12.1" >> "$GITHUB_PATH"
-          export PATH="${GITHUB_WORKSPACE}/.tools/rcc/v18.12.1:$PATH"
+          echo "${GITHUB_WORKSPACE}/.tools/rcc/v18.13.0" >> "$GITHUB_PATH"
+          export PATH="${GITHUB_WORKSPACE}/.tools/rcc/v18.13.0:$PATH"
           rcc version
 
       - name: Cache ROBOCORP_HOME
