@@ -125,9 +125,10 @@ RUN mkdir -p /home/linuxbrew && \
     # Create .dockerenv to skip some interactive checks in the installer
     touch /.dockerenv && \
     # Run official Homebrew installer as linuxbrew user
-    su - linuxbrew -c 'NONINTERACTIVE=1 /bin/bash -c "$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)"' && \
+    # Note: Using double quotes with escaped inner quotes to satisfy Hadolint SC2016
+    su - linuxbrew -c "NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" && \
     # Run initial update to populate formulae
-    su - linuxbrew -c '/home/linuxbrew/.linuxbrew/bin/brew update --force' && \
+    su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew update --force" && \
     # Configure git safe directory for all users
     git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
 
@@ -167,21 +168,29 @@ USER vscode
 RUN /home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile && \
     /home/linuxbrew/.linuxbrew/bin/brew cleanup
 
-# Configure mise with default language runtimes
-RUN /home/linuxbrew/.linuxbrew/bin/mise use -g node@lts python@latest go@latest
-
-USER root
+# Configure mise with default language runtimes and update npm to fix GHSA-29xp-372q-xqph
+# The tar npm package vulnerability is addressed by updating to latest npm
+RUN /home/linuxbrew/.linuxbrew/bin/mise use -g node@lts python@latest go@latest && \
+    # Update npm to latest to get patched tar dependency (GHSA-29xp-372q-xqph)
+    /home/linuxbrew/.linuxbrew/bin/mise exec -- npm install -g npm@latest && \
+    # Clear npm cache to remove any cached vulnerable packages
+    /home/linuxbrew/.linuxbrew/bin/mise exec -- npm cache clean --force
 
 # ============================================================================
 # STAGE 4: Final Image
 # ============================================================================
 FROM core-tools AS final
 
-# Security: Update packages after multi-stage build
+# Security: Update packages after multi-stage build and address CVEs
+# CVE-2023-39327, CVE-2023-39328, CVE-2023-39329: openjpeg vulnerabilities
+# CVE-2025-60876: busybox wget vulnerability
 RUN apk update && \
     apk add --no-cache --upgrade \
     ca-certificates \
-    openssl && \
+    openssl \
+    # Upgrade packages with known CVEs to latest available versions
+    openjpeg \
+    busybox && \
     apk cache clean && \
     # Remove gcompat from world file if present (VS Code may try to add it)
     # Wolfi uses native glibc, not musl - gcompat is not needed and not available

@@ -15,4 +15,4 @@ brew "gh"                  # GitHub CLI
 
 # rcc
 tap "joshyorko/tools"
-cask "rcc" 
+cask "rcc"
