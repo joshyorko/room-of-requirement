@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.2.2](https://github.com/joshyorko/room-of-requirement/compare/v1.2.1...v1.2.2) (2026-01-03)
+
+
+### 🐛 Bug Fixes
+
+* Update RCC version to v18.13.0 in maintenance workflow ([dfafdaa](https://github.com/joshyorko/room-of-requirement/commit/dfafdaa5bb5f9158827fce9052659ccd30b0fead))
+
 ## [1.2.1](https://github.com/joshyorko/room-of-requirement/compare/v1.2.0...v1.2.1) (2026-01-03)
 
 
