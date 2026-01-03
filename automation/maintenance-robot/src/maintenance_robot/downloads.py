@@ -116,7 +116,6 @@ class DownloadsUpdater:
                     logger.warning("  ⚠ No %s info found for %s (repo: %s)", source, identifier, repo)
                     continue
                 version = release.version
-                version_str = str(release.version)
                 logger.info("  ✓ Latest GitHub %s version: %s (tag: %s)", source, version, release.tag)
 
             targets = config.get("targets", [])

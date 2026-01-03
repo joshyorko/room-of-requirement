@@ -117,5 +117,12 @@
     "max_major": 2,
     "include_prerelease": false,
     "pin_to_sha": true
+  },
+  "dataaxiom/ghcr-cleanup-action": {
+    "repo": "dataaxiom/ghcr-cleanup-action",
+    "source": "release",
+    "max_major": 1,
+    "include_prerelease": false,
+    "pin_to_sha": true
   }
 }

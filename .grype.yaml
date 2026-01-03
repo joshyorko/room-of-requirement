@@ -94,3 +94,21 @@ ignore:
     package:
       name: cgi
       type: gem
+
+  # ============================================================================
+  # OpenJPEG - Upstream vulnerabilities with no fix available
+  # These are transitive dependencies from image processing libraries
+  # Tracking: https://github.com/uclouvain/openjpeg/issues
+  # ============================================================================
+  - vulnerability: CVE-2023-39327
+    package:
+      name: openjpeg
+      type: apk
+  - vulnerability: CVE-2023-39328
+    package:
+      name: openjpeg
+      type: apk
+  - vulnerability: CVE-2023-39329
+    package:
+      name: openjpeg
+      type: apk
