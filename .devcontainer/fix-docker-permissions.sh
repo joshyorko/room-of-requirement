@@ -48,7 +48,7 @@ else
         # Start dockerd in background if not running
         if ! pgrep -x dockerd > /dev/null; then
             log "Starting dockerd..."
-            sudo sh -c 'nohup /usr/bin/dockerd-entrypoint.sh dockerd > /tmp/docker-init.log 2>&1 &'
+            sudo sh -c 'nohup /usr/bin/dockerd-entrypoint.sh > /tmp/docker-init.log 2>&1 &'
             
             # Wait for socket to be created
             for i in {1..10}; do
