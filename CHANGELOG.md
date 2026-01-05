@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.3](https://github.com/joshyorko/room-of-requirement/compare/v1.3.2...v1.3.3) (2026-01-05)
+
+
+### 🐛 Bug Fixes
+
+* Update Brewfile paths for persistence and improve fallback logic in justfile ([0fae8b1](https://github.com/joshyorko/room-of-requirement/commit/0fae8b1d206738e61b126dc8f7dc71c837e0c1aa))
+
 ## [1.3.2](https://github.com/joshyorko/room-of-requirement/compare/v1.3.1...v1.3.2) (2026-01-05)
 
 
