@@ -15,7 +15,6 @@
     "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
   },
   "mounts": [
-    "source=${localEnv:HOME}${localEnv:USERPROFILE}/.ssh,target=/home/vscode/.ssh,type=bind,readonly",
     "source=ror-homebrew-cache,target=/home/linuxbrew/.cache/Homebrew,type=volume",
     "source=ror-mise-cache,target=/home/vscode/.local/share/mise,type=volume",
     "source=ror-npm-cache,target=/home/vscode/.npm,type=volume",
