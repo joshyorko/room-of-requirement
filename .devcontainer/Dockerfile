@@ -187,6 +187,9 @@ RUN mise use -g node@lts python@latest go@latest && \
 # ============================================================================
 FROM core-tools AS final
 
+# Switch to root for system operations (core-tools stage ends with USER vscode)
+USER root
+
 # Security: Update packages after multi-stage build and address CVEs
 # CVE-2023-39327, CVE-2023-39328, CVE-2023-39329: openjpeg vulnerabilities
 # CVE-2025-60876: busybox wget vulnerability
