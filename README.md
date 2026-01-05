@@ -267,6 +267,26 @@ See [automation/maintenance-robot/README.md](automation/maintenance-robot/README
 
 ---
 
+## 🔧 Troubleshooting
+
+### Docker Permission Issues in Codespaces
+
+If you encounter "permission denied" errors when running Docker commands without `sudo` in GitHub Codespaces:
+
+```bash
+# Automatic fix (runs on container start/attach)
+bash /usr/local/bin/fix-docker-permissions.sh
+
+# Or restart your shell with the docker group
+newgrp docker
+```
+
+The container automatically fixes Docker socket permissions for Codespaces on startup. If issues persist, the fix script can be run manually.
+
+**Why this happens**: GitHub Codespaces mounts the Docker socket from the host with different group ownership than the container expects. The fix script detects Codespaces and adjusts permissions accordingly.
+
+---
+
 ## 📄 License
 
 MIT License - See [LICENSE](LICENSE) for details.
