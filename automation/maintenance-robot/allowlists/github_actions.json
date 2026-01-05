@@ -116,7 +116,8 @@
     "source": "release",
     "max_major": 2,
     "include_prerelease": false,
-    "pin_to_sha": true
+    "pin_to_sha": false,
+    "_comment": "SLSA generator MUST be referenced by tag, not SHA - see https://github.com/slsa-framework/slsa-github-generator#referencing-slsa-builders-and-generators"
   },
   "dataaxiom/ghcr-cleanup-action": {
     "repo": "dataaxiom/ghcr-cleanup-action",

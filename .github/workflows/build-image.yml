@@ -451,7 +451,9 @@ jobs:
       actions: read
       id-token: write
       packages: write
-    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@f7dd8c54c2067bafc12ca7a55595d5ee9b75204a # v2.1.0
+    # IMPORTANT: SLSA generator MUST be referenced by semantic version tag, not SHA hash
+    # See: https://github.com/slsa-framework/slsa-github-generator/blob/main/README.md#referencing-slsa-builders-and-generators
+    uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
       # Note: env context not available in reusable workflow inputs, using literal values
       image: ghcr.io/${{ github.repository_owner }}/ror
