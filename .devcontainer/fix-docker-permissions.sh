@@ -62,7 +62,7 @@ else
             
             # Fix socket permissions
             if [ -e /var/run/docker.sock ]; then
-                sudo chmod 666 /var/run/docker.sock 2>/dev/null || true
+                sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
                 log "Docker socket permissions fixed"
             fi
         fi
