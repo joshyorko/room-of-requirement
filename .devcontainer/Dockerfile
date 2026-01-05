@@ -132,13 +132,16 @@ RUN mkdir -p /home/linuxbrew && \
     # Configure git safe directory for all users
     git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
 
-# Homebrew environment
+# Homebrew environment and PATH
+# NOTE: PATH must include Homebrew bin directories early so all subsequent commands
+# (including mise, brew, and any shims created by mise) can find required tools
 ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     HOMEBREW_CELLAR=/home/linuxbrew/.linuxbrew/Cellar \
     HOMEBREW_REPOSITORY=/home/linuxbrew/.linuxbrew/Homebrew \
     HOMEBREW_NO_ANALYTICS=1 \
     HOMEBREW_NO_AUTO_UPDATE=1 \
-    HOMEBREW_NO_INSTALL_CLEANUP=1
+    HOMEBREW_NO_INSTALL_CLEANUP=1 \
+    PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
@@ -170,11 +173,12 @@ RUN /home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile && \
 
 # Configure mise with default language runtimes and update npm to fix GHSA-29xp-372q-xqph
 # The tar npm package vulnerability is addressed by updating to latest npm
-RUN /home/linuxbrew/.linuxbrew/bin/mise use -g node@lts python@latest go@latest && \
+# NOTE: PATH was set earlier after Homebrew installation so mise is available
+RUN mise use -g node@lts python@latest go@latest && \
     # Update npm to latest to get patched tar dependency (GHSA-29xp-372q-xqph)
-    /home/linuxbrew/.linuxbrew/bin/mise exec -- npm install -g npm@latest && \
+    mise exec -- npm install -g npm@latest && \
     # Clear npm cache to remove any cached vulnerable packages
-    /home/linuxbrew/.linuxbrew/bin/mise exec -- npm cache clean --force
+    mise exec -- npm cache clean --force
 
 # ============================================================================
 # STAGE 4: Final Image
