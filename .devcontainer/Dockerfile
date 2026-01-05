@@ -223,6 +223,10 @@ COPY --chown=vscode:vscode .devcontainer/config/starship.toml /home/vscode/.conf
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 
+# Copy Docker permissions fix script for Codespaces compatibility
+COPY --chown=vscode:vscode .devcontainer/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
+RUN chmod +x /usr/local/bin/fix-docker-permissions.sh
+
 # Copy justfile and Brewfiles for Bluefin-style commands (ujust bbrew, etc.)
 # Using /usr/share/ror/ for persistence across container restarts (not /tmp)
 RUN mkdir -p /usr/share/ror

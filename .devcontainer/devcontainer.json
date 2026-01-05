@@ -60,6 +60,6 @@
     "--privileged"
   ],
   "postCreateCommand": "cp /tmp/.zshrc-ror ~/.zshrc 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true",
-  "postStartCommand": "sudo usermod -aG docker vscode 2>/dev/null || true; if ! docker info > /dev/null 2>&1; then sudo sh -c 'nohup /usr/bin/dockerd-entrypoint.sh dockerd > /tmp/docker-init.log 2>&1 &' && sleep 5 && sudo chmod 666 /var/run/docker.sock 2>/dev/null || true; fi",
+  "postStartCommand": "bash /usr/local/bin/fix-docker-permissions.sh || bash .devcontainer/fix-docker-permissions.sh",
   "waitFor": "onCreateCommand"
 }
