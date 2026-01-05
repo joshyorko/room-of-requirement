@@ -223,12 +223,11 @@ COPY --chown=vscode:vscode .devcontainer/config/starship.toml /home/vscode/.conf
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 
-# Copy Brewfiles for on-demand installation (bbrew TUI selects from these)
-COPY --chown=vscode:vscode .devcontainer/brew /tmp/brew
-
-# Copy justfile for Bluefin-style commands (ujust bbrew, etc.)
+# Copy justfile and Brewfiles for Bluefin-style commands (ujust bbrew, etc.)
+# Using /usr/share/ror/ for persistence across container restarts (not /tmp)
 RUN mkdir -p /usr/share/ror
-COPY .devcontainer/justfile /usr/share/ror/justfile
+COPY --chown=vscode:vscode .devcontainer/brew /usr/share/ror/brew
+COPY --chown=vscode:vscode .devcontainer/justfile /usr/share/ror/justfile
 RUN chmod 644 /usr/share/ror/justfile && \
     printf '#!/bin/bash\nexec just --justfile /usr/share/ror/justfile --working-directory /usr/share/ror "$@"\n' > /usr/local/bin/ujust && \
     chmod +x /usr/local/bin/ujust
@@ -256,7 +255,7 @@ ENV HOME=/home/vscode \
     SHELL=/bin/zsh \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
 
-# Brewfiles are available at /tmp/brew/ for on-demand installation
+# Brewfiles are available at /usr/share/ror/brew/ for on-demand installation
 # Run: ujust bbrew (TUI selector) or ujust brew-install-all (install everything)
 
 WORKDIR /workspaces

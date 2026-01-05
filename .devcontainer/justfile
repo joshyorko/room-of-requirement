@@ -8,10 +8,16 @@ default:
 # Install applications from curated Brewfiles
 bbrew:
     #!/usr/bin/env bash
-    BREW_DIR="${BREW_DIR:-/tmp/brew}"
-    # Fallback to .devcontainer/brew if running from workspace
-    if [ ! -d "$BREW_DIR" ] && [ -d ".devcontainer/brew" ]; then
-        BREW_DIR=".devcontainer/brew"
+    BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
+    # Fallback chain for development/edge cases
+    if [ ! -d "$BREW_DIR" ]; then
+        # Try workspace-relative path
+        for ws in /workspaces/*/; do
+            if [ -d "${ws}.devcontainer/brew" ]; then
+                BREW_DIR="${ws}.devcontainer/brew"
+                break
+            fi
+        done
     fi
     if ! command -v gum &>/dev/null; then
         echo "Installing gum..."
@@ -38,9 +44,15 @@ brew-install-all:
     #!/usr/bin/env bash
     echo "Installing ALL Homebrew packages from all Brewfiles..."
     echo "This may take a while..."
-    BREW_DIR="${BREW_DIR:-/tmp/brew}"
-    if [ ! -d "$BREW_DIR" ] && [ -d ".devcontainer/brew" ]; then
-        BREW_DIR=".devcontainer/brew"
+    BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
+    # Fallback chain for development/edge cases
+    if [ ! -d "$BREW_DIR" ]; then
+        for ws in /workspaces/*/; do
+            if [ -d "${ws}.devcontainer/brew" ]; then
+                BREW_DIR="${ws}.devcontainer/brew"
+                break
+            fi
+        done
     fi
     for brewfile in "$BREW_DIR"/*.Brewfile; do
         echo "Installing from $(basename "$brewfile")..."
