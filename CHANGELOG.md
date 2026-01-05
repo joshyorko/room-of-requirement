@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.3.1](https://github.com/joshyorko/room-of-requirement/compare/v1.3.0...v1.3.1) (2026-01-05)
+
+
+### 🐛 Bug Fixes
+
+* Remove unused subproject reference ([6f6a89c](https://github.com/joshyorko/room-of-requirement/commit/6f6a89c5b765a3ee5d88f3f9387fb625b156587e))
+* Update Homebrew environment variables and PATH for improved tool accessibility ([f639230](https://github.com/joshyorko/room-of-requirement/commit/f6392301581c737ee4af65b22a5ea1697b7f2408))
+* Update Playwright installation instructions and remove obsolete commands ([71c115e](https://github.com/joshyorko/room-of-requirement/commit/71c115e844785c00b1bafccd9ba5bad2f242bee2))
+
 ## [1.3.0](https://github.com/joshyorko/room-of-requirement/compare/v1.2.2...v1.3.0) (2026-01-03)
 
 
