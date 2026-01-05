@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.3.2](https://github.com/joshyorko/room-of-requirement/compare/v1.3.1...v1.3.2) (2026-01-05)
+
+
+### 🐛 Bug Fixes
+
+* Switch to root user for system operations and update packages to address security vulnerabilities ([b42ebbb](https://github.com/joshyorko/room-of-requirement/commit/b42ebbbbebc2ecfda52d5fc27ebb257578f8219f))
+* Update SLSA generator reference to use semantic version tag and adjust allowlist configuration ([2b357f0](https://github.com/joshyorko/room-of-requirement/commit/2b357f055f4b7ee61561738e0178cbbb12804d2f))
+
 ## [1.3.1](https://github.com/joshyorko/room-of-requirement/compare/v1.3.0...v1.3.1) (2026-01-05)
 
 
