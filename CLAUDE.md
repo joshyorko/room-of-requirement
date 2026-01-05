@@ -37,7 +37,6 @@ ujust docker-status      # Check Docker daemon status
 ujust docker-start       # Start Docker daemon
 ujust docker-clean       # Prune Docker resources
 ujust info               # Display system configuration
-ujust playwright-install # Install Playwright browsers
 ```
 
 ### Maintenance Robot (rcc)

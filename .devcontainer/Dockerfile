@@ -53,8 +53,8 @@ RUN apk add --no-cache \
     docker-compose \
     docker-dind \
     dockerd-oci-entrypoint \
-    # Playwright/Browser dependencies (headless Chromium support)
-    # Note: Some deps like atk, gtk-3 aren't in Wolfi - Playwright may show warnings
+    # Playwright and browser dependencies (headless Chromium support)
+    # Playwright installed via Wolfi package for proper system integration
     alsa-lib \
     at-spi2-core \
     cairo \
@@ -75,6 +75,8 @@ RUN apk add --no-cache \
     mesa \
     mesa-gbm \
     nss \
+    libnspr \
+    playwright \
     pango && \
     # Enable docker compose plugin (V2 syntax) by symlinking to plugin directory
     ln -sf /usr/bin/docker-compose /usr/libexec/docker/cli-plugins/docker-compose && \
