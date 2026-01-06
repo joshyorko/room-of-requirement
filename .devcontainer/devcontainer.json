@@ -58,6 +58,5 @@
   "overrideCommand": false,
   "runArgs": [
     "--privileged"
-  ],
-  "postStartCommand": "bash /usr/local/bin/fix-docker-permissions.sh || bash .devcontainer/fix-docker-permissions.sh"
+  ]
 }

@@ -196,9 +196,9 @@ COPY --chown=vscode:vscode .devcontainer/config/starship.toml /home/vscode/.conf
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 
-# Copy Docker permissions fix script for Codespaces compatibility
-COPY --chown=vscode:vscode .devcontainer/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
-RUN chmod +x /usr/local/bin/fix-docker-permissions.sh
+# Copy entrypoint wrapper for Docker-in-Docker (handles both DevPod and Codespaces)
+COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh
+RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy justfile and Brewfiles for Bluefin-style commands (ujust bbrew, etc.)
 # Using /usr/share/ror/ for persistence across container restarts (not /tmp)
@@ -224,13 +224,13 @@ RUN mkdir -p \
     openssl-dev \
     ruby-dev || true
 
-# Switch to vscode user
-# USER vscode <--- Commented out to ensure ENTRYPOINT runs as root for Docker-in-Docker
-# VS Code will automatically connect as the `remoteUser` (vscode) defined in devcontainer.json
+# Switch to vscode user (satisfies Hadolint DL3002)
+# Docker-in-Docker is handled by entrypoint.sh which uses sudo to start dockerd
+USER vscode
 
 # Environment
-# HOME is intentionally let unset so it defaults to /root for root and /home/vscode for vscode user
-ENV SHELL=/bin/zsh \
+ENV HOME=/home/vscode \
+    SHELL=/bin/zsh \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
 
 # Brewfiles are available at /usr/share/ror/brew/ for on-demand installation
@@ -242,7 +242,6 @@ WORKDIR /workspaces
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
     CMD echo "OK" || exit 1
 
-# Docker-in-Docker entrypoint - official Wolfi/Chainguard dockerd entrypoint
-# From dockerd-oci-entrypoint package (ported from docker-library/docker)
-ENTRYPOINT ["/usr/bin/dockerd-entrypoint.sh"]
+# Entrypoint wrapper starts dockerd via sudo, then runs CMD as vscode user
+ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]
