@@ -158,36 +158,11 @@ RUN mkdir -p \
     chmod 775 /home/linuxbrew/.linuxbrew
 
 # ============================================================================
-# STAGE 3.5: Install Core Shell Tools (mise, starship, zoxide, nushell)
+# STAGE 4: Final Image (Optimized for size - tools installed in post-create)
 # ============================================================================
-# Pre-install foundational shell/dev tools so they're baked into the image
-# These are required by .zshrc and should be available immediately
-FROM homebrew AS core-tools
+FROM homebrew AS final
 
-# Copy core.Brewfile for installation
-COPY .devcontainer/brew/core.Brewfile /tmp/core.Brewfile
-
-USER vscode
-
-# Install core shell tools via Homebrew using the Brewfile
-RUN /home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile && \
-    /home/linuxbrew/.linuxbrew/bin/brew cleanup
-
-# Configure mise with default language runtimes and update npm to fix GHSA-29xp-372q-xqph
-# The tar npm package vulnerability is addressed by updating to latest npm
-# NOTE: PATH was set earlier after Homebrew installation so mise is available
-RUN mise use -g node@lts python@latest go@latest && \
-    # Update npm to latest to get patched tar dependency (GHSA-29xp-372q-xqph)
-    mise exec -- npm install -g npm@latest && \
-    # Clear npm cache to remove any cached vulnerable packages
-    mise exec -- npm cache clean --force
-
-# ============================================================================
-# STAGE 4: Final Image
-# ============================================================================
-FROM core-tools AS final
-
-# Switch to root for system operations (core-tools stage ends with USER vscode)
+# Switch to root for system operations
 USER root
 
 # Security: Update packages after multi-stage build and address CVEs

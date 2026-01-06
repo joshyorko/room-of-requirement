@@ -24,11 +24,9 @@ bbrew:
         brew install gum
     fi
     if ! command -v bbrew &>/dev/null; then
-        if gum confirm "Bold Brew is not installed, would you like to install it?"; then
-            brew install Valkyrie00/homebrew-bbrew/bbrew
-        else
-            exit 0
-        fi
+        echo "Installing Bold Brew (bbrew)..."
+        brew tap valkyrie00/bbrew
+        brew install valkyrie00/bbrew/bbrew
     fi
     bbrew -f "${BREW_DIR}/$(gum choose $(find "${BREW_DIR}"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
 

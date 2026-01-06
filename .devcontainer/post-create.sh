@@ -50,23 +50,33 @@ else
     fi
 
     # =========================================================================
-    # CORE SHELL TOOLS - Pre-installed in image
+    # CORE SHELL TOOLS - Install on demand (reduced image size)
     # =========================================================================
-    # mise, starship, zoxide, nushell are now baked into the image
-    # Verify they're available
-    for tool in mise starship zoxide nu; do
-        if command -v "$tool" &> /dev/null; then
-            log "✓ $tool available"
-        else
-            warn "$tool not found - may need image rebuild"
-        fi
-    done
+    log "Installing core shell tools (starship, nushell, mise, zoxide)..."
+    if brew bundle --file=/usr/share/ror/brew/core.Brewfile; then
+        log "✓ Core tools installed successfully"
+    else
+        warn "Failed to install some core tools"
+    fi
+
+    # =========================================================================
+    # MISE: Install Global Runtimes
+    # =========================================================================
+    # Install default runtimes that were previously baked into the image
+    log "Installing global language runtimes (node, python, go)..."
+    # Ensure mise is active for this session
+    eval "$(mise activate bash)"
+    
+    mise use -g node@lts python@latest go@latest
+    
+    # Update npm to latest to fix potential vulnerabilities (e.g. tar GHSA-29xp-372q-xqph)
+    log "Updating npm to latest..."
+    mise exec -- npm install -g npm@latest
+    mise exec -- npm cache clean --force
 
     # =========================================================================
     # MISE: Install project-specific runtimes if .mise.toml exists
     # =========================================================================
-    # Default runtimes (node@lts, python@latest, go@latest) are already
-    # configured globally in the image. This only runs for project overrides.
 
     # =========================================================================
     # BBREW TUI - For on-demand package management
