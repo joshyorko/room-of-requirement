@@ -66,9 +66,9 @@ else
     log "Installing global language runtimes (node, python, go)..."
     # Ensure mise is active for this session
     eval "$(mise activate bash)"
-    
+
     mise use -g node@lts python@latest go@latest
-    
+
     # Update npm to latest to fix potential vulnerabilities (e.g. tar GHSA-29xp-372q-xqph)
     log "Updating npm to latest..."
     mise exec -- npm install -g npm@latest

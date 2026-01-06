@@ -15,7 +15,7 @@ sudo usermod -aG docker vscode 2>/dev/null || true
 # GitHub Codespaces provides its own Docker daemon - don't start another
 if [ -n "${CODESPACES:-}" ]; then
     log "Detected GitHub Codespaces environment"
-    
+
     # Wait for Codespaces Docker socket (provided by host)
     for i in $(seq 1 30); do
         if [ -S /var/run/docker.sock ]; then
@@ -25,7 +25,7 @@ if [ -n "${CODESPACES:-}" ]; then
         [ "$i" -eq 30 ] && log "Warning: Docker socket not found after 30s"
         sleep 1
     done
-    
+
     # Fix socket permissions for vscode user
     if [ -S /var/run/docker.sock ]; then
         SOCKET_GROUP=$(stat -c '%G' /var/run/docker.sock 2>/dev/null || echo "unknown")
@@ -37,12 +37,12 @@ if [ -n "${CODESPACES:-}" ]; then
 else
     # Standard Docker-in-Docker: start dockerd ourselves
     log "Starting Docker daemon..."
-    
+
     if [ -x /usr/bin/dockerd-entrypoint.sh ]; then
         # Start dockerd-entrypoint.sh in background as root
         sudo /usr/bin/dockerd-entrypoint.sh dockerd &
         DOCKERD_PID=$!
-        
+
         # Wait for Docker socket (max 30 seconds)
         for i in $(seq 1 30); do
             if [ -S /var/run/docker.sock ]; then
@@ -52,7 +52,7 @@ else
             [ "$i" -eq 30 ] && log "Warning: Docker daemon didn't start in 30s"
             sleep 1
         done
-        
+
         # Fix socket permissions for vscode user
         if [ -S /var/run/docker.sock ]; then
             sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
