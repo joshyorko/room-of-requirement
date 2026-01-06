@@ -225,11 +225,12 @@ RUN mkdir -p \
     ruby-dev || true
 
 # Switch to vscode user
-USER vscode
+# USER vscode <--- Commented out to ensure ENTRYPOINT runs as root for Docker-in-Docker
+# VS Code will automatically connect as the `remoteUser` (vscode) defined in devcontainer.json
 
 # Environment
-ENV HOME=/home/vscode \
-    SHELL=/bin/zsh \
+# HOME is intentionally let unset so it defaults to /root for root and /home/vscode for vscode user
+ENV SHELL=/bin/zsh \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
 
 # Brewfiles are available at /usr/share/ror/brew/ for on-demand installation
