@@ -185,11 +185,15 @@ RUN apk update && \
 RUN mkdir -p /usr/local/etc/vscode-dev-containers
 COPY .devcontainer/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
 
-# Copy shell configuration
+# Copy shell configuration (backup to /usr/share/ror/config/ survives home volume mounts)
+RUN mkdir -p /usr/share/ror/config
+COPY --chown=vscode:vscode .devcontainer/config/.zshrc /usr/share/ror/config/.zshrc
+COPY --chown=vscode:vscode .devcontainer/config/.bashrc /usr/share/ror/config/.bashrc
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
 COPY --chown=vscode:vscode .devcontainer/config/.bashrc /home/vscode/.bashrc
 
 # Copy starship configuration (shared by bash and zsh)
+COPY --chown=vscode:vscode .devcontainer/config/starship.toml /usr/share/ror/config/starship.toml
 COPY --chown=vscode:vscode .devcontainer/config/starship.toml /home/vscode/.config/starship.toml
 
 # Copy post-create script for pre-built image usage
