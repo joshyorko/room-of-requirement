@@ -59,7 +59,5 @@
   "runArgs": [
     "--privileged"
   ],
-  "postCreateCommand": "cp /tmp/.zshrc-ror ~/.zshrc 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true",
-  "postStartCommand": "bash /usr/local/bin/fix-docker-permissions.sh || bash .devcontainer/fix-docker-permissions.sh",
-  "waitFor": "onCreateCommand"
+  "postStartCommand": "bash /usr/local/bin/fix-docker-permissions.sh || bash .devcontainer/fix-docker-permissions.sh"
 }

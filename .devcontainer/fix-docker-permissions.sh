@@ -69,13 +69,18 @@ else
     fi
 fi
 
-# Verify Docker access
-if docker info > /dev/null 2>&1; then
-    log "✓ Docker is accessible without sudo"
-    docker version --format '{{.Server.Version}}' 2>/dev/null | xargs -I {} log "Docker daemon version: {}"
+# Verify Docker access using sg to test with docker group context
+# (usermod doesn't affect the current shell session)
+if sg docker -c "docker info" > /dev/null 2>&1; then
+    DOCKER_VERSION=$(sg docker -c "docker version --format '{{.Server.Version}}'" 2>/dev/null || echo "unknown")
+    log "✓ Docker is accessible (version: $DOCKER_VERSION)"
+    log "  Note: Run 'newgrp docker' or open a new terminal to use docker in existing shells"
+elif docker info > /dev/null 2>&1; then
+    DOCKER_VERSION=$(docker version --format '{{.Server.Version}}' 2>/dev/null || echo "unknown")
+    log "✓ Docker is accessible without sudo (version: $DOCKER_VERSION)"
 else
-    log "✗ Docker still not accessible. You may need to restart your shell or container."
-    log "  Try: newgrp docker  (or restart your terminal)"
+    log "✗ Docker still not accessible."
+    log "  Try: newgrp docker  (or open a new terminal)"
 fi
 
 exit 0
