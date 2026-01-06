@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.3.4](https://github.com/joshyorko/room-of-requirement/compare/v1.3.3...v1.3.4) (2026-01-06)
+
+
+### 🐛 Bug Fixes
+
+* update Dockerfile and scripts for improved shell configuration and Docker permissions ([f924c85](https://github.com/joshyorko/room-of-requirement/commit/f924c853a0b738c47fca5fd7453c577952d2096b))
+
 ## [1.3.3](https://github.com/joshyorko/room-of-requirement/compare/v1.3.2...v1.3.3) (2026-01-05)
 
 
