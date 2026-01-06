@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.4.0](https://github.com/joshyorko/room-of-requirement/compare/v1.3.4...v1.4.0) (2026-01-06)
+
+
+### ✨ Features
+
+* implement entrypoint wrapper for Docker-in-Docker support and remove permissions fix script ([09cd51e](https://github.com/joshyorko/room-of-requirement/commit/09cd51e8b11d317fd8380e5666ff70564cc0652f))
+
+
+### 🐛 Bug Fixes
+
+* adjust user context in Dockerfile for Docker-in-Docker compatibility ([efcd823](https://github.com/joshyorko/room-of-requirement/commit/efcd82322b4b41aa016f0f42c64d9445310f89de))
+
+
+### ♻️ Refactoring
+
+* optimize Dockerfile and scripts for reduced image size and on-demand tool installation ([508ab40](https://github.com/joshyorko/room-of-requirement/commit/508ab40eb940b179f8136ef7f396a98d93e65455))
+
 ## [1.3.4](https://github.com/joshyorko/room-of-requirement/compare/v1.3.3...v1.3.4) (2026-01-06)
 
 
