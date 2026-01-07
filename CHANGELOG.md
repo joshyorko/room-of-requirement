@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.4.1](https://github.com/joshyorko/room-of-requirement/compare/v1.4.0...v1.4.1) (2026-01-07)
+
+
+### 🐛 Bug Fixes
+
+* ensure /var/run has 755 permissions for Docker socket access ([48172ea](https://github.com/joshyorko/room-of-requirement/commit/48172eaf24c2abb8598da7930588a8bbb88ab85a))
+* start Wolfi dockerd on Codespaces when host socket unavailable ([5977c2b](https://github.com/joshyorko/room-of-requirement/commit/5977c2bdcdb0699bec45a263f59e71792625c9b7))
+
 ## [1.4.0](https://github.com/joshyorko/room-of-requirement/compare/v1.3.4...v1.4.0) (2026-01-06)
 
 
