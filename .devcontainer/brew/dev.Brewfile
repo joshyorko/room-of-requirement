@@ -11,6 +11,7 @@ brew "tldr"                # Simplified man pages
 brew "tree"                # Directory tree viewer
 
 # Shell and development tools
+brew "nushell"             # Modern shell alternative (optional)
 brew "jq"                  # JSON processor
 brew "yq"                  # YAML processor
 brew "httpie"              # User-friendly HTTP client

@@ -52,7 +52,7 @@ else
     # =========================================================================
     # CORE SHELL TOOLS - Install on demand (reduced image size)
     # =========================================================================
-    log "Installing core shell tools (starship, nushell, mise, zoxide)..."
+    log "Installing core shell tools (starship, mise, zoxide)..."
     if brew bundle --file=/usr/share/ror/brew/core.Brewfile; then
         log "✓ Core tools installed successfully"
     else
