@@ -12,31 +12,9 @@ log() {
 # Ensure vscode user is in docker group
 sudo usermod -aG docker vscode 2>/dev/null || true
 
-# GitHub Codespaces provides its own Docker daemon - don't start another
-if [ -n "${CODESPACES:-}" ]; then
-    log "Detected GitHub Codespaces environment"
-
-    # Wait for Codespaces Docker socket (provided by host)
-    for i in $(seq 1 30); do
-        if [ -S /var/run/docker.sock ]; then
-            log "Docker socket found"
-            break
-        fi
-        [ "$i" -eq 30 ] && log "Warning: Docker socket not found after 30s"
-        sleep 1
-    done
-
-    # Fix socket permissions for vscode user
-    if [ -S /var/run/docker.sock ]; then
-        SOCKET_GROUP=$(stat -c '%G' /var/run/docker.sock 2>/dev/null || echo "unknown")
-        log "Current socket group: $SOCKET_GROUP"
-        sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
-        sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
-        log "Docker socket permissions updated"
-    fi
-else
-    # Standard Docker-in-Docker: start dockerd ourselves
-    log "Starting Docker daemon..."
+# Function to start Wolfi's native dockerd
+start_dockerd() {
+    log "Starting Docker daemon (Wolfi native)..."
 
     if [ -x /usr/bin/dockerd-entrypoint.sh ]; then
         # Start dockerd-entrypoint.sh in background as root
@@ -61,6 +39,38 @@ else
     else
         log "Warning: dockerd-entrypoint.sh not found"
     fi
+}
+
+# GitHub Codespaces may or may not provide Docker - check first, then fallback
+if [ -n "${CODESPACES:-}" ]; then
+    log "Detected GitHub Codespaces environment"
+
+    # Brief wait for Codespaces Docker socket (if host provides one)
+    SOCKET_FOUND=false
+    for i in $(seq 1 5); do
+        if [ -S /var/run/docker.sock ]; then
+            log "Docker socket found from Codespaces host"
+            SOCKET_FOUND=true
+            break
+        fi
+        sleep 1
+    done
+
+    if [ "$SOCKET_FOUND" = true ]; then
+        # Fix socket permissions for vscode user
+        SOCKET_GROUP=$(stat -c '%G' /var/run/docker.sock 2>/dev/null || echo "unknown")
+        log "Current socket group: $SOCKET_GROUP"
+        sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
+        sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
+        log "Docker socket permissions updated"
+    else
+        # No socket from Codespaces host - start our own dockerd
+        log "No Docker socket from Codespaces host, starting Wolfi dockerd..."
+        start_dockerd
+    fi
+else
+    # Standard Docker-in-Docker (DevPod, local, etc): start dockerd ourselves
+    start_dockerd
 fi
 
 # Verify Docker access
