@@ -16,6 +16,15 @@ sudo usermod -aG docker vscode 2>/dev/null || true
 start_dockerd() {
     log "Starting Docker daemon (Wolfi native)..."
 
+    # Ensure /var/run is accessible (755) - dockerd creates it with 700 by default
+    # which blocks non-root users from accessing the socket even with correct group membership
+    if [ -d /var/run ]; then
+        sudo chmod 755 /var/run
+    else
+        sudo mkdir -p /var/run
+        sudo chmod 755 /var/run
+    fi
+
     if [ -x /usr/bin/dockerd-entrypoint.sh ]; then
         # Start dockerd-entrypoint.sh in background as root
         sudo /usr/bin/dockerd-entrypoint.sh dockerd &
@@ -57,6 +66,8 @@ if [ -n "${CODESPACES:-}" ]; then
     done
 
     if [ "$SOCKET_FOUND" = true ]; then
+        # Ensure /var/run is traversable (Codespaces may have restrictive permissions)
+        sudo chmod 755 /var/run 2>/dev/null || true
         # Fix socket permissions for vscode user
         SOCKET_GROUP=$(stat -c '%G' /var/run/docker.sock 2>/dev/null || echo "unknown")
         log "Current socket group: $SOCKET_GROUP"
