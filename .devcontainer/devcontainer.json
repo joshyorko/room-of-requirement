@@ -59,5 +59,7 @@
   "runArgs": [
     "--privileged"
   ],
+  "onCreateCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true",
+  "updateContentCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true",
   "postCreateCommand": "cp /usr/share/ror/config/.zshrc ~/.zshrc 2>/dev/null || true; cp /usr/share/ror/config/.bashrc ~/.bashrc 2>/dev/null || true; mkdir -p ~/.config && cp /usr/share/ror/config/starship.toml ~/.config/starship.toml 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true"
 }
