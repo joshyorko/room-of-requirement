@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.2](https://github.com/joshyorko/room-of-requirement/compare/v1.4.1...v1.4.2) (2026-01-09)
+
+
+### 🐛 Bug Fixes
+
+* remove gcompat from apk world file via lifecycle hooks ([#115](https://github.com/joshyorko/room-of-requirement/issues/115)) ([4c877da](https://github.com/joshyorko/room-of-requirement/commit/4c877da4961b1fb013f632379a71c4714ac389f6))
+
 ## [1.4.1](https://github.com/joshyorko/room-of-requirement/compare/v1.4.0...v1.4.1) (2026-01-07)
 
 
