@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.4.3](https://github.com/joshyorko/room-of-requirement/compare/v1.4.2...v1.4.3) (2026-01-11)
+
+
+### 🐛 Bug Fixes
+
+* install core shell tools directly in Docker image for faster startup ([5386c56](https://github.com/joshyorko/room-of-requirement/commit/5386c56d8569573ad3097209b4d9e338b152c96c))
+
 ## [1.4.2](https://github.com/joshyorko/room-of-requirement/compare/v1.4.1...v1.4.2) (2026-01-09)
 
 
