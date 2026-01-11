@@ -14,5 +14,8 @@ brew "gh"                  # GitHub CLI
 
 
 # rcc
+# Custom taps
 tap "joshyorko/tools"
-cask "rcc"
+
+# RCC - Robocorp Control Center CLI for RPA automation
+cask "joshyorko/tools/rcc"

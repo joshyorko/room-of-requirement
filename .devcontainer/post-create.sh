@@ -50,16 +50,6 @@ else
     fi
 
     # =========================================================================
-    # CORE SHELL TOOLS - Install on demand (reduced image size)
-    # =========================================================================
-    log "Installing core shell tools (starship, mise, zoxide)..."
-    if brew bundle --file=/usr/share/ror/brew/core.Brewfile; then
-        log "✓ Core tools installed successfully"
-    else
-        warn "Failed to install some core tools"
-    fi
-
-    # =========================================================================
     # MISE: Install Global Runtimes
     # =========================================================================
     # Install default runtimes that were previously baked into the image

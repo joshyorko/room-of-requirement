@@ -145,6 +145,12 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     HOMEBREW_NO_INSTALL_CLEANUP=1 \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
+# Install core shell tools (baked into image for faster startup)
+# These are essential tools that should always be available immediately
+COPY .devcontainer/brew/core.Brewfile /tmp/core.Brewfile
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile" && \
+    rm /tmp/core.Brewfile
+
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
 RUN mkdir -p \

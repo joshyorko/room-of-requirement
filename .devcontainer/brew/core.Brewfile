@@ -1,5 +1,5 @@
 # Core Shell Foundation Tools
-# These are installed in post-create to save image size
+# These are baked into the Docker image for immediate availability
 
 # Shell and prompt
 brew "starship"            # Cross-shell prompt
