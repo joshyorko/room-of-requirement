@@ -1,5 +1,5 @@
 # mise Configuration for Room of Requirement
-# T041: Create default mise global config with node@lts, python@latest, go@latest
+# Global config for default tool versions
 
 # ============================================================================
 # TOOL VERSIONS
@@ -18,44 +18,37 @@ ruby = "latest"
 # MISE SETTINGS
 # ============================================================================
 [settings]
-# Auto-update tools when versions are specified
-auto_update = false
-
-# Automatically use tools when entering directory
+# Automatically install tools when entering directory
 auto_install = true
 
-# Show prompt messages
+# Show status messages
 quiet = false
 
 # ============================================================================
-# EXPERIMENTAL & FEATURES (T037)
+# ENVIRONMENT
 # ============================================================================
 [env]
-# Enable experimental direnv integration for environment variable loading
-# This allows .mise.toml files to define environment variables that are
-# automatically loaded when entering a project directory
-_.experimental_direnv = true
-
-# Enable experimental environment file support
-_.experimental_env_file = true
-
 # Precedence: mise shims > Homebrew > standard system paths
-_.path = "/usr/local/share/mise/shims:/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin"
+_.path = [
+  "/usr/local/share/mise/shims",
+  "/home/linuxbrew/.linuxbrew/bin",
+  "/home/linuxbrew/.linuxbrew/sbin"
+]
 
 # ============================================================================
-# ALIASES
+# TOOL ALIASES
 # ============================================================================
 # Create convenient shortcuts for version selection
 
-[alias.node]
+[tool_alias.node]
 lts = "20"
 current = "22"
 
-[alias.python]
+[tool_alias.python]
 "3.13" = "3.13.0"
 "3.12" = "3.12.3"
 "3.11" = "3.11.8"
 
-[alias.go]
+[tool_alias.go]
 latest = "1.23.0"
 stable = "1.22.0"
