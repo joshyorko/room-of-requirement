@@ -9,6 +9,11 @@ log() {
     echo "[Entrypoint] $*" >&2
 }
 
+# Remove gcompat from apk world file if present
+# VS Code/DevPod may try to add gcompat for musl compatibility, but Wolfi uses native glibc
+# This must run early before any apk update/upgrade operations
+sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true
+
 # Ensure vscode user is in docker group
 sudo usermod -aG docker vscode 2>/dev/null || true
 

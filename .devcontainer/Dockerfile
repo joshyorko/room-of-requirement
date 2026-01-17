@@ -205,6 +205,10 @@ COPY --chown=vscode:vscode .devcontainer/config/.bashrc /home/vscode/.bashrc
 COPY --chown=vscode:vscode .devcontainer/config/starship.toml /usr/share/ror/config/starship.toml
 COPY --chown=vscode:vscode .devcontainer/config/starship.toml /home/vscode/.config/starship.toml
 
+# Copy mise configuration (global config for default tool versions)
+COPY --chown=vscode:vscode .devcontainer/config/mise.toml /usr/share/ror/config/mise.toml
+COPY --chown=vscode:vscode .devcontainer/config/mise.toml /home/vscode/.config/mise/config.toml
+
 # Copy post-create script for pre-built image usage
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
@@ -226,7 +230,7 @@ RUN chmod 644 /usr/share/ror/justfile && \
 RUN mkdir -p \
     /home/vscode/.cache \
     /home/vscode/.local/share \
-    /home/vscode/.config \
+    /home/vscode/.config/mise \
     /workspaces && \
     chown -R vscode:vscode /home/vscode /workspaces && \
     chmod 755 /workspaces && \
