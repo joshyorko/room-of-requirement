@@ -6,6 +6,9 @@
   },
   "workspaceFolder": "/workspaces/room-of-requirement",
   "remoteUser": "vscode",
+  "containerEnv": {
+    "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
+  },
   "remoteEnv": {
     "SHELL": "/bin/zsh",
     "HOMEBREW_NO_ANALYTICS": "1",

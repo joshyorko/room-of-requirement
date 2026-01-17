@@ -20,9 +20,12 @@ LABEL org.opencontainers.image.description="Modular DevContainer with Wolfi OS -
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
 
 # UTF-8 locale and timezone
+# DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL prevents VS Code from trying to install gcompat
+# (Wolfi uses native glibc, not musl - gcompat is not needed and doesn't exist in Wolfi repos)
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
-    TZ=UTC
+    TZ=UTC \
+    DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true
 
 # Install system packages (minimal set for devcontainer features to work)
 # Security: Use fixed versions where available, keep minimal footprint
