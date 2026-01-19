@@ -39,16 +39,17 @@ _.path = [
 # TOOL ALIASES
 # ============================================================================
 # Create convenient shortcuts for version selection
+# Updated to new mise alias format: [alias.<TOOL>.versions]
 
-[tool_alias.node]
+[alias.node.versions]
 lts = "20"
 current = "22"
 
-[tool_alias.python]
+[alias.python.versions]
 "3.13" = "3.13.0"
 "3.12" = "3.12.3"
 "3.11" = "3.11.8"
 
-[tool_alias.go]
+[alias.go.versions]
 latest = "1.23.0"
 stable = "1.22.0"
