@@ -19,3 +19,4 @@ tap "joshyorko/tools"
 
 # RCC - Robocorp Control Center CLI for RPA automation
 cask "joshyorko/tools/rcc"
+cask "joshyorko/tools/action-server"
