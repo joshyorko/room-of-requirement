@@ -1,5 +1,23 @@
 # Changelog
 
+## [1.5.0](https://github.com/joshyorko/room-of-requirement/compare/v1.4.3...v1.5.0) (2026-01-22)
+
+
+### ✨ Features
+
+* add action-server to ror Brewfile ([751e45b](https://github.com/joshyorko/room-of-requirement/commit/751e45bfee0c89049123b354d38ef8ad9329eb29))
+* add mise configuration and update post-create command for tool versions ([e45c42c](https://github.com/joshyorko/room-of-requirement/commit/e45c42ca85e07785fc11921f1a938ad2f8c2ac43))
+
+
+### 🐛 Bug Fixes
+
+* migrate mise aliases to current format ([#121](https://github.com/joshyorko/room-of-requirement/issues/121)) ([302d297](https://github.com/joshyorko/room-of-requirement/commit/302d29758d6d86ae3265526705eeafad0585c3e2))
+* prevent gcompat installation in Docker setup for Wolfi OS ([a899618](https://github.com/joshyorko/room-of-requirement/commit/a899618d82d6cd27e54ae802d2e3b94a5b774473))
+* remove mise aliases due to conflicting deprecation warnings ([e46cee7](https://github.com/joshyorko/room-of-requirement/commit/e46cee7fdef16d667e890f7faed3f4114da51605))
+* update mise.toml for improved configuration and organization ([d032f8f](https://github.com/joshyorko/room-of-requirement/commit/d032f8f1c879ff9a15a1b9d6a487644787d12162))
+* update RCC version to v18.16.0 in maintenance workflow ([c98f37a](https://github.com/joshyorko/room-of-requirement/commit/c98f37a1da0e5acce8a43813fb86c31a00aa1fb4))
+* update uv package version to 0.9.26 in conda.yaml ([43f1dea](https://github.com/joshyorko/room-of-requirement/commit/43f1dea0d66fad0fd86475a4a646c609dc57338f))
+
 ## [1.4.3](https://github.com/joshyorko/room-of-requirement/compare/v1.4.2...v1.4.3) (2026-01-11)
 
 
