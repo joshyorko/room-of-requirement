@@ -58,13 +58,19 @@ RUN apk add --no-cache \
     dockerd-oci-entrypoint \
     # Playwright and browser dependencies (headless Chromium support)
     # Playwright installed via Wolfi package for proper system integration
+    # Based on wolfi-dev/os chromium.yaml runtime dependencies
     alsa-lib \
     at-spi2-core \
     cairo \
     cups-libs \
     dbus-libs \
+    font-opensans \
+    fontconfig \
     gdk-pixbuf \
+    gtk-3 \
     libdrm \
+    libnss \
+    libnspr \
     libx11 \
     libxcb \
     libxcomposite \
@@ -77,10 +83,11 @@ RUN apk add --no-cache \
     libxshmfence \
     mesa \
     mesa-gbm \
+    mesa-glx \
     nss \
-    libnspr \
+    pango \
     playwright \
-    pango && \
+    xdg-utils && \
     # Enable docker compose plugin (V2 syntax) by symlinking to plugin directory
     ln -sf /usr/bin/docker-compose /usr/libexec/docker/cli-plugins/docker-compose && \
     # Verify critical security tools
