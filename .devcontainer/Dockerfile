@@ -110,14 +110,22 @@ RUN groupadd -g 2000 linuxbrew && \
 # ============================================================================
 FROM users AS homebrew
 
-# Install Homebrew build dependencies
+# Install Homebrew build dependencies + Ruby runtime dependencies
 # Security: Only install what's strictly necessary for Homebrew to function
+# Runtime libraries (libffi, zlib, yaml, readline) needed for mise to compile Ruby and gems
 RUN apk add --no-cache \
     build-base \
+    libffi \
     libffi-dev \
     openssl \
     openssl-dev \
+    readline \
+    readline-dev \
     ruby-dev \
+    yaml \
+    yaml-dev \
+    zlib \
+    zlib-dev \
     procps \
     git-daemon && \
     # Verify OpenSSL for security
@@ -235,11 +243,15 @@ RUN mkdir -p \
     chown -R vscode:vscode /home/vscode /workspaces && \
     chmod 755 /workspaces && \
     # Keep build-base/gcc for Homebrew source builds (e.g., bbrew)
-    # Remove only Homebrew-specific dev dependencies
+    # Keep runtime libraries (libffi, readline, yaml, zlib) for mise Ruby/gem compilation
+    # Remove only *-dev dependencies to save space
     apk del --no-cache \
     libffi-dev \
     openssl-dev \
-    ruby-dev || true
+    readline-dev \
+    ruby-dev \
+    yaml-dev \
+    zlib-dev || true
 
 # Switch to vscode user (satisfies Hadolint DL3002)
 # Docker-in-Docker is handled by entrypoint.sh which uses sudo to start dockerd
