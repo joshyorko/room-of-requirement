@@ -26,7 +26,6 @@ brew "duckdb"              # Embedded analytics database
 # VCS and Git tools
 brew "gh"                  # GitHub CLI
 
-# RCC - Robocorp Control Center CLI for RPA automation
+# RCC and Action Server - installed via brew install --cask in Dockerfile
+# (brew bundle skips casks on Linux, but brew install --cask works)
 tap "joshyorko/tools"
-cask "joshyorko/tools/rcc"
-cask "joshyorko/tools/action-server"

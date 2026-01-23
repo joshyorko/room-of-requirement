@@ -175,6 +175,10 @@ RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/co
 RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force valkyrie00/bbrew" && \
     su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force joshyorko/tools"
 
+# Install rcc and action-server via brew install --cask
+# (brew bundle skips casks on Linux, but brew install --cask works directly)
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install --cask joshyorko/tools/rcc joshyorko/tools/action-server"
+
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
 RUN mkdir -p \
