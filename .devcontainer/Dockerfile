@@ -196,11 +196,14 @@ RUN mkdir -p /usr/local/share/mise && \
     chown -R vscode:vscode /usr/local/share/mise
 
 # Install runtimes as vscode user to system location
+# Note: Must use bash explicitly because mise activate generates bash-specific code
 USER vscode
 ENV MISE_DATA_DIR=/usr/local/share/mise
+SHELL ["/bin/bash", "-c"]
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/mise activate bash)" && \
     /home/linuxbrew/.linuxbrew/bin/mise install node@lts python@latest go@latest && \
     /home/linuxbrew/.linuxbrew/bin/mise reshim
+SHELL ["/bin/sh", "-c"]
 USER root
 # Reset for final image (user location for runtime)
 ENV MISE_DATA_DIR=/home/vscode/.local/share/mise
