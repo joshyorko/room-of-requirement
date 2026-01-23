@@ -165,9 +165,19 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
 
 # Install core shell tools (baked into image for faster startup)
 # These are essential tools that should always be available immediately
+# Includes: mise, starship, zoxide, bbrew, uv, sqlite, duckdb, gh, rcc, action-server
 COPY .devcontainer/brew/core.Brewfile /tmp/core.Brewfile
 RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile" && \
     rm /tmp/core.Brewfile
+
+# Pre-tap custom repositories so bbrew can find casks (avoids hang on first use)
+# These taps are declared in core.Brewfile but bbrew needs them pre-loaded
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force valkyrie00/bbrew" && \
+    su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force joshyorko/tools"
+
+# Install rcc and action-server via brew install --cask
+# (brew bundle skips casks on Linux, but brew install --cask works directly)
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install --cask joshyorko/tools/rcc joshyorko/tools/action-server"
 
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
@@ -180,6 +190,27 @@ RUN mkdir -p \
     chown -R vscode:vscode /home/linuxbrew/.linuxbrew && \
     chmod -R u+rwX /home/linuxbrew/.linuxbrew && \
     chmod 775 /home/linuxbrew/.linuxbrew
+
+# ============================================================================
+# Pre-install mise runtimes to system location for instant startup
+# Volume mount overlays user cache, so we install to /usr/local/share/mise
+# and seed the user cache on first run via mise-seed-cache.sh
+# ============================================================================
+RUN mkdir -p /usr/local/share/mise && \
+    chown -R vscode:vscode /usr/local/share/mise
+
+# Install runtimes as vscode user to system location
+# Note: Must use bash explicitly because mise activate generates bash-specific code
+USER vscode
+ENV MISE_DATA_DIR=/usr/local/share/mise
+SHELL ["/bin/bash", "-c"]
+RUN eval "$(/home/linuxbrew/.linuxbrew/bin/mise activate bash)" && \
+    /home/linuxbrew/.linuxbrew/bin/mise install node@lts python@latest go@latest && \
+    /home/linuxbrew/.linuxbrew/bin/mise reshim
+SHELL ["/bin/sh", "-c"]
+USER root
+# Reset for final image (user location for runtime)
+ENV MISE_DATA_DIR=/home/vscode/.local/share/mise
 
 # ============================================================================
 # STAGE 4: Final Image (Optimized for size - tools installed in post-create)
@@ -205,6 +236,27 @@ RUN apk update && \
     # Use broader pattern to catch gcompat with or without version constraints
     sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true
 
+# Create apk wrapper that filters out gcompat requests
+# VS Code/DevPod keeps trying to install gcompat even with DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true
+# This wrapper intercepts those requests and silently ignores gcompat
+RUN mv /sbin/apk /sbin/apk.real && \
+    printf '#!/bin/bash\n\
+# apk wrapper to filter out gcompat (not available in Wolfi, not needed with native glibc)\n\
+args=()\n\
+for arg in "$@"; do\n\
+    if [[ "$arg" != "gcompat" && "$arg" != *"gcompat"* ]]; then\n\
+        args+=("$arg")\n\
+    fi\n\
+done\n\
+# Also remove gcompat from world file if somehow added\n\
+sed -i "/gcompat/d" /etc/apk/world 2>/dev/null || true\n\
+# If only command remains (e.g., "add" with no packages), skip\n\
+if [[ ${#args[@]} -le 1 ]]; then\n\
+    exit 0\n\
+fi\n\
+exec /sbin/apk.real "${args[@]}"\n' > /sbin/apk && \
+    chmod +x /sbin/apk
+
 # Copy first run notice for VS Code to display
 RUN mkdir -p /usr/local/etc/vscode-dev-containers
 COPY .devcontainer/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
@@ -227,6 +279,10 @@ COPY --chown=vscode:vscode .devcontainer/config/mise.toml /home/vscode/.config/m
 # Copy post-create script for pre-built image usage
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
+
+# Copy mise cache seeding script (instant startup for runtimes)
+COPY --chown=vscode:vscode .devcontainer/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
+RUN chmod +x /usr/local/bin/mise-seed-cache.sh
 
 # Copy entrypoint wrapper for Docker-in-Docker (handles both DevPod and Codespaces)
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh

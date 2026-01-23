@@ -11,8 +11,12 @@
 node = "lts"
 python = "latest"
 go = "latest"
-rust = "latest"
-ruby = "latest"
+# NOTE: Ruby and Rust are disabled by default - they compile from source
+# Build dependencies (libffi, readline, yaml, zlib) are available in the image
+# To enable: mise use ruby@latest rust@latest
+# Or install via Homebrew: brew install ruby rust
+# rust = "latest"
+# ruby = "latest"
 
 # ============================================================================
 # MISE SETTINGS

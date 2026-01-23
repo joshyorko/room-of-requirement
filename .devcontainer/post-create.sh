@@ -30,6 +30,16 @@ WORKSPACE_DIR="${1:-.}"
 cd "$WORKSPACE_DIR" || error "Failed to change to workspace directory"
 
 # ============================================================================
+# MISE CACHE SEEDING (Instant Startup)
+# ============================================================================
+# Seed user mise cache from system installation if empty
+# This copies pre-installed node/python/go from the Docker image to the user's
+# volume-mounted cache directory, enabling instant startup
+if [ -x /usr/local/bin/mise-seed-cache.sh ]; then
+    /usr/local/bin/mise-seed-cache.sh
+fi
+
+# ============================================================================
 # T026: Bluefin-Style Homebrew Setup
 # ============================================================================
 # Ensure Homebrew is in PATH
@@ -50,40 +60,23 @@ else
     fi
 
     # =========================================================================
-    # MISE: Install Global Runtimes
+    # MISE: Install Global Runtimes (cached via volume mount)
     # =========================================================================
-    # Install default runtimes that were previously baked into the image
+    # Install default runtimes - these are cached in the mise volume for fast restarts
     log "Installing global language runtimes (node, python, go)..."
     # Ensure mise is active for this session
     eval "$(mise activate bash)"
 
+    # Install node, python, go (Ruby/Rust disabled - build issues on Wolfi)
     mise use -g node@lts python@latest go@latest
 
-    # Update npm to latest to fix potential vulnerabilities (e.g. tar GHSA-29xp-372q-xqph)
+    # Update npm to latest to fix potential vulnerabilities
     log "Updating npm to latest..."
-    mise exec -- npm install -g npm@latest
-    mise exec -- npm cache clean --force
+    mise exec -- npm install -g npm@latest 2>/dev/null || warn "npm update had issues"
+    mise exec -- npm cache clean --force 2>/dev/null || true
 
-    # =========================================================================
-    # MISE: Install project-specific runtimes if .mise.toml exists
-    # =========================================================================
-
-    # =========================================================================
-    # BBREW TUI - For on-demand package management
-    # =========================================================================
-    if ! command -v bbrew &> /dev/null; then
-        log "Installing bbrew (Bold Brew TUI) for on-demand package management..."
-        if brew tap valkyrie00/bbrew && brew install valkyrie00/bbrew/bbrew; then
-            log "✓ bbrew installed - use 'ujust bbrew' to install packages"
-        else
-            warn "Failed to install bbrew - packages can still be installed via 'ujust brew-install-all'"
-        fi
-    else
-        log "✓ bbrew already installed"
-    fi
-
-    # NOTE: zsh plugins (autosuggestions, syntax-highlighting) are now managed by
-    # zinit in .zshrc - no need to install via Homebrew
+    # NOTE: bbrew, starship, zoxide, uv, sqlite, duckdb, gh, rcc are now baked into the image
+    log "✓ Core tools already installed in image (bbrew, starship, uv, gh, rcc, etc.)"
 fi
 
 # ============================================================================
