@@ -1,17 +1,27 @@
 {
   "image": "ghcr.io/joshyorko/ror:latest",
   "remoteUser": "vscode",
+  "containerEnv": {
+    "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
+  },
   "remoteEnv": {
-    "SHELL": "/bin/zsh"
+    "SHELL": "/bin/zsh",
+    "HOMEBREW_NO_ANALYTICS": "1",
+    "HOMEBREW_NO_AUTO_UPDATE": "1",
+    "DOCKER_BUILDKIT": "1",
+    "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
   },
   "mounts": [
-    "source=ror-homebrew-cache,target=/home/vscode/.cache/homebrew,type=volume",
-    "source=ror-mise-cache,target=/home/vscode/.cache/mise,type=volume",
-    "source=ror-npm-cache,target=/home/vscode/.cache/npm,type=volume"
+    "source=ror-homebrew-cache,target=/home/linuxbrew/.cache/Homebrew,type=volume",
+    "source=ror-mise-cache,target=/home/vscode/.local/share/mise,type=volume",
+    "source=ror-npm-cache,target=/home/vscode/.npm,type=volume"
   ],
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:2.13.0": {}
   },
+  "privileged": true,
+  "runArgs": ["--privileged"],
+  "overrideCommand": false,
   "customizations": {
     "vscode": {
       "extensions": [
@@ -21,5 +31,7 @@
       ]
     }
   },
-  "postCreateCommand": "bash .devcontainer/post-create.sh"
+  "onCreateCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true; sudo apk cache clean 2>/dev/null || true",
+  "updateContentCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true; sudo apk cache clean 2>/dev/null || true",
+  "postCreateCommand": "cp /usr/share/ror/config/.zshrc ~/.zshrc 2>/dev/null || true; cp /usr/share/ror/config/.bashrc ~/.bashrc 2>/dev/null || true; mkdir -p ~/.config/mise && cp /usr/share/ror/config/starship.toml ~/.config/starship.toml 2>/dev/null || true; cp /usr/share/ror/config/mise.toml ~/.config/mise/config.toml 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || bash .devcontainer/post-create.sh 2>/dev/null || true"
 }
