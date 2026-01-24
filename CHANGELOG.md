@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.6.0](https://github.com/joshyorko/room-of-requirement/compare/v1.5.0...v1.6.0) (2026-01-23)
+
+
+### ✨ Features
+
+* bake brew tools + instant mise runtime startup ([#126](https://github.com/joshyorko/room-of-requirement/issues/126)) ([6124c71](https://github.com/joshyorko/room-of-requirement/commit/6124c71da703dd8037f8d4eac3ce04f5d4bb93de))
+
 ## [1.5.0](https://github.com/joshyorko/room-of-requirement/compare/v1.4.3...v1.5.0) (2026-01-22)
 
 
