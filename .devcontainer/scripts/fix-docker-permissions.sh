@@ -17,9 +17,12 @@ if [ -n "${CODESPACES:-}" ]; then
     if [ -S /var/run/docker.sock ]; then
         log "Fixing Docker socket permissions..."
         
-        # Ensure /var/run is traversable
-        if ! sudo chmod 755 /var/run 2>/dev/null; then
-            log "Warning: Failed to set permissions on /var/run"
+        # Check and fix /var/run permissions if needed
+        CURRENT_PERMS=$(stat -c '%a' /var/run 2>/dev/null || echo "000")
+        if [ "$CURRENT_PERMS" != "755" ]; then
+            if ! sudo chmod 755 /var/run 2>/dev/null; then
+                log "Warning: Failed to set permissions on /var/run"
+            fi
         fi
         
         # Fix socket permissions
