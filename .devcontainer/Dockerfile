@@ -284,6 +284,10 @@ RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 COPY --chown=vscode:vscode .devcontainer/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
 RUN chmod +x /usr/local/bin/mise-seed-cache.sh
 
+# Copy Docker permission fix script for Codespaces
+COPY --chown=vscode:vscode .devcontainer/scripts/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
+RUN chmod +x /usr/local/bin/fix-docker-permissions.sh
+
 # Copy entrypoint wrapper for Docker-in-Docker (handles both DevPod and Codespaces)
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

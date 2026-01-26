@@ -269,6 +269,35 @@ See [automation/maintenance-robot/README.md](automation/maintenance-robot/README
 
 ## 🔧 Troubleshooting
 
+### GitHub Copilot Chat Extension Error in Codespaces
+
+If you encounter the error `TypeError: Cannot read properties of undefined (reading 'bind')` when using GitHub Copilot Chat in Codespaces:
+
+**Solution**: The devcontainer configuration explicitly includes the `github.copilot` and `github.copilot-chat` extensions to ensure proper initialization. If you still encounter issues:
+
+1. **Reload the window**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) and run "Developer: Reload Window"
+2. **Rebuild the container**: Press `Ctrl+Shift+P` and run "Dev Containers: Rebuild Container"
+3. **Check extension versions**: Ensure you're using stable (not pre-release) versions of the Copilot extensions
+
+**Why this happens**: The Copilot Chat extension requires certain VS Code APIs to be available during initialization. Explicitly declaring the extensions in the devcontainer configuration ensures they are properly installed and initialized in the correct order.
+
+### Mise Permission Issues in Codespaces
+
+If you encounter permission errors when running `mise install` in GitHub Codespaces:
+
+```bash
+mise ERROR Failed to install tools: core:node@lts, core:python@latest, core:go@latest
+core:node@lts: failed create_dir_all: ~/.local/share/mise/installs/node/24.13.0: Permission denied (os error 13)
+```
+
+**Solution**: The container automatically fixes mise cache directory permissions on startup in Codespaces. If you still encounter issues after the container starts:
+
+1. **Restart your terminal**: Close and reopen the terminal to ensure permissions are applied
+2. **Reload the window**: Press `Ctrl+Shift+P` and run "Developer: Reload Window"
+3. **Manual fix**: Run `sudo chown -R vscode:vscode ~/.local/share/mise` to fix permissions
+
+**Why this happens**: GitHub Codespaces mounts named volumes with root ownership by default. The entrypoint script detects Codespaces and automatically fixes permissions for the mise cache directory during container initialization, ensuring mise commands work properly.
+
 ### Docker Permission Issues in Codespaces
 
 If you encounter "permission denied" errors when running Docker commands without `sudo` in GitHub Codespaces:
