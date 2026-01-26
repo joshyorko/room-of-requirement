@@ -269,6 +269,18 @@ See [automation/maintenance-robot/README.md](automation/maintenance-robot/README
 
 ## 🔧 Troubleshooting
 
+### GitHub Copilot Chat Extension Error in Codespaces
+
+If you encounter the error `TypeError: Cannot read properties of undefined (reading 'bind')` when using GitHub Copilot Chat in Codespaces:
+
+**Solution**: The devcontainer configuration explicitly includes the `github.copilot` and `github.copilot-chat` extensions to ensure proper initialization. If you still encounter issues:
+
+1. **Reload the window**: Press `Ctrl+Shift+P` (or `Cmd+Shift+P` on Mac) and run "Developer: Reload Window"
+2. **Rebuild the container**: Press `Ctrl+Shift+P` and run "Dev Containers: Rebuild Container"
+3. **Check extension versions**: Ensure you're using stable (not pre-release) versions of the Copilot extensions
+
+**Why this happens**: The Copilot Chat extension requires certain VS Code APIs to be available during initialization. Explicitly declaring the extensions in the devcontainer configuration ensures they are properly installed and initialized in the correct order.
+
 ### Docker Permission Issues in Codespaces
 
 If you encounter "permission denied" errors when running Docker commands without `sudo` in GitHub Codespaces:

@@ -30,7 +30,9 @@
         "github.vscode-github-actions",
         "ms-python.python",
         "esbenp.prettier-vscode",
-        "dbaeumer.vscode-eslint"
+        "dbaeumer.vscode-eslint",
+        "github.copilot",
+        "github.copilot-chat"
       ],
       "settings": {
         "terminal.integrated.defaultProfile.linux": "zsh",
@@ -51,7 +53,11 @@
         "terminal.integrated.shellIntegration.enabled": true,
         "terminal.integrated.shellIntegration.decorationsEnabled": "never",
         "editor.defaultFormatter": null,
-        "editor.formatOnSave": true
+        "editor.formatOnSave": true,
+        "github.copilot.enable": {
+          "*": true
+        },
+        "github.copilot.advanced": {}
       }
     }
   },
