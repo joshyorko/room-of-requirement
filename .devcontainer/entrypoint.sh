@@ -59,6 +59,13 @@ start_dockerd() {
 if [ -n "${CODESPACES:-}" ]; then
     log "Detected GitHub Codespaces environment"
 
+    # Fix mise cache directory permissions (Codespaces volume mounts often have root ownership)
+    if [ -d /home/vscode/.local/share/mise ]; then
+        log "Fixing mise cache directory permissions..."
+        sudo chown -R vscode:vscode /home/vscode/.local/share/mise 2>/dev/null || true
+        sudo chmod -R u+rwX /home/vscode/.local/share/mise 2>/dev/null || true
+    fi
+
     # Brief wait for Codespaces Docker socket (if host provides one)
     SOCKET_FOUND=false
     for i in $(seq 1 5); do
