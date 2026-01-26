@@ -18,14 +18,22 @@ if [ -n "${CODESPACES:-}" ]; then
         log "Fixing Docker socket permissions..."
         
         # Ensure /var/run is traversable
-        sudo chmod 755 /var/run 2>/dev/null || true
+        if ! sudo chmod 755 /var/run 2>/dev/null; then
+            log "Warning: Failed to set permissions on /var/run"
+        fi
         
         # Fix socket permissions
-        sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
-        sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
+        if ! sudo chown root:docker /var/run/docker.sock 2>/dev/null; then
+            log "Warning: Failed to change ownership of Docker socket"
+        fi
+        if ! sudo chmod 660 /var/run/docker.sock 2>/dev/null; then
+            log "Warning: Failed to set permissions on Docker socket"
+        fi
         
         # Ensure vscode user is in docker group
-        sudo usermod -aG docker vscode 2>/dev/null || true
+        if ! sudo usermod -aG docker vscode 2>/dev/null; then
+            log "Warning: Failed to add vscode user to docker group"
+        fi
         
         log "✓ Docker socket permissions fixed"
         log "Run 'newgrp docker' or restart your shell to apply group changes"

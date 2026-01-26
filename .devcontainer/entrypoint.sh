@@ -60,10 +60,15 @@ if [ -n "${CODESPACES:-}" ]; then
     log "Detected GitHub Codespaces environment"
 
     # Fix mise cache directory permissions (Codespaces volume mounts often have root ownership)
-    if [ -d /home/vscode/.local/share/mise ]; then
+    MISE_CACHE_DIR="${HOME}/.local/share/mise"
+    if [ -d "$MISE_CACHE_DIR" ]; then
         log "Fixing mise cache directory permissions..."
-        sudo chown -R vscode:vscode /home/vscode/.local/share/mise 2>/dev/null || true
-        sudo chmod -R u+rwX /home/vscode/.local/share/mise 2>/dev/null || true
+        if ! sudo chown -R vscode:vscode "$MISE_CACHE_DIR" 2>/dev/null; then
+            log "Warning: Failed to change ownership of mise cache directory"
+        fi
+        if ! sudo chmod -R u+rwX "$MISE_CACHE_DIR" 2>/dev/null; then
+            log "Warning: Failed to set permissions on mise cache directory"
+        fi
     fi
 
     # Brief wait for Codespaces Docker socket (if host provides one)
