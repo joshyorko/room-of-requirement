@@ -296,7 +296,7 @@ core:node@lts: failed create_dir_all: ~/.local/share/mise/installs/node/24.13.0:
 2. **Reload the window**: Press `Ctrl+Shift+P` and run "Developer: Reload Window"
 3. **Manual fix**: Run `sudo chown -R vscode:vscode ~/.local/share/mise` to fix permissions
 
-**Why this happens**: GitHub Codespaces mounts named volumes with root ownership by default. The entrypoint script detects Codespaces and automatically fixes permissions for the mise cache directory, but this happens after the container starts, not during the postCreateCommand.
+**Why this happens**: GitHub Codespaces mounts named volumes with root ownership by default. The entrypoint script detects Codespaces and automatically fixes permissions for the mise cache directory during container initialization, ensuring mise commands work properly.
 
 ### Docker Permission Issues in Codespaces
 

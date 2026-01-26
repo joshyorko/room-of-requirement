@@ -24,8 +24,15 @@ if [ -d "$SYSTEM_DIR/installs" ] && [ ! -d "$USER_DIR/installs" ]; then
         echo "[mise-seed] This is expected in Codespaces - will be fixed on container start"
         exit 0
     fi
-    cp -r "$SYSTEM_DIR/shims" "$USER_DIR/" 2>/dev/null || true
-    cp -r "$SYSTEM_DIR/downloads" "$USER_DIR/" 2>/dev/null || true
+    
+    # Copy shims and downloads (optional, don't fail if missing)
+    if ! cp -r "$SYSTEM_DIR/shims" "$USER_DIR/" 2>/dev/null; then
+        echo "[mise-seed] Note: No shims directory to copy (this is normal)"
+    fi
+    if ! cp -r "$SYSTEM_DIR/downloads" "$USER_DIR/" 2>/dev/null; then
+        echo "[mise-seed] Note: No downloads directory to copy (this is normal)"
+    fi
+    
     echo "[mise-seed] Done - node, python, go available immediately"
 else
     echo "[mise-seed] Cache already seeded or system installation not found"

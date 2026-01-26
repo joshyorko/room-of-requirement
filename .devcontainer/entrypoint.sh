@@ -61,6 +61,12 @@ if [ -n "${CODESPACES:-}" ]; then
 
     # Fix mise cache directory permissions (Codespaces volume mounts often have root ownership)
     MISE_CACHE_DIR="${HOME}/.local/share/mise"
+    # Create directory if it doesn't exist to ensure permissions are set
+    if [ ! -d "$MISE_CACHE_DIR" ]; then
+        log "Creating mise cache directory..."
+        sudo mkdir -p "$MISE_CACHE_DIR" 2>/dev/null || log "Warning: Failed to create mise cache directory"
+    fi
+    
     if [ -d "$MISE_CACHE_DIR" ]; then
         log "Fixing mise cache directory permissions..."
         if ! sudo chown -R vscode:vscode "$MISE_CACHE_DIR" 2>/dev/null; then
