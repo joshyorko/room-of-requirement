@@ -66,7 +66,7 @@ if [ -n "${CODESPACES:-}" ]; then
         log "Creating mise cache directory..."
         sudo mkdir -p "$MISE_CACHE_DIR" 2>/dev/null || log "Warning: Failed to create mise cache directory"
     fi
-    
+
     if [ -d "$MISE_CACHE_DIR" ]; then
         log "Fixing mise cache directory permissions..."
         if ! sudo chown -R vscode:vscode "$MISE_CACHE_DIR" 2>/dev/null; then
