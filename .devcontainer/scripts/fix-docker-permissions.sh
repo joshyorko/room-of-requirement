@@ -12,11 +12,11 @@ log() {
 # Check if running in Codespaces
 if [ -n "${CODESPACES:-}" ]; then
     log "Detected GitHub Codespaces environment"
-    
+
     # Check if Docker socket exists
     if [ -S /var/run/docker.sock ]; then
         log "Fixing Docker socket permissions..."
-        
+
         # Check and fix /var/run permissions if needed
         CURRENT_PERMS=$(stat -c '%a' /var/run 2>/dev/null || echo "000")
         if [ "$CURRENT_PERMS" != "755" ]; then
@@ -24,7 +24,7 @@ if [ -n "${CODESPACES:-}" ]; then
                 log "Warning: Failed to set permissions on /var/run"
             fi
         fi
-        
+
         # Fix socket permissions
         if ! sudo chown root:docker /var/run/docker.sock 2>/dev/null; then
             log "Warning: Failed to change ownership of Docker socket"
@@ -32,12 +32,12 @@ if [ -n "${CODESPACES:-}" ]; then
         if ! sudo chmod 660 /var/run/docker.sock 2>/dev/null; then
             log "Warning: Failed to set permissions on Docker socket"
         fi
-        
+
         # Ensure vscode user is in docker group
         if ! sudo usermod -aG docker vscode 2>/dev/null; then
             log "Warning: Failed to add vscode user to docker group"
         fi
-        
+
         log "✓ Docker socket permissions fixed"
         log "Run 'newgrp docker' or restart your shell to apply group changes"
     else
