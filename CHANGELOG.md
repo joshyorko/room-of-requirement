@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.7.0](https://github.com/joshyorko/room-of-requirement/compare/v1.6.0...v1.7.0) (2026-01-31)
+
+
+### ✨ Features
+
+* add zsh completion support for rcc command ([fe72367](https://github.com/joshyorko/room-of-requirement/commit/fe72367e842f59c2e0650c98334dae2cb3e01edf))
+
 ## [1.6.0](https://github.com/joshyorko/room-of-requirement/compare/v1.5.0...v1.6.0) (2026-01-23)
 
 
