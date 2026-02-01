@@ -1,5 +1,22 @@
 # Changelog
 
+## [1.7.0](https://github.com/joshyorko/room-of-requirement/compare/v1.6.0...v1.7.0) (2026-02-01)
+
+
+### ✨ Features
+
+* add zsh completion support for rcc command ([fe72367](https://github.com/joshyorko/room-of-requirement/commit/fe72367e842f59c2e0650c98334dae2cb3e01edf))
+
+
+### 🐛 Bug Fixes
+
+* ensure .vscode/ entry in .gitignore has a newline at the end ([4ccb2d4](https://github.com/joshyorko/room-of-requirement/commit/4ccb2d48ff02f0ece241c1053a87e8e81163ec3a))
+
+
+### ♻️ Refactoring
+
+* remove outdated speckit commands and templates ([e873b46](https://github.com/joshyorko/room-of-requirement/commit/e873b461e6fdd05f9a89d295b728ce1223351570))
+
 ## [1.6.0](https://github.com/joshyorko/room-of-requirement/compare/v1.5.0...v1.6.0) (2026-01-23)
 
 
