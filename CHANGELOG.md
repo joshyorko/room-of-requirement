@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.8.0](https://github.com/joshyorko/room-of-requirement/compare/v1.7.0...v1.8.0) (2026-02-12)
+
+
+### ✨ Features
+
+* update maintenance robot configuration and tasks for improved functionality ([dc9dc9a](https://github.com/joshyorko/room-of-requirement/commit/dc9dc9ae0803d1742715cd97298ed880ba3c974e))
+
+
+### 🐛 Bug Fixes
+
+* ensure proper permissions for user directories in entrypoint and update README with zsh history guidance ([2f5d411](https://github.com/joshyorko/room-of-requirement/commit/2f5d4114c2a769799af6171eb5e63c7a68b8cde5))
+
 ## [1.7.0](https://github.com/joshyorko/room-of-requirement/compare/v1.6.0...v1.7.0) (2026-02-01)
 
 
