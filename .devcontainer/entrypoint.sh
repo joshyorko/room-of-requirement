@@ -9,6 +9,12 @@ log() {
     echo "[Entrypoint] $*" >&2
 }
 
+# Runtime selection:
+# - auto (default): prefer DinD on Codespaces for k3d/kind reliability
+# - dind: always use internal Docker daemon
+# - host: always use host-provided Docker socket
+DOCKER_BACKEND="${ROR_DOCKER_BACKEND:-auto}"
+
 # Remove gcompat from apk world file if present
 # VS Code/DevPod may try to add gcompat for musl compatibility, but Wolfi uses native glibc
 # This must run early before any apk update/upgrade operations
@@ -44,7 +50,10 @@ fix_user_dir_permissions "${HOME}/.npm" "npm cache"
 
 # Function to start Wolfi's native dockerd
 start_dockerd() {
-    log "Starting Docker daemon (Wolfi native)..."
+    local docker_socket="${1:-/var/run/docker.sock}"
+    local docker_host="unix://${docker_socket}"
+
+    log "Starting Docker daemon (Wolfi native) on ${docker_socket}..."
 
     # Ensure /var/run is accessible (755) - dockerd creates it with 700 by default
     # which blocks non-root users from accessing the socket even with correct group membership
@@ -55,14 +64,16 @@ start_dockerd() {
         sudo chmod 755 /var/run
     fi
 
+    sudo mkdir -p "$(dirname "${docker_socket}")"
+
     if [ -x /usr/bin/dockerd-entrypoint.sh ]; then
         # Start dockerd-entrypoint.sh in background as root
-        sudo /usr/bin/dockerd-entrypoint.sh dockerd &
+        sudo /usr/bin/dockerd-entrypoint.sh dockerd --host="${docker_host}" &
         DOCKERD_PID=$!
 
         # Wait for Docker socket (max 30 seconds)
         for i in $(seq 1 30); do
-            if [ -S /var/run/docker.sock ]; then
+            if [ -S "${docker_socket}" ]; then
                 log "Docker daemon is ready"
                 break
             fi
@@ -71,16 +82,22 @@ start_dockerd() {
         done
 
         # Fix socket permissions for vscode user
-        if [ -S /var/run/docker.sock ]; then
-            sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
-            sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
+        if [ -S "${docker_socket}" ]; then
+            sudo chown root:docker "${docker_socket}" 2>/dev/null || true
+            sudo chmod 660 "${docker_socket}" 2>/dev/null || true
         fi
+
+        # Ensure all child processes (including shells/tasks) use the selected socket.
+        export DOCKER_HOST="${docker_host}"
+        log "DOCKER_HOST set to ${DOCKER_HOST}"
     else
         log "Warning: dockerd-entrypoint.sh not found"
     fi
 }
 
-# GitHub Codespaces may or may not provide Docker - check first, then fallback
+# GitHub Codespaces may or may not provide Docker - check first, then fallback.
+# In Codespaces we prefer DinD by default because host socket behavior can differ
+# and break nested container workloads like k3d.
 if [ -n "${CODESPACES:-}" ]; then
     log "Detected GitHub Codespaces environment"
 
@@ -95,7 +112,11 @@ if [ -n "${CODESPACES:-}" ]; then
         sleep 1
     done
 
-    if [ "$SOCKET_FOUND" = true ]; then
+    if [ "${DOCKER_BACKEND}" = "dind" ] || [ "${DOCKER_BACKEND}" = "auto" ]; then
+        log "Using internal DinD backend in Codespaces"
+        # Avoid clashing with host-mounted /var/run/docker.sock.
+        start_dockerd "/tmp/ror-docker.sock"
+    elif [ "$SOCKET_FOUND" = true ]; then
         # Ensure /var/run is traversable (Codespaces may have restrictive permissions)
         sudo chmod 755 /var/run 2>/dev/null || true
         # Fix socket permissions for vscode user
@@ -103,15 +124,21 @@ if [ -n "${CODESPACES:-}" ]; then
         log "Current socket group: $SOCKET_GROUP"
         sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
         sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
+        export DOCKER_HOST="unix:///var/run/docker.sock"
         log "Docker socket permissions updated"
     else
         # No socket from Codespaces host - start our own dockerd
         log "No Docker socket from Codespaces host, starting Wolfi dockerd..."
-        start_dockerd
+        start_dockerd "/var/run/docker.sock"
     fi
 else
-    # Standard Docker-in-Docker (DevPod, local, etc): start dockerd ourselves
-    start_dockerd
+    if [ "${DOCKER_BACKEND}" = "host" ] && [ -S /var/run/docker.sock ]; then
+        export DOCKER_HOST="unix:///var/run/docker.sock"
+        log "Using host Docker socket"
+    else
+        # Standard Docker-in-Docker (DevPod, local, etc): start dockerd ourselves
+        start_dockerd "/var/run/docker.sock"
+    fi
 fi
 
 # Verify Docker access
