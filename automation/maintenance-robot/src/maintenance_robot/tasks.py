@@ -2,11 +2,12 @@ from __future__ import annotations
 
 import json
 import logging
+import os
 import subprocess
 from pathlib import Path
 from typing import Dict
 
-from robocorp.tasks import task
+from robocorp.tasks import get_current_task, get_output_dir, task
 
 from maintenance_robot.allowlist_loader import load_allowlist
 from maintenance_robot.downloads import DownloadsUpdater
@@ -18,9 +19,8 @@ from maintenance_robot.devcontainer_lock import update_devcontainer_lockfile
 logging.basicConfig(level=logging.INFO, format="[%(levelname)s] %(message)s")
 
 PACKAGE_DIR = Path(__file__).resolve().parent
-ROBOT_ROOT = PACKAGE_DIR.parent.parent
+ROBOT_ROOT = Path(os.getenv("ROBOT_ROOT", str(PACKAGE_DIR.parent.parent))).resolve()
 REPO_ROOT = ROBOT_ROOT.parent.parent
-OUTPUT_DIR = ROBOT_ROOT / "output"
 
 
 @task
@@ -37,8 +37,6 @@ def maintenance() -> None:
     """
 
     allowlists = _load_allowlists()
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-
     report = MaintenanceReport()
 
     # Update GitHub Actions workflows
@@ -72,9 +70,7 @@ def maintenance() -> None:
     # Run pre-commit to auto-fix formatting issues
     _run_precommit_autofixes()
 
-    report_path = OUTPUT_DIR / "maintenance_report.json"
-    report_path.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
-    logging.info("Wrote maintenance report to %s", report_path)
+    _write_report(report)
 
 
 @task
@@ -106,7 +102,6 @@ def update_downloads_only() -> None:
 def update_devcontainer_lock_only() -> None:
     """Regenerate the devcontainer lockfile only."""
     report = MaintenanceReport()
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
     update_devcontainer_lockfile(REPO_ROOT, report)
     _write_report(report)
 
@@ -164,11 +159,27 @@ def _load_allowlists() -> Dict[str, Dict[str, dict]]:
     }
 
 
+def _resolve_output_dir() -> Path:
+    output_dir = get_output_dir()
+    if output_dir is not None:
+        return output_dir.resolve()
+    # Fallback keeps behavior when this module is invoked outside task execution.
+    return Path(os.getenv("ROBOT_ARTIFACTS", str(ROBOT_ROOT / "output"))).resolve()
+
+
+def _current_task_name() -> str:
+    current_task = get_current_task()
+    if current_task is None:
+        return "<outside-task>"
+    return current_task.name
+
+
 def _write_report(report: MaintenanceReport) -> None:
-    OUTPUT_DIR.mkdir(parents=True, exist_ok=True)
-    report_path = OUTPUT_DIR / "maintenance_report.json"
+    output_dir = _resolve_output_dir()
+    output_dir.mkdir(parents=True, exist_ok=True)
+    report_path = output_dir / "maintenance_report.json"
     report_path.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
-    logging.info("Wrote maintenance report to %s", report_path)
+    logging.info("Wrote maintenance report for task '%s' to %s", _current_task_name(), report_path)
 
 
 def _run_precommit_autofixes() -> None:

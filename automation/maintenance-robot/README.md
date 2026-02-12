@@ -48,27 +48,35 @@ Generated artefacts (for example `output/maintenance_report.json`) are ignored v
 ## Running Locally
 
 1. Ensure `rcc` is available (install via `brew install --cask joshyorko/tools/rcc`).
-2. From the repository root run:
+2. Pre-build/resolve the holotree environment:
 
 ```shell
-rcc run -r automation/maintenance-robot/robot.yaml -t maintenance
+rcc ht vars -r automation/maintenance-robot/robot.yaml --json
 ```
+
+3. Run the maintenance task from the repository root:
+
+```shell
+rcc run -r automation/maintenance-robot/robot.yaml --task maintenance --silent
+```
+
+The robot prefers freeze artifacts from `output/environment_*_freeze.yaml` when present and falls back to `conda.yaml`.
 
 ### Available Tasks
 
 | Task | Command | Description |
 |------|---------|-------------|
-| **maintenance** | `-t maintenance` | Full maintenance run (recommended) |
-| **update-workflows** | `-t update-workflows` | Update GitHub Actions only |
-| **update-downloads** | `-t update-downloads` | Update PyPI packages only |
-| **update-lockfile** | `-t update-lockfile` | Regenerate devcontainer-lock.json only |
-| **update-homebrew** | `-t update-homebrew` | Log Homebrew versions (informational only) |
-| **test-devcontainer** | `-t test-devcontainer` | Test devcontainer build |
+| **maintenance** | `--task maintenance` | Full maintenance run (recommended) |
+| **update-workflows** | `--task update-workflows` | Update GitHub Actions only |
+| **update-downloads** | `--task update-downloads` | Update PyPI packages only |
+| **update-lockfile** | `--task update-lockfile` | Regenerate devcontainer-lock.json only |
+| **update-homebrew** | `--task update-homebrew` | Log Homebrew versions (informational only) |
+| **test-devcontainer** | `--task test-devcontainer` | Test devcontainer build |
 
 To inspect the resolved environment without running the robot:
 
 ```shell
-rcc holotree vars -r automation/maintenance-robot/robot.yaml
+rcc ht vars -r automation/maintenance-robot/robot.yaml --json
 ```
 
 A summary of changes is written to `automation/maintenance-robot/output/maintenance_report.json`.

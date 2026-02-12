@@ -13,6 +13,20 @@
       }
     ]
   },
+  "uv": {
+    "source": "pypi",
+    "package": "uv",
+    "max_major": null,
+    "include_prerelease": false,
+    "targets": [
+      {
+        "file": "automation/maintenance-robot/conda.yaml",
+        "patterns": [
+          "uv=(?P<version>[0-9]+\\.[0-9]+\\.[0-9]+)"
+        ]
+      }
+    ]
+  },
   "ruamel-yaml": {
     "source": "pypi",
     "package": "ruamel.yaml",

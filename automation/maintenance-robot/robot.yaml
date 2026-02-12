@@ -27,6 +27,9 @@ tasks:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t test_devcontainer_build
 
 environmentConfigs:
+  - output/environment_linux_amd64_freeze.yaml
+  - output/environment_windows_amd64_freeze.yaml
+  - output/environment_darwin_amd64_freeze.yaml
   - conda.yaml
 
 artifactsDir: output
@@ -35,3 +38,6 @@ PATH:
   - .
 PYTHONPATH:
   - src
+
+ignoreFiles:
+  - .gitignore
