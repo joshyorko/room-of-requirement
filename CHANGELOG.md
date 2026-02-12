@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.10.0](https://github.com/joshyorko/room-of-requirement/compare/v1.9.0...v1.10.0) (2026-02-12)
+
+
+### ✨ Features
+
+* add ROR_DOCKER_BACKEND environment variable for flexible Docker backend selection ([07d4b6d](https://github.com/joshyorko/room-of-requirement/commit/07d4b6d3d2a71968b2aa8d1d720737bcd9782f59))
+* enhance Docker-in-Docker setup with docker-dind-compat and improve entrypoint logging ([9052626](https://github.com/joshyorko/room-of-requirement/commit/9052626569b31b14393d127578f12ecd059a7e37))
+* link Docker socket to conventional path for new exec sessions in entrypoint ([b4f12d7](https://github.com/joshyorko/room-of-requirement/commit/b4f12d73849b102937a59181da593087ecd6d306))
+
 ## [1.9.0](https://github.com/joshyorko/room-of-requirement/compare/v1.8.0...v1.9.0) (2026-02-12)
 
 
