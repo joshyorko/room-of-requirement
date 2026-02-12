@@ -52,9 +52,13 @@ RUN apk add --no-cache \
     wget \
     zsh \
     # Official Wolfi Docker-in-Docker packages (from Chainguard)
+    # docker-dind-compat creates /usr/local/bin/dind symlink so that
+    # dockerd-entrypoint.sh invokes the dind script with cgroup v2 nesting
+    # setup (required for k3d/kind to get cpu/memory controller delegation)
     docker \
     docker-compose \
     docker-dind \
+    docker-dind-compat \
     dockerd-oci-entrypoint \
     # Playwright and browser dependencies (headless Chromium support)
     # Playwright installed via Wolfi package for proper system integration

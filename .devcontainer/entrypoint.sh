@@ -10,7 +10,8 @@ log() {
 }
 
 # Runtime selection:
-# - auto (default): prefer DinD on Codespaces for k3d/kind reliability
+# - auto (default): prefer host socket on Codespaces (fewer nesting layers = better
+#   k3d/kind reliability); fall back to DinD if no host socket exists
 # - dind: always use internal Docker daemon
 # - host: always use host-provided Docker socket
 DOCKER_BACKEND="${ROR_DOCKER_BACKEND:-auto}"
@@ -49,6 +50,9 @@ fix_user_dir_permissions "${HOME}/.zsh_history_dir" "zsh history"
 fix_user_dir_permissions "${HOME}/.npm" "npm cache"
 
 # Function to start Wolfi's native dockerd
+# cgroup v2 nesting (process evacuation, subtree_control, mount --make-rshared)
+# is handled by the dind script invoked via dockerd-entrypoint.sh, which finds
+# /usr/local/bin/dind from the docker-dind-compat package.
 start_dockerd() {
     local docker_socket="${1:-/var/run/docker.sock}"
     local docker_host="unix://${docker_socket}"
@@ -105,10 +109,12 @@ start_dockerd() {
 }
 
 # GitHub Codespaces may or may not provide Docker - check first, then fallback.
-# In Codespaces we prefer DinD by default because host socket behavior can differ
-# and break nested container workloads like k3d.
+# In Codespaces we prefer the host socket (auto mode) because it has proper cgroup
+# delegation and capabilities from the Codespaces infrastructure.  Starting an
+# internal DinD adds an extra nesting layer that breaks k3d/kind (k3s can't get
+# proper cgroup v2 subtree delegation through two layers of Docker).
 if [ -n "${CODESPACES:-}" ]; then
-    log "Detected GitHub Codespaces environment"
+    log "Detected GitHub Codespaces environment (backend=${DOCKER_BACKEND})"
 
     # Brief wait for Codespaces Docker socket (if host provides one)
     SOCKET_FOUND=false
@@ -121,16 +127,13 @@ if [ -n "${CODESPACES:-}" ]; then
         sleep 1
     done
 
-    if [ "${DOCKER_BACKEND}" = "dind" ] || [ "${DOCKER_BACKEND}" = "auto" ]; then
-        log "Using internal DinD backend in Codespaces"
-        # Avoid clashing with host-mounted /var/run/docker.sock.
+    if [ "${DOCKER_BACKEND}" = "dind" ]; then
+        log "Using internal DinD backend in Codespaces (explicit)"
         start_dockerd "/tmp/ror-docker.sock"
     elif [ "$SOCKET_FOUND" = true ]; then
-        # Ensure /var/run is traversable (Codespaces may have restrictive permissions)
+        # Use the host socket — fewer nesting layers means k3d/kind work reliably
+        log "Using Codespaces host Docker socket (recommended for k3d/kind)"
         sudo chmod 755 /var/run 2>/dev/null || true
-        # Fix socket permissions for vscode user
-        SOCKET_GROUP=$(stat -c '%G' /var/run/docker.sock 2>/dev/null || echo "unknown")
-        log "Current socket group: $SOCKET_GROUP"
         sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
         sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
         export DOCKER_HOST="unix:///var/run/docker.sock"
@@ -150,10 +153,13 @@ else
     fi
 fi
 
-# Verify Docker access
+# Verify Docker access and log diagnostics useful for debugging k3d/kind issues
 if sg docker -c "docker info" > /dev/null 2>&1; then
     DOCKER_VERSION=$(sg docker -c "docker version --format '{{.Server.Version}}'" 2>/dev/null || echo "unknown")
-    log "✓ Docker ready (version: $DOCKER_VERSION)"
+    STORAGE_DRIVER=$(sg docker -c "docker info --format '{{.Driver}}'" 2>/dev/null || echo "unknown")
+    CGROUP_DRIVER=$(sg docker -c "docker info --format '{{.CgroupDriver}}'" 2>/dev/null || echo "unknown")
+    CGROUP_VER=$(sg docker -c "docker info --format '{{.CgroupVersion}}'" 2>/dev/null || echo "unknown")
+    log "✓ Docker ready (version: ${DOCKER_VERSION}, storage: ${STORAGE_DRIVER}, cgroup: ${CGROUP_DRIVER} v${CGROUP_VER})"
 elif docker info > /dev/null 2>&1; then
     log "✓ Docker ready"
 else
