@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.9.0](https://github.com/joshyorko/room-of-requirement/compare/v1.8.0...v1.9.0) (2026-02-12)
+
+
+### ✨ Features
+
+* enhance vulnerability scanning and reporting in build workflow; add new CVEs to ignore list ([e5ea67f](https://github.com/joshyorko/room-of-requirement/commit/e5ea67f629d242a29f84d471812056a0230c974f))
+
 ## [1.8.0](https://github.com/joshyorko/room-of-requirement/compare/v1.7.0...v1.8.0) (2026-02-12)
 
 
