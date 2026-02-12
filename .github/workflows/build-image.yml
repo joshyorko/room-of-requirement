@@ -344,9 +344,8 @@ jobs:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
           fail-build: ${{ inputs.fail_on_critical != false }}
           severity-cutoff: critical
-          output-format:
-            sarif
-            # Note: .grype.yaml is automatically read from the working directory
+          # Note: .grype.yaml is automatically read from the working directory
+          output-format: sarif
         continue-on-error: true
 
       - name: Upload SARIF report
@@ -358,13 +357,13 @@ jobs:
       - name: Parse scan results
         id: scan
         run: |
-          # Parse Grype JSON output for counts
-          # Note: Using jq to extract vulnerability counts
-          if [ -f results.json ]; then
-            CRITICAL=$(jq '[.matches[] | select(.vulnerability.severity == "Critical")] | length' results.json 2>/dev/null || echo "0")
-            HIGH=$(jq '[.matches[] | select(.vulnerability.severity == "High")] | length' results.json 2>/dev/null || echo "0")
-            MEDIUM=$(jq '[.matches[] | select(.vulnerability.severity == "Medium")] | length' results.json 2>/dev/null || echo "0")
-            LOW=$(jq '[.matches[] | select(.vulnerability.severity == "Low")] | length' results.json 2>/dev/null || echo "0")
+          # Parse Grype SARIF output for severity counts and actionable details.
+          SARIF_FILE="${{ steps.grype.outputs.sarif }}"
+          if [ -n "${SARIF_FILE}" ] && [ -f "${SARIF_FILE}" ]; then
+            CRITICAL=$(jq '[.runs[].results[]? | select((.properties.severity // "" | ascii_downcase) == "critical") | .ruleId] | unique | length' "${SARIF_FILE}" 2>/dev/null || echo "0")
+            HIGH=$(jq '[.runs[].results[]? | select((.properties.severity // "" | ascii_downcase) == "high") | .ruleId] | unique | length' "${SARIF_FILE}" 2>/dev/null || echo "0")
+            MEDIUM=$(jq '[.runs[].results[]? | select((.properties.severity // "" | ascii_downcase) == "medium") | .ruleId] | unique | length' "${SARIF_FILE}" 2>/dev/null || echo "0")
+            LOW=$(jq '[.runs[].results[]? | select((.properties.severity // "" | ascii_downcase) == "low") | .ruleId] | unique | length' "${SARIF_FILE}" 2>/dev/null || echo "0")
           else
             CRITICAL=0
             HIGH=0
@@ -379,6 +378,8 @@ jobs:
 
           echo "### Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
+          echo "Unique vulnerability IDs from Grype SARIF output." >> $GITHUB_STEP_SUMMARY
+          echo "" >> $GITHUB_STEP_SUMMARY
           echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
           echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
           echo "| Critical | ${CRITICAL} |" >> $GITHUB_STEP_SUMMARY
@@ -386,10 +387,26 @@ jobs:
           echo "| Medium | ${MEDIUM} |" >> $GITHUB_STEP_SUMMARY
           echo "| Low | ${LOW} |" >> $GITHUB_STEP_SUMMARY
 
+          if [ "${CRITICAL}" -gt 0 ] && [ -n "${SARIF_FILE}" ] && [ -f "${SARIF_FILE}" ]; then
+            echo "" >> $GITHUB_STEP_SUMMARY
+            echo "#### Critical Findings (Top 20)" >> $GITHUB_STEP_SUMMARY
+            jq -r '
+              [.runs[].results[]?
+              | select((.properties.severity // "" | ascii_downcase) == "critical")
+              | {id: .ruleId, path: (.locations[0].physicalLocation.artifactLocation.uri // "unknown")}
+              ]
+              | unique_by(.id + ":" + .path)
+              | .[:20]
+              | .[]
+              | "- \(.id) @ \(.path)"
+            ' "${SARIF_FILE}" >> $GITHUB_STEP_SUMMARY || true
+          fi
+
       - name: Check for critical vulnerabilities
         if: inputs.fail_on_critical != false && steps.grype.outcome == 'failure'
         run: |
           echo "::error::Critical vulnerabilities found with available fixes. Build failed."
+          echo "::error::See the 'Vulnerability Scan Results' section in this run summary for CVE IDs and affected paths."
           exit 1
 
       - name: Output scan summary
