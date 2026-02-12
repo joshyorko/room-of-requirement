@@ -87,6 +87,15 @@ start_dockerd() {
             sudo chmod 660 "${docker_socket}" 2>/dev/null || true
         fi
 
+        # Make Docker available at the conventional path for all new exec sessions
+        # (VS Code terminals do not inherit runtime exports from this entrypoint).
+        if [ "${docker_socket}" != "/var/run/docker.sock" ] && [ -S "${docker_socket}" ]; then
+            sudo mkdir -p /var/run
+            sudo ln -sf "${docker_socket}" /var/run/docker.sock
+            sudo chmod 755 /var/run 2>/dev/null || true
+            log "Linked /var/run/docker.sock -> ${docker_socket}"
+        fi
+
         # Ensure all child processes (including shells/tasks) use the selected socket.
         export DOCKER_HOST="${docker_host}"
         log "DOCKER_HOST set to ${DOCKER_HOST}"
