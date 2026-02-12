@@ -17,6 +17,31 @@ sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true
 # Ensure vscode user is in docker group
 sudo usermod -aG docker vscode 2>/dev/null || true
 
+# Ensure user-owned writable directories for volume mounts/caches
+# Named volumes may be created as root-owned (especially in Codespaces),
+# which can break shell history, mise, npm, etc.
+fix_user_dir_permissions() {
+    local dir_path="$1"
+    local dir_label="$2"
+
+    if [ ! -d "$dir_path" ]; then
+        log "Creating ${dir_label} directory..."
+        sudo mkdir -p "$dir_path" 2>/dev/null || {
+            log "Warning: Failed to create ${dir_label} directory at $dir_path"
+            return
+        }
+    fi
+
+    log "Ensuring ${dir_label} permissions..."
+    sudo chown -R vscode:vscode "$dir_path" 2>/dev/null || log "Warning: Failed to chown $dir_path"
+    sudo chmod -R u+rwX "$dir_path" 2>/dev/null || log "Warning: Failed to chmod $dir_path"
+}
+
+# Fix common writable paths early before shells/tools initialize
+fix_user_dir_permissions "${HOME}/.local/share/mise" "mise cache"
+fix_user_dir_permissions "${HOME}/.zsh_history_dir" "zsh history"
+fix_user_dir_permissions "${HOME}/.npm" "npm cache"
+
 # Function to start Wolfi's native dockerd
 start_dockerd() {
     log "Starting Docker daemon (Wolfi native)..."
@@ -58,24 +83,6 @@ start_dockerd() {
 # GitHub Codespaces may or may not provide Docker - check first, then fallback
 if [ -n "${CODESPACES:-}" ]; then
     log "Detected GitHub Codespaces environment"
-
-    # Fix mise cache directory permissions (Codespaces volume mounts often have root ownership)
-    MISE_CACHE_DIR="${HOME}/.local/share/mise"
-    # Create directory if it doesn't exist to ensure permissions are set
-    if [ ! -d "$MISE_CACHE_DIR" ]; then
-        log "Creating mise cache directory..."
-        sudo mkdir -p "$MISE_CACHE_DIR" 2>/dev/null || log "Warning: Failed to create mise cache directory"
-    fi
-
-    if [ -d "$MISE_CACHE_DIR" ]; then
-        log "Fixing mise cache directory permissions..."
-        if ! sudo chown -R vscode:vscode "$MISE_CACHE_DIR" 2>/dev/null; then
-            log "Warning: Failed to change ownership of mise cache directory"
-        fi
-        if ! sudo chmod -R u+rwX "$MISE_CACHE_DIR" 2>/dev/null; then
-            log "Warning: Failed to set permissions on mise cache directory"
-        fi
-    fi
 
     # Brief wait for Codespaces Docker socket (if host provides one)
     SOCKET_FOUND=false

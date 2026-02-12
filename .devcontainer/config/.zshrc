@@ -58,15 +58,23 @@ zstyle ':completion:*' list-colors "${(s.:.)LS_COLORS}"
 # HISTORY CONFIGURATION
 # ============================================================================
 # Use persistent volume directory for history (volume mounts as directory, not file)
-export HISTFILE=~/.zsh_history_dir/.zsh_history
+export HISTDIR="${ZSH_HISTORY_DIR:-$HOME/.zsh_history_dir}"
+export HISTFILE="${HISTDIR}/.zsh_history"
 export HISTSIZE=10000
 export SAVEHIST=10000
 
-# Ensure history directory exists
-[[ -d ~/.zsh_history_dir ]] && touch "$HISTFILE" 2>/dev/null || true
+# Ensure history directory/file exists; fallback if mount is unavailable/unwritable
+mkdir -p "$HISTDIR" 2>/dev/null || true
+touch "$HISTFILE" 2>/dev/null || true
+if [[ ! -w "$HISTFILE" ]]; then
+    export HISTFILE="$HOME/.zsh_history"
+    touch "$HISTFILE" 2>/dev/null || true
+fi
 
+setopt APPEND_HISTORY
 setopt INC_APPEND_HISTORY
 setopt SHARE_HISTORY
+setopt HIST_FCNTL_LOCK
 setopt HIST_IGNORE_DUPS
 setopt HIST_IGNORE_ALL_DUPS
 setopt HIST_FIND_NO_DUPS
