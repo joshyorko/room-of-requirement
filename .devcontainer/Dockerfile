@@ -124,10 +124,12 @@ FROM users AS homebrew
 # Install Homebrew build dependencies + Ruby runtime dependencies
 # Security: Only install what's strictly necessary for Homebrew to function
 # Runtime libraries (libffi, zlib, yaml, readline) needed for mise to compile Ruby and gems
+# ncurses-dev added for Ruby 3.4.7 compilation (required for irb/readline)
 RUN apk add --no-cache \
     build-base \
     libffi \
     libffi-dev \
+    ncurses-dev \
     openssl \
     openssl-dev \
     readline \
@@ -159,12 +161,14 @@ RUN mkdir -p /home/linuxbrew && \
 # Homebrew environment and PATH
 # NOTE: PATH must include Homebrew bin directories early so all subsequent commands
 # (including mise, brew, and any shims created by mise) can find required tools
+# RUBY_CFLAGS: Workaround for GCC 15 optimization bug causing segfault in Ruby 3.4.7 compilation
 ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     HOMEBREW_CELLAR=/home/linuxbrew/.linuxbrew/Cellar \
     HOMEBREW_REPOSITORY=/home/linuxbrew/.linuxbrew/Homebrew \
     HOMEBREW_NO_ANALYTICS=1 \
     HOMEBREW_NO_AUTO_UPDATE=1 \
     HOMEBREW_NO_INSTALL_CLEANUP=1 \
+    RUBY_CFLAGS="-O1" \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 # Install core shell tools (baked into image for faster startup)
@@ -312,17 +316,10 @@ RUN mkdir -p \
     /home/vscode/.config/mise \
     /workspaces && \
     chown -R vscode:vscode /home/vscode /workspaces && \
-    chmod 755 /workspaces && \
-    # Keep build-base/gcc for Homebrew source builds (e.g., bbrew)
-    # Keep runtime libraries (libffi, readline, yaml, zlib) for mise Ruby/gem compilation
-    # Remove only *-dev dependencies to save space
-    apk del --no-cache \
-    libffi-dev \
-    openssl-dev \
-    readline-dev \
-    ruby-dev \
-    yaml-dev \
-    zlib-dev || true
+    chmod 755 /workspaces
+    # NOTE: Keeping build-base/gcc and all *-dev packages for Ruby compilation via mise
+    # Ruby 3.4.7 requires: libffi-dev, ncurses-dev, openssl-dev, readline-dev, yaml-dev, zlib-dev
+    # GCC 15 requires RUBY_CFLAGS="-O1" to avoid segfault in search_nonascii during make
 
 # Switch to vscode user (satisfies Hadolint DL3002)
 # Docker-in-Docker is handled by entrypoint.sh which uses sudo to start dockerd
