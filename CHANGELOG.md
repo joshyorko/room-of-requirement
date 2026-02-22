@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.1](https://github.com/joshyorko/room-of-requirement/compare/v1.10.0...v1.10.1) (2026-02-22)
+
+
+### 🐛 Bug Fixes
+
+* release ruby/rails container updates ([ec3a7f5](https://github.com/joshyorko/room-of-requirement/commit/ec3a7f580319bd82db3b45f4918eea5059f306f6))
+
 ## [1.10.0](https://github.com/joshyorko/room-of-requirement/compare/v1.9.0...v1.10.0) (2026-02-12)
 
 
