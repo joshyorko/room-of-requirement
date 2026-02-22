@@ -147,7 +147,11 @@ RUN apk add --no-cache \
     # Wolfi ruby-dev can miss /usr/lib/libruby.so, but native gem builds link with -lruby.
     # Ensure the unversioned linker name exists when versioned libruby shared objects are present.
     if [ ! -e /usr/lib/libruby.so ]; then \
-        ruby_shared="$(ls /usr/lib/libruby.so.[0-9]* 2>/dev/null | sort -V | head -n 1)"; \
+        ruby_shared=""; \
+        for candidate in /usr/lib/libruby.so.[0-9]*; do \
+            [ -e "${candidate}" ] || continue; \
+            ruby_shared="${candidate}"; \
+        done; \
         if [ -n "${ruby_shared}" ]; then \
             ln -s "$(basename "${ruby_shared}")" /usr/lib/libruby.so; \
         fi; \
@@ -194,7 +198,9 @@ RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force valkyrie0
 
 # Install rcc and action-server via brew install --cask
 # (brew bundle skips casks on Linux, but brew install --cask works directly)
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install --cask joshyorko/tools/rcc joshyorko/tools/action-server"
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install --cask joshyorko/tools/rcc joshyorko/tools/action-server && /home/linuxbrew/.linuxbrew/bin/brew cleanup --prune=all" && \
+    # Remove cached cask downloads so scanners only report runtime-shipped binaries.
+    find /home/linuxbrew/.cache/Homebrew/downloads -mindepth 1 -delete 2>/dev/null || true
 
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
@@ -223,6 +229,8 @@ ENV MISE_DATA_DIR=/usr/local/share/mise
 SHELL ["/bin/bash", "-c"]
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/mise activate bash)" && \
     /home/linuxbrew/.linuxbrew/bin/mise install node@lts python@latest go@latest && \
+    # Keep npm at latest to reduce bundled transitive CVE exposure.
+    npm install -g npm@latest && \
     /home/linuxbrew/.linuxbrew/bin/mise reshim
 SHELL ["/bin/sh", "-c"]
 USER root
@@ -311,7 +319,6 @@ RUN chmod +x /usr/local/bin/entrypoint.sh
 
 # Copy justfile and Brewfiles for Bluefin-style commands (ujust bbrew, etc.)
 # Using /usr/share/ror/ for persistence across container restarts (not /tmp)
-RUN mkdir -p /usr/share/ror
 COPY --chown=vscode:vscode .devcontainer/brew /usr/share/ror/brew
 COPY --chown=vscode:vscode .devcontainer/justfile /usr/share/ror/justfile
 RUN chmod 644 /usr/share/ror/justfile && \
