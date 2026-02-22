@@ -230,7 +230,7 @@ SHELL ["/bin/bash", "-c"]
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/mise activate bash)" && \
     /home/linuxbrew/.linuxbrew/bin/mise install node@lts python@latest go@latest && \
     # Keep npm at latest to reduce bundled transitive CVE exposure.
-    npm install -g npm@latest && \
+    /home/linuxbrew/.linuxbrew/bin/mise exec node@lts -- npm install -g npm@latest && \
     /home/linuxbrew/.linuxbrew/bin/mise reshim
 SHELL ["/bin/sh", "-c"]
 USER root
