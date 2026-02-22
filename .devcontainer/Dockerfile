@@ -48,6 +48,7 @@ RUN apk add --no-cache \
     shadow \
     sudo \
     tini \
+    tzdata \
     util-linux \
     wget \
     zsh \
