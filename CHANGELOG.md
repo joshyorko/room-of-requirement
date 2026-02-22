@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.3](https://github.com/joshyorko/room-of-requirement/compare/v1.10.2...v1.10.3) (2026-02-22)
+
+
+### 🐛 Bug Fixes
+
+* run npm update via mise exec during image build ([8cb3237](https://github.com/joshyorko/room-of-requirement/commit/8cb3237c1d77d52d24166beaeb420cf41c3eb873))
+
 ## [1.10.2](https://github.com/joshyorko/room-of-requirement/compare/v1.10.1...v1.10.2) (2026-02-22)
 
 
