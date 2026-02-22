@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.2](https://github.com/joshyorko/room-of-requirement/compare/v1.10.1...v1.10.2) (2026-02-22)
+
+
+### 🔒 Security
+
+* remediate devcontainer scanner findings ([63c151b](https://github.com/joshyorko/room-of-requirement/commit/63c151b81dc1dd1a31c3faedc43ab0c3578abf55))
+
 ## [1.10.1](https://github.com/joshyorko/room-of-requirement/compare/v1.10.0...v1.10.1) (2026-02-22)
 
 
