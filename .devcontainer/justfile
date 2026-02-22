@@ -66,6 +66,43 @@ brew-install formula:
 brew-update:
     brew update && brew upgrade
 
+# Enable Ruby tooling on demand via mise (recommended)
+ruby-enable ruby_version='latest':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v mise &>/dev/null; then
+        echo "mise not found in PATH" >&2
+        exit 1
+    fi
+    eval "$(mise activate bash)"
+    echo "Installing Ruby with mise: ruby@{{ruby_version}}"
+    mise use -g ruby@{{ruby_version}}
+    mise reshim
+    echo "Ruby ready: $(mise exec -- ruby --version)"
+    echo "Bundler: $(mise exec -- bundle --version)"
+
+# Enable Rails on demand via mise-managed Ruby
+rails-enable ruby_version='latest' rails_version='latest':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v mise &>/dev/null; then
+        echo "mise not found in PATH" >&2
+        exit 1
+    fi
+    eval "$(mise activate bash)"
+    echo "Installing Ruby with mise: ruby@{{ruby_version}}"
+    mise use -g ruby@{{ruby_version}}
+    if [ "{{rails_version}}" = "latest" ]; then
+        echo "Installing latest Rails gem"
+        mise exec -- gem install rails
+    else
+        echo "Installing Rails gem version {{rails_version}}"
+        mise exec -- gem install rails -v "{{rails_version}}"
+    fi
+    mise reshim
+    echo "Ruby: $(mise exec -- ruby --version)"
+    echo "Rails: $(mise exec -- rails --version)"
+
 # Show Docker status
 docker-status:
     @docker info 2>/dev/null && echo "Docker is running" || echo "Docker is not running"

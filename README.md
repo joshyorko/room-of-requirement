@@ -140,6 +140,27 @@ Tool versions automatically switch when you `cd` into the project directory.
 
 ---
 
+## 💎 Ruby and Rails (On-Demand)
+
+Ruby/Rails are intentionally not preinstalled to keep container startup fast.
+Use `mise` for Ruby version management (recommended):
+
+```bash
+mise use -g ruby@3.4
+gem install rails
+```
+
+This keeps Ruby isolated to `mise` (no `sudo gem` and no Homebrew Ruby symlink conflicts).
+
+Optional wrappers are available if you prefer `ujust`:
+
+```bash
+ujust ruby-enable 3.4
+ujust rails-enable 3.4 8.1.2
+```
+
+---
+
 ## 📋 Adding Custom Tools
 
 ### Option 1: Project-Level Brewfile

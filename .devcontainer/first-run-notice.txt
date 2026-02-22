@@ -14,6 +14,7 @@ This container has manifested itself as your development environment.
 │  k3d & k9s          - Orchestrating clusters in miniature worlds   │
 │  DevSpace           - Streamlined Kubernetes development workflows │
 │  mise               - Polyglot tool manager (Node, Python, Go)     │
+│  Ruby/Rails         - On-demand via mise (`mise use -g ruby@3.4`)   │
 │  UV                 - Python's swift shadow, installing dependencies│
 │  GitHub CLI (gh)    - Command your repositories with mystical powers│
 │  Zsh + Starship     - Modern shell with a stellar prompt           │
@@ -30,6 +31,8 @@ USEFUL COMMANDS TO TRY
   $ mise --version           # Verify your polyglot tool manager
   $ gh repo list             # List your GitHub repositories
   $ uv --version             # Verify the version of your package conjurer
+  $ mise use -g ruby@3.4     # Install Ruby version for this environment
+  $ gem install rails        # Install Rails into the active mise Ruby
   $ container-use version    # Check your sandboxed environment manager
   $ dagger version           # Verify your CI/CD pipeline orchestrator
   $ starship bug-report      # Verify Starship prompt configuration

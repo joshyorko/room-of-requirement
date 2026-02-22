@@ -143,7 +143,15 @@ RUN apk add --no-cache \
     procps \
     git-daemon && \
     # Verify OpenSSL for security
-    openssl version
+    openssl version && \
+    # Wolfi ruby-dev can miss /usr/lib/libruby.so, but native gem builds link with -lruby.
+    # Ensure the unversioned linker name exists when versioned libruby shared objects are present.
+    if [ ! -e /usr/lib/libruby.so ]; then \
+        ruby_shared="$(ls /usr/lib/libruby.so.[0-9]* 2>/dev/null | sort -V | head -n 1)"; \
+        if [ -n "${ruby_shared}" ]; then \
+            ln -s "$(basename "${ruby_shared}")" /usr/lib/libruby.so; \
+        fi; \
+    fi
 
 # Install Homebrew using the OFFICIAL installer (same as Universal Blue)
 # This ensures proper git remote setup and works correctly with brew update

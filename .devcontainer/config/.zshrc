@@ -9,6 +9,21 @@
 unset VSCODE_SHELL_INTEGRATION
 
 # ============================================================================
+# FIRST-RUN NOTICE (client-agnostic fallback)
+# ============================================================================
+# Some devcontainer clients do not render /usr/local/etc/vscode-dev-containers/first-run-notice.txt.
+# Show it once on first interactive shell start so users always see onboarding.
+if [[ -o interactive ]] && [[ -t 1 ]]; then
+    ROR_NOTICE_FILE="/usr/local/etc/vscode-dev-containers/first-run-notice.txt"
+    ROR_NOTICE_MARKER="${XDG_STATE_HOME:-$HOME/.local/state}/ror/first-run-notice.shown"
+    if [[ -f "$ROR_NOTICE_FILE" && ! -f "$ROR_NOTICE_MARKER" ]]; then
+        command mkdir -p "$(dirname "$ROR_NOTICE_MARKER")" 2>/dev/null || true
+        command cat "$ROR_NOTICE_FILE"
+        command touch "$ROR_NOTICE_MARKER" 2>/dev/null || true
+    fi
+fi
+
+# ============================================================================
 # ZINIT PLUGIN MANAGER BOOTSTRAP
 # ============================================================================
 ZINIT_HOME="${XDG_DATA_HOME:-${HOME}/.local/share}/zinit/zinit.git"

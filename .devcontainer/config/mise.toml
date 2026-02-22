@@ -13,8 +13,9 @@ python = "latest"
 go = "latest"
 # NOTE: Ruby and Rust are disabled by default to reduce initial startup time
 # All build dependencies are available in the image (including fix for GCC 15 compilation)
-# To enable: mise use ruby@latest rust@latest
-# Or install via Homebrew: brew install ruby rust
+# Quick Ruby setup: mise use -g ruby@<version>
+# Optional helper: ujust rails-enable <ruby_version> <rails_version>
+# To enable via mise only: mise use -g ruby@latest rust@latest
 # rust = "latest"
 # ruby = "latest"
 

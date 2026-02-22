@@ -67,7 +67,8 @@ else
     # Ensure mise is active for this session
     eval "$(mise activate bash)"
 
-    # Install node, python, go (Ruby/Rust disabled - build issues on Wolfi)
+    # Install node, python, go (Ruby/Rust disabled by default for faster startup)
+    # Enable Ruby/Rails when needed with mise: mise use -g ruby@<version>
     mise use -g node@lts python@latest go@latest
 
     # Update npm to latest to fix potential vulnerabilities

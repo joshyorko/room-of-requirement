@@ -8,6 +8,21 @@
 export PATH="${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}/bin:${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}/sbin:/usr/local/bin:/usr/bin:/bin:/usr/sbin:/sbin:$PATH"
 
 # ============================================================================
+# FIRST-RUN NOTICE (client-agnostic fallback)
+# ============================================================================
+# Some devcontainer clients do not render /usr/local/etc/vscode-dev-containers/first-run-notice.txt.
+# Show it once on first interactive shell start so users always see onboarding.
+if [[ $- == *i* ]] && [ -t 1 ]; then
+    ROR_NOTICE_FILE="/usr/local/etc/vscode-dev-containers/first-run-notice.txt"
+    ROR_NOTICE_MARKER="${XDG_STATE_HOME:-$HOME/.local/state}/ror/first-run-notice.shown"
+    if [ -f "$ROR_NOTICE_FILE" ] && [ ! -f "$ROR_NOTICE_MARKER" ]; then
+        mkdir -p "$(dirname "$ROR_NOTICE_MARKER")" 2>/dev/null || true
+        command cat "$ROR_NOTICE_FILE"
+        touch "$ROR_NOTICE_MARKER" 2>/dev/null || true
+    fi
+fi
+
+# ============================================================================
 # ENVIRONMENT VARIABLES
 # ============================================================================
 export LANG=C.UTF-8
