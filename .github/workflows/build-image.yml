@@ -282,6 +282,7 @@ jobs:
     if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
     outputs:
       sbom_digest: ${{ steps.attach.outputs.sbom_digest }}
+      tlog_mode: ${{ steps.attach.outputs.tlog_mode }}
 
     steps:
       - name: Install Cosign
@@ -308,20 +309,50 @@ jobs:
         env:
           DIGEST: ${{ needs.build.outputs.digest }}
         run: |
-          # Attach SBOM as attestation using cosign attest
-          cosign attest --yes \
-            --predicate sbom.spdx.json \
-            --type spdxjson \
-            ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}
+          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}"
+          MAX_ATTEMPTS=4
+          ATTEMPT=1
+          TLOG_MODE="uploaded"
+
+          # Retry Rekor-backed attest first, then fall back to no tlog upload if Rekor is unavailable.
+          while true; do
+            if cosign attest --yes \
+              --predicate sbom.spdx.json \
+              --type spdxjson \
+              "${IMAGE_REF}"; then
+              break
+            fi
+
+            if [[ ${ATTEMPT} -ge ${MAX_ATTEMPTS} ]]; then
+              echo "::warning::Rekor upload failed after ${MAX_ATTEMPTS} attempts; attaching SBOM without transparency log."
+              cosign attest --yes --tlog-upload=false \
+                --predicate sbom.spdx.json \
+                --type spdxjson \
+                "${IMAGE_REF}"
+              TLOG_MODE="skipped"
+              break
+            fi
+
+            SLEEP_SECONDS=$((ATTEMPT * 15))
+            echo "::warning::cosign attest attempt ${ATTEMPT}/${MAX_ATTEMPTS} failed; retrying in ${SLEEP_SECONDS}s."
+            sleep "${SLEEP_SECONDS}"
+            ATTEMPT=$((ATTEMPT + 1))
+          done
 
           # Calculate SBOM digest for reference
           SBOM_DIGEST=$(sha256sum sbom.spdx.json | cut -d' ' -f1)
           echo "sbom_digest=${SBOM_DIGEST}" >> $GITHUB_OUTPUT
+          echo "tlog_mode=${TLOG_MODE}" >> $GITHUB_OUTPUT
 
           echo "### SBOM Generated" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "**Format:** SPDX JSON" >> $GITHUB_STEP_SUMMARY
           echo "**SBOM Digest:** \`${SBOM_DIGEST}\`" >> $GITHUB_STEP_SUMMARY
+          if [[ "${TLOG_MODE}" == "skipped" ]]; then
+            echo "**Transparency Log:** Rekor upload skipped (fallback mode)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "**Transparency Log:** Uploaded to Rekor" >> $GITHUB_STEP_SUMMARY
+          fi
 
   scan:
     name: CVE Vulnerability Scan
@@ -506,7 +537,11 @@ jobs:
           echo "This build implements SLSA v3.1 supply chain security:" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
           echo "- ✓ Signed with Cosign (keyless OIDC)" >> $GITHUB_STEP_SUMMARY
-          echo "- ✓ SBOM attached as attestation" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.sbom.outputs.tlog_mode }}" == "skipped" ]]; then
+            echo "- [fallback] SBOM attached as attestation (Rekor transparency log skipped)" >> $GITHUB_STEP_SUMMARY
+          else
+            echo "- ✓ SBOM attached as attestation" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "- ✓ CVE vulnerabilities scanned and reported" >> $GITHUB_STEP_SUMMARY
           echo "- ✓ SLSA provenance generated" >> $GITHUB_STEP_SUMMARY
           echo "- ✓ Image digest validated" >> $GITHUB_STEP_SUMMARY
@@ -522,6 +557,9 @@ jobs:
           echo "# Verify SBOM attestation" >> $GITHUB_STEP_SUMMARY
           echo "cosign verify-attestation ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \\" >> $GITHUB_STEP_SUMMARY
           echo "  --type spdxjson \\" >> $GITHUB_STEP_SUMMARY
+          if [[ "${{ needs.sbom.outputs.tlog_mode }}" == "skipped" ]]; then
+            echo "  --insecure-ignore-tlog=true \\" >> $GITHUB_STEP_SUMMARY
+          fi
           echo "  --certificate-identity-regexp=\"https://github.com/${{ github.repository }}/*\" \\" >> $GITHUB_STEP_SUMMARY
           echo "  --certificate-oidc-issuer=\"https://token.actions.githubusercontent.com\"" >> $GITHUB_STEP_SUMMARY
           echo "" >> $GITHUB_STEP_SUMMARY
