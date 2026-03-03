@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.10.4](https://github.com/joshyorko/room-of-requirement/compare/v1.10.3...v1.10.4) (2026-03-03)
+
+
+### 🐛 Bug Fixes
+
+* **build-image:** make SBOM attestation resilient to Rekor outages ([59ad32e](https://github.com/joshyorko/room-of-requirement/commit/59ad32efcdf15eb594a9b1b2b914c229598493cb))
+
 ## [1.10.3](https://github.com/joshyorko/room-of-requirement/compare/v1.10.2...v1.10.3) (2026-02-22)
 
 
