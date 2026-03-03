@@ -55,6 +55,7 @@ fix_user_dir_permissions "${HOME}/.npm" "npm cache"
 # /usr/local/bin/dind from the docker-dind-compat package.
 start_dockerd() {
     local docker_socket="${1:-/var/run/docker.sock}"
+    local link_default="${2:-true}"
     local docker_host="unix://${docker_socket}"
 
     log "Starting Docker daemon (Wolfi native) on ${docker_socket}..."
@@ -95,9 +96,16 @@ start_dockerd() {
         # (VS Code terminals do not inherit runtime exports from this entrypoint).
         if [ "${docker_socket}" != "/var/run/docker.sock" ] && [ -S "${docker_socket}" ]; then
             sudo mkdir -p /var/run
-            sudo ln -sf "${docker_socket}" /var/run/docker.sock
-            sudo chmod 755 /var/run 2>/dev/null || true
-            log "Linked /var/run/docker.sock -> ${docker_socket}"
+            if [ "${link_default}" = "true" ] && [ ! -S /var/run/docker.sock ]; then
+                sudo ln -sf "${docker_socket}" /var/run/docker.sock
+                sudo chmod 755 /var/run 2>/dev/null || true
+                log "Linked /var/run/docker.sock -> ${docker_socket}"
+            else
+                sudo mkdir -p /etc/profile.d
+                echo "export DOCKER_HOST=${docker_host}" | sudo tee /etc/profile.d/ror-docker-host.sh > /dev/null || true
+                sudo chmod 644 /etc/profile.d/ror-docker-host.sh 2>/dev/null || true
+                log "Persisted DOCKER_HOST for new shells (${docker_host})"
+            fi
         fi
 
         # Ensure all child processes (including shells/tasks) use the selected socket.
@@ -131,13 +139,19 @@ if [ -n "${CODESPACES:-}" ]; then
         log "Using internal DinD backend in Codespaces (explicit)"
         start_dockerd "/tmp/ror-docker.sock"
     elif [ "$SOCKET_FOUND" = true ]; then
-        # Use the host socket — fewer nesting layers means k3d/kind work reliably
-        log "Using Codespaces host Docker socket (recommended for k3d/kind)"
-        sudo chmod 755 /var/run 2>/dev/null || true
-        sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
-        sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
-        export DOCKER_HOST="unix:///var/run/docker.sock"
-        log "Docker socket permissions updated"
+        HOST_SECURITY=$(sudo DOCKER_HOST="unix:///var/run/docker.sock" docker info --format '{{json .SecurityOptions}}' 2>/dev/null || echo "")
+        if echo "$HOST_SECURITY" | grep -Eq 'rootless|userns'; then
+            log "Codespaces host Docker is rootless/userns; starting internal dockerd for k3d/kind"
+            start_dockerd "/tmp/ror-docker.sock" "false"
+        else
+            # Use the host socket — fewer nesting layers means k3d/kind work reliably
+            log "Using Codespaces host Docker socket (recommended for k3d/kind)"
+            sudo chmod 755 /var/run 2>/dev/null || true
+            sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
+            sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
+            export DOCKER_HOST="unix:///var/run/docker.sock"
+            log "Docker socket permissions updated"
+        fi
     else
         # No socket from Codespaces host - start our own dockerd
         log "No Docker socket from Codespaces host, starting Wolfi dockerd..."
