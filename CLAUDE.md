@@ -36,6 +36,7 @@ ujust brew-update        # Update Homebrew and packages
 ujust docker-status      # Check Docker daemon status
 ujust docker-start       # Start Docker daemon
 ujust docker-clean       # Prune Docker resources
+ujust cgroup-check       # Check cgroup v2 memory controller status (k3d/k3s troubleshooting)
 ujust info               # Display system configuration
 ```
 
@@ -74,6 +75,35 @@ ruff check .             # Lint Python code
 **Docker-in-Docker:** Uses Wolfi's official dockerd-oci-entrypoint. The container runs with `--privileged` for DinD support.
 
 **Allowlist-driven updates:** Maintenance robot uses JSON allowlists (`automation/maintenance-robot/allowlists/`) to constrain which versions can be automatically updated.
+
+## Known Issues
+
+### k3d/k3s in GitHub Codespaces
+
+**Problem:** k3d cluster creation fails in GitHub Codespaces with the error:
+```
+level=fatal msg="Error: failed to find memory cgroup (v2)"
+```
+
+**Root cause:** GitHub Codespaces runs on Azure VMs with cgroup v2, but the outer orchestrator only delegates `cpuset cpu pids` to child cgroups — **not `memory`**. k3s requires the memory controller for pod resource management.
+
+**Diagnosis:** Run `ujust cgroup-check` to verify if the memory controller is delegated. The output will show:
+- ✓ Memory controller delegated → k3d/k3s should work
+- ⚠ Memory controller NOT delegated → k3d/k3s will fail
+
+**Attempted fix:** The devcontainer image includes `/usr/local/bin/enable-cgroup-memory.sh` which attempts to enable memory controller delegation at container startup. However, this typically fails in Codespaces due to infrastructure restrictions (insufficient permissions to modify the root cgroup).
+
+**Workarounds:**
+1. Use Docker Desktop locally (full cgroup delegation)
+2. Use DevPod on k3s/k8s clusters (proper cgroup delegation from kubelet)
+3. Request GitHub Codespaces team to enable memory controller delegation for your workspace
+
+**Why this doesn't happen elsewhere:**
+- **Local Docker Desktop**: Full control of cgroup tree, memory controller always delegated
+- **DevPod on k3s**: The k3s node itself requires memory controller for pod limits, so it's delegated to all child containers
+- **GitHub Codespaces**: Azure orchestrator restricts delegation for resource isolation
+
+This is a platform limitation of GitHub Codespaces, not a bug in the devcontainer or k3d.
 
 ## Security Considerations
 

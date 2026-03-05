@@ -9,6 +9,14 @@ log() {
     echo "[Entrypoint] $*" >&2
 }
 
+# Enable cgroup v2 memory controller delegation for k3d/k3s support
+# This must run early, before dockerd starts, to ensure proper delegation
+# Note: In GitHub Codespaces this will likely fail due to infrastructure restrictions,
+# but we try anyway and provide clear diagnostic output for troubleshooting
+if [ -x /usr/local/bin/enable-cgroup-memory.sh ]; then
+    /usr/local/bin/enable-cgroup-memory.sh || true
+fi
+
 # Runtime selection:
 # - auto (default): prefer host socket on Codespaces (fewer nesting layers = better
 #   k3d/kind reliability); fall back to DinD if no host socket exists
