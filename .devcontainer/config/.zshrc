@@ -128,8 +128,16 @@ export PATH="${HOMEBREW_PREFIX:-/home/linuxbrew/.linuxbrew}/bin:${HOMEBREW_PREFI
 export LANG=C.UTF-8
 export LC_ALL=C.UTF-8
 export TZ=UTC
-export EDITOR=vim
-export VISUAL=vim
+if command -v code-insiders &> /dev/null; then
+    export EDITOR="code-insiders --wait"
+    export VISUAL="code-insiders --wait"
+elif command -v code &> /dev/null; then
+    export EDITOR="code --wait"
+    export VISUAL="code --wait"
+else
+    export EDITOR=vim
+    export VISUAL=vim
+fi
 export CLICOLOR=1
 export LS_COLORS='di=34:ln=35:so=32:pi=33:ex=31:bd=34;46:cd=34;43:su=30;41:sg=30;46:tw=30;42:ow=30;43'
 
