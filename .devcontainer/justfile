@@ -121,6 +121,40 @@ docker-start:
 docker-clean:
     docker system prune -af
 
+# Check cgroup v2 memory controller status (for k3d/k3s troubleshooting)
+cgroup-check:
+    #!/usr/bin/env bash
+    echo "=== cgroup v2 Status (for k3d/k3s) ==="
+    echo ""
+    if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+        echo "✓ cgroup v2 detected"
+        echo ""
+        echo "Available controllers at root:"
+        cat /sys/fs/cgroup/cgroup.controllers
+        echo ""
+        echo "Delegated to subtree (child cgroups):"
+        cat /sys/fs/cgroup/cgroup.subtree_control
+        echo ""
+        SUBTREE=$(cat /sys/fs/cgroup/cgroup.subtree_control 2>/dev/null || echo "")
+        if echo "$SUBTREE" | grep -q "memory"; then
+            echo "✓ Memory controller is delegated - k3d/k3s should work"
+        else
+            echo "⚠ Memory controller NOT delegated - k3d/k3s will FAIL"
+            echo ""
+            echo "This is a known limitation in GitHub Codespaces."
+            echo "See: https://github.com/joshyorko/room-of-requirement/issues/<issue_number>"
+        fi
+        echo ""
+        CURRENT_CGROUP=$(cat /proc/self/cgroup | cut -d: -f3)
+        echo "Current cgroup: $CURRENT_CGROUP"
+    else
+        echo "⚠ cgroup v2 not detected (using cgroup v1)"
+        echo "k3d/k3s may still work on cgroup v1"
+    fi
+    echo ""
+    echo "Docker cgroup info:"
+    docker info --format '{{.CgroupDriver}} (v{{.CgroupVersion}})' 2>/dev/null || echo "Docker not running"
+
 # Show system info
 info:
     @echo "=== Room of Requirement DevContainer ==="
