@@ -146,20 +146,30 @@ if [ -n "${CODESPACES:-}" ]; then
     if [ "${DOCKER_BACKEND}" = "dind" ]; then
         log "Using internal DinD backend in Codespaces (explicit)"
         start_dockerd "/tmp/ror-docker.sock"
-    elif [ "$SOCKET_FOUND" = true ]; then
-        HOST_SECURITY=$(sudo DOCKER_HOST="unix:///var/run/docker.sock" docker info --format '{{json .SecurityOptions}}' 2>/dev/null || echo "")
-        if echo "$HOST_SECURITY" | grep -Eq 'rootless|userns'; then
-            log "Codespaces host Docker is rootless/userns; starting internal dockerd for k3d/kind"
-            start_dockerd "/tmp/ror-docker.sock" "false"
-        else
-            # Use the host socket — fewer nesting layers means k3d/kind work reliably
-            log "Using Codespaces host Docker socket (recommended for k3d/kind)"
+    elif [ "${DOCKER_BACKEND}" = "host" ]; then
+        if [ "$SOCKET_FOUND" = true ]; then
+            log "Using Codespaces host Docker socket (forced by ROR_DOCKER_BACKEND=host)"
             sudo chmod 755 /var/run 2>/dev/null || true
             sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
             sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
             export DOCKER_HOST="unix:///var/run/docker.sock"
             log "Docker socket permissions updated"
+        else
+            log "ROR_DOCKER_BACKEND=host requested, but no host socket found; starting internal dockerd"
+            start_dockerd "/var/run/docker.sock"
         fi
+    elif [ "$SOCKET_FOUND" = true ]; then
+        HOST_SECURITY=$(sudo DOCKER_HOST="unix:///var/run/docker.sock" docker info --format '{{json .SecurityOptions}}' 2>/dev/null || echo "")
+        if echo "$HOST_SECURITY" | grep -Eq 'rootless|userns'; then
+            log "Codespaces host Docker is rootless/userns; using host socket anyway to avoid nested DinD cgroup failures"
+        else
+            log "Using Codespaces host Docker socket (recommended for k3d/kind)"
+        fi
+        sudo chmod 755 /var/run 2>/dev/null || true
+        sudo chown root:docker /var/run/docker.sock 2>/dev/null || true
+        sudo chmod 660 /var/run/docker.sock 2>/dev/null || true
+        export DOCKER_HOST="unix:///var/run/docker.sock"
+        log "Docker socket permissions updated"
     else
         # No socket from Codespaces host - start our own dockerd
         log "No Docker socket from Codespaces host, starting Wolfi dockerd..."

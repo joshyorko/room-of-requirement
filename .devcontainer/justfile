@@ -153,7 +153,7 @@ cgroup-check:
     fi
     echo ""
     echo "Docker cgroup info:"
-    docker info --format '{{.CgroupDriver}} (v{{.CgroupVersion}})' 2>/dev/null || echo "Docker not running"
+    docker info 2>/dev/null | awk -F': +' '/Cgroup Driver/ {d=$2} /Cgroup Version/ {v=$2} END {if (d != "") print d " (v" v ")"; else print "Docker not running"}'
 
 # Show system info
 info:
