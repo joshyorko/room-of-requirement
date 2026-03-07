@@ -1,6 +1,5 @@
 # ROR Development Tools
-# NOTE: These tools are now baked into the Docker image via core.Brewfile
-# This file is kept for reference and manual installation via: brew bundle --file=ror.Brewfile
+# Install on demand via `ujust bbrew` or `brew bundle --file=ror.Brewfile`
 
 # Python
 brew "uv"                  # Fast Python package installer
@@ -11,8 +10,10 @@ brew "duckdb"              # Embedded analytics database
 
 # VCS and Git tools
 brew "gh"                  # GitHub CLI
+cask "codex"               # OpenAI Codex terminal agent
+cask "claude-code"         # Claude Code terminal agent
 
-# RCC - Robocorp Control Center CLI for RPA automation
+# Optional RPA tooling
 tap "joshyorko/tools"
 cask "joshyorko/tools/rcc"
 cask "joshyorko/tools/action-server"

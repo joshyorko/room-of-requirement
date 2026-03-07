@@ -11,13 +11,12 @@
 node = "lts"
 python = "latest"
 go = "latest"
-# NOTE: Ruby and Rust are disabled by default to reduce initial startup time
-# All build dependencies are available in the image (including fix for GCC 15 compilation)
-# Quick Ruby setup: mise use -g ruby@<version>
+ruby = "latest"
+# Rust remains disabled by default to reduce initial startup time.
+# All build dependencies required for Ruby are available in the image.
 # Optional helper: ujust rails-enable <ruby_version> <rails_version>
-# To enable via mise only: mise use -g ruby@latest rust@latest
+# To enable Rust as well: mise use -g rust@latest
 # rust = "latest"
-# ruby = "latest"
 
 # ============================================================================
 # MISE SETTINGS

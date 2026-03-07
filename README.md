@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-Everything is pre-baked into the image - no features required! Core tools (mise, starship, zoxide, nushell) are ready to use. Additional tools like rcc are available via `ujust bbrew` → select `ror`.
+Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, `nushell`, and the default `mise` runtimes are ready to use. Additional tools like `rcc`, `action-server`, `codex`, and `claude-code` are available via `ujust bbrew` → select `ror`.
 
 ### Option 2: Open This Repository
 
@@ -58,7 +58,7 @@ devpod up https://github.com/joshyorko/room-of-requirement
 │  │  • core.Brewfile  - mise, starship, zoxide, nushell    ││
 │  │  • dev.Brewfile   - bat, eza, fzf, ripgrep, jq, yq     ││
 │  │  • cloud.Brewfile - aws, azure, terraform, k8s tools   ││
-│  │  • ror.Brewfile   - rcc, uv, gh, duckdb, sqlite        ││
+│  │  • ror.Brewfile   - rcc, action-server, codex, Claude  ││
 │  └─────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -82,7 +82,7 @@ These are baked into the image for instant availability:
 
 | Tool | Purpose |
 |------|---------|
-| **mise** | Polyglot version manager (Node, Python, Go, etc.) |
+| **mise** | Polyglot version manager (Node, Python, Go, Ruby, etc.) |
 | **starship** | Cross-shell prompt with git/tool status |
 | **zoxide** | Smart directory navigation (`z` command) |
 | **nushell** | Modern shell alternative |
@@ -102,7 +102,7 @@ ujust brew-install-all  # Install everything
 | **core** | mise, starship, zoxide, nushell |
 | **dev** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux, git-lfs |
 | **cloud** | aws-cli, azure-cli, terraform, kubectl, helm, k9s, k3d, dagger, devspace |
-| **ror** | rcc, uv, gh, duckdb, sqlite |
+| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server |
 
 ---
 
@@ -140,13 +140,13 @@ Tool versions automatically switch when you `cd` into the project directory.
 
 ---
 
-## 💎 Ruby and Rails (On-Demand)
+## 💎 Ruby and Rails
 
-Ruby/Rails are intentionally not preinstalled to keep container startup fast.
-Use `mise` for Ruby version management (recommended):
+Ruby is installed by default via `mise`. Use `mise` to pin a different version when needed:
 
 ```bash
-mise use -g ruby@3.4
+ruby --version
+mise use -g ruby@latest
 gem install rails
 ```
 

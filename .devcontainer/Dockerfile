@@ -185,22 +185,13 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 # Install core shell tools (baked into image for faster startup)
-# These are essential tools that should always be available immediately
-# Includes: mise, starship, zoxide, bbrew, uv, sqlite, duckdb, gh, rcc, action-server
+# These are essential tools that should always be available immediately.
 COPY .devcontainer/brew/core.Brewfile /tmp/core.Brewfile
 RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile" && \
     rm /tmp/core.Brewfile
 
-# Pre-tap custom repositories so bbrew can find casks (avoids hang on first use)
-# These taps are declared in core.Brewfile but bbrew needs them pre-loaded
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force valkyrie00/bbrew" && \
-    su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force joshyorko/tools"
-
-# Install rcc and action-server via brew install --cask
-# (brew bundle skips casks on Linux, but brew install --cask works directly)
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install --cask joshyorko/tools/rcc joshyorko/tools/action-server && /home/linuxbrew/.linuxbrew/bin/brew cleanup --prune=all" && \
-    # Remove cached cask downloads so scanners only report runtime-shipped binaries.
-    find /home/linuxbrew/.cache/Homebrew/downloads -mindepth 1 -delete 2>/dev/null || true
+# Pre-tap Bold Brew so the TUI is ready on first use.
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force valkyrie00/bbrew"
 
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
@@ -228,7 +219,7 @@ USER vscode
 ENV MISE_DATA_DIR=/usr/local/share/mise
 SHELL ["/bin/bash", "-c"]
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/mise activate bash)" && \
-    /home/linuxbrew/.linuxbrew/bin/mise install node@lts python@latest go@latest && \
+    /home/linuxbrew/.linuxbrew/bin/mise install node@lts python@latest go@latest ruby@latest && \
     # Keep npm at latest to reduce bundled transitive CVE exposure.
     /home/linuxbrew/.linuxbrew/bin/mise exec node@lts -- npm install -g npm@latest && \
     /home/linuxbrew/.linuxbrew/bin/mise reshim

@@ -63,21 +63,18 @@ else
     # MISE: Install Global Runtimes (cached via volume mount)
     # =========================================================================
     # Install default runtimes - these are cached in the mise volume for fast restarts
-    log "Installing global language runtimes (node, python, go)..."
+    log "Installing global language runtimes (node, python, go, ruby)..."
     # Ensure mise is active for this session
     eval "$(mise activate bash)"
 
-    # Install node, python, go (Ruby/Rust disabled by default for faster startup)
-    # Enable Ruby/Rails when needed with mise: mise use -g ruby@<version>
-    mise use -g node@lts python@latest go@latest
+    mise use -g node@lts python@latest go@latest ruby@latest
 
     # Update npm to latest to fix potential vulnerabilities
     log "Updating npm to latest..."
     mise exec -- npm install -g npm@latest 2>/dev/null || warn "npm update had issues"
     mise exec -- npm cache clean --force 2>/dev/null || true
 
-    # NOTE: bbrew, starship, zoxide, uv, sqlite, duckdb, gh, rcc are now baked into the image
-    log "✓ Core tools already installed in image (bbrew, starship, uv, gh, rcc, etc.)"
+    log "✓ Core image tools installed (bbrew, starship, zoxide, mise)"
 fi
 
 # ============================================================================
