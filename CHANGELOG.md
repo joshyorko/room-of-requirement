@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.0](https://github.com/joshyorko/room-of-requirement/compare/v1.10.4...v1.11.0) (2026-03-07)
+
+
+### ✨ Features
+
+* enhance Dockerfile and Brewfiles for improved tooling and Ruby support ([9b514fa](https://github.com/joshyorko/room-of-requirement/commit/9b514fa0020f448b91925fc75982037b7bbcd8b2))
+
 ## [1.10.4](https://github.com/joshyorko/room-of-requirement/compare/v1.10.3...v1.10.4) (2026-03-03)
 
 
