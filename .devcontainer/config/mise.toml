@@ -28,6 +28,9 @@ auto_install = true
 # Show status messages
 quiet = false
 
+# Use pre-built Ruby binaries; never compile from source in postcreate
+ruby.compile = false
+
 # ============================================================================
 # ENVIRONMENT
 # ============================================================================
