@@ -212,11 +212,66 @@ ignore:
   - vulnerability: CVE-2026-1299
   - vulnerability: CVE-2026-0865
   - vulnerability: CVE-2026-0672
+  - vulnerability: CVE-2026-4224
+    package:
+      name: python
+      type: binary
+  - vulnerability: CVE-2026-3644
+    package:
+      name: python
+      type: binary
   - vulnerability: CVE-2025-15367
   - vulnerability: CVE-2025-15366
   - vulnerability: CVE-2025-15282
+  - vulnerability: CVE-2025-13462
+    package:
+      name: python
+      type: binary
   - vulnerability: CVE-2025-12781
   - vulnerability: CVE-2025-11468
+
+  # ============================================================================
+  # Go stdlib CVEs in first-class CLI binaries
+  # Docker 29.3.0 and bbrew 2.2.1 are the latest upstream artifacts available on
+  # 2026-03-18, but they are still built with vulnerable Go 1.25.x toolchains.
+  # Docker remains required for DinD; bbrew is intentionally baked into the image
+  # as the one exception to the otherwise on-demand Homebrew flow.
+  # ============================================================================
+  - vulnerability: CVE-2026-25679
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-27142
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-27139
+    package:
+      name: stdlib
+      type: go-module
+
+  # ============================================================================
+  # OpenSSL in Wolfi base
+  # Wolfi latest still ships openssl 3.6.1-r3 on 2026-03-18. The image does not
+  # expose an OpenSSL-backed TLS service, so we accept the distro risk until
+  # Wolfi publishes patched packages.
+  # ============================================================================
+  - vulnerability: CVE-2026-2673
+    package:
+      name: openssl
+      type: apk
+  - vulnerability: CVE-2026-2673
+    package:
+      name: openssl-dev
+      type: apk
+  - vulnerability: CVE-2026-2673
+    package:
+      name: libssl3
+      type: apk
+  - vulnerability: CVE-2026-2673
+    package:
+      name: libcrypto3
+      type: apk
 
   # ============================================================================
   # BusyBox - Wolfi base image component

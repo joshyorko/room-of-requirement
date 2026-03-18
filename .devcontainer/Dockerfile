@@ -190,7 +190,7 @@ COPY .devcontainer/brew/core.Brewfile /tmp/core.Brewfile
 RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile" && \
     rm /tmp/core.Brewfile
 
-# Pre-tap Bold Brew so the TUI is ready on first use.
+# Pre-tap Bold Brew so the baked-in TUI is ready on first use.
 RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force valkyrie00/bbrew"
 
 # Configure Homebrew permissions for vscode user
@@ -213,13 +213,16 @@ RUN mkdir -p \
 RUN mkdir -p /usr/local/share/mise && \
     chown -R vscode:vscode /usr/local/share/mise
 
-# Install runtimes as vscode user to system location
+# Install runtimes as vscode user to system location.
+# Python is intentionally not baked into the image until CPython 3.15.0 is
+# available via trusted upstream tooling; current 3.14.3 builds are flagged by
+# GitHub code scanning.
 # Note: Must use bash explicitly because mise activate generates bash-specific code
 USER vscode
 ENV MISE_DATA_DIR=/usr/local/share/mise
 SHELL ["/bin/bash", "-c"]
 RUN eval "$(/home/linuxbrew/.linuxbrew/bin/mise activate bash)" && \
-    /home/linuxbrew/.linuxbrew/bin/mise install node@lts python@latest go@latest ruby@latest && \
+    /home/linuxbrew/.linuxbrew/bin/mise install node@lts go@latest ruby@latest && \
     # Keep npm at latest to reduce bundled transitive CVE exposure.
     /home/linuxbrew/.linuxbrew/bin/mise exec node@lts -- npm install -g npm@latest && \
     /home/linuxbrew/.linuxbrew/bin/mise reshim

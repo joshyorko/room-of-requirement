@@ -68,7 +68,7 @@ ruff check .             # Lint Python code
 
 **Homebrew ownership:** The vscode user (UID 1000) owns `/home/linuxbrew/.linuxbrew` for `brew update` to work. The linuxbrew user is only for initial installation.
 
-**Tool versioning:** Uses mise-en-place for polyglot version management. Default runtimes (node@lts, python@latest, go@latest) are pre-configured in the image.
+**Tool versioning:** Uses mise-en-place for polyglot version management. Default runtimes (node@lts, go@latest, ruby@latest) are pre-configured in the image, Python remains available on demand via `mise`, and `bbrew` is the one baked-in exception to the otherwise on-demand Homebrew flow.
 
 **Shell configuration:** `.devcontainer/config/.zshrc` is copied to both `/tmp/.zshrc-ror` (backup) and `/home/vscode/.zshrc`. The postCreate command restores it if features overwrite it.
 
