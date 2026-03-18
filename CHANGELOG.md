@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.11.1](https://github.com/joshyorko/room-of-requirement/compare/v1.11.0...v1.11.1) (2026-03-18)
+
+
+### 🐛 Bug Fixes
+
+* update Python version in mise configuration to 3.15.0 ([8e36a4d](https://github.com/joshyorko/room-of-requirement/commit/8e36a4d5ed19faf419629ac26533a5bcdcec1663))
+
 ## [1.11.0](https://github.com/joshyorko/room-of-requirement/compare/v1.10.4...v1.11.0) (2026-03-07)
 
 
