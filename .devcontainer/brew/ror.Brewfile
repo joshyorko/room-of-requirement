@@ -17,3 +17,4 @@ cask "claude-code"         # Claude Code terminal agent
 tap "joshyorko/tools"
 cask "joshyorko/tools/rcc"
 cask "joshyorko/tools/action-server"
+brew "joshyorko/tools/t3code-cli-main"
