@@ -30,28 +30,28 @@
   "docker/login-action": {
     "repo": "docker/login-action",
     "source": "release",
-    "max_major": 3,
+    "max_major": 4,
     "include_prerelease": false,
     "pin_to_sha": true
   },
   "docker/metadata-action": {
     "repo": "docker/metadata-action",
     "source": "release",
-    "max_major": 5,
+    "max_major": 6,
     "include_prerelease": false,
     "pin_to_sha": true
   },
   "docker/setup-qemu-action": {
     "repo": "docker/setup-qemu-action",
     "source": "release",
-    "max_major": 3,
+    "max_major": 4,
     "include_prerelease": false,
     "pin_to_sha": true
   },
   "docker/setup-buildx-action": {
     "repo": "docker/setup-buildx-action",
     "source": "release",
-    "max_major": 3,
+    "max_major": 4,
     "include_prerelease": false,
     "pin_to_sha": true
   },
@@ -100,7 +100,7 @@
   "anchore/scan-action": {
     "repo": "anchore/scan-action",
     "source": "release",
-    "max_major": 5,
+    "max_major": 7,
     "include_prerelease": false,
     "pin_to_sha": true
   },
