@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.0](https://github.com/joshyorko/room-of-requirement/compare/v1.11.1...v1.12.0) (2026-03-18)
+
+
+### ✨ Features
+
+* add t3code-cli-main to Brewfile for enhanced tooling ([a1c3127](https://github.com/joshyorko/room-of-requirement/commit/a1c312729104ac66fa22b2289649880d4e993771))
+
 ## [1.11.1](https://github.com/joshyorko/room-of-requirement/compare/v1.11.0...v1.11.1) (2026-03-18)
 
 
