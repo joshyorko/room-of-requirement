@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, `nushell`, and the default `mise` runtimes are ready to use. Additional tools like `rcc`, `action-server`, `codex`, and `claude-code` are available via `ujust bbrew` → select `ror`.
+Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, `nushell`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `rcc`, `action-server`, `codex`, and `claude-code` are available via `ujust bbrew` → select `ror`.
 
 ### Option 2: Open This Repository
 
@@ -86,6 +86,7 @@ These are baked into the image for instant availability:
 | **starship** | Cross-shell prompt with git/tool status |
 | **zoxide** | Smart directory navigation (`z` command) |
 | **nushell** | Modern shell alternative |
+| **bbrew** | Bold Brew TUI baked in as the exception to on-demand installs |
 
 
 ### On-Demand Brewfiles

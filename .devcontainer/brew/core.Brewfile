@@ -8,9 +8,8 @@ brew "starship"            # Cross-shell prompt
 brew "mise"                # Polyglot version manager (node, python, go, etc.)
 brew "zoxide"              # Smart directory navigation (z command)
 
-# Bold Brew TUI for interactive package management
 tap "valkyrie00/bbrew"
-brew "valkyrie00/bbrew/bbrew"
+brew "valkyrie00/bbrew/bbrew" # Bold Brew TUI is the baked-in exception
 
 # =============================================================================
 # Common CLI tooling baked into the base image
