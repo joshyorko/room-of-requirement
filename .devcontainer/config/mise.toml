@@ -47,5 +47,5 @@ _.path = [
 # ============================================================================
 # Aliases are optional convenience shortcuts. Use explicit versions instead:
 #   mise use node@20    (instead of node@lts)
-#   mise use python@3.12
+#   mise use python@3.15.0
 #   mise use go@1.23.0

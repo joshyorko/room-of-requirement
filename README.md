@@ -119,7 +119,7 @@ mise install
 
 # Use specific versions
 mise use node@20
-mise use python@3.12
+mise use python@3.15.0
 ```
 
 ### Project Configuration
