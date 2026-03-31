@@ -5,37 +5,26 @@ WELCOME TO THE ROOM OF REQUIREMENT
 *~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*~*
 
 
-This container has manifested itself as your development environment.
+Ready now:
+  Wolfi OS • Homebrew • mise • Docker
+  gh • uv • sqlite • duckdb
+  zsh • starship • zoxide • bbrew
 
-┌──────────────────── DEVELOPMENT ENVIRONMENT ──────────────────┐
-│                                                                    │
-│  Wolfi OS           - Minimal, secure container-native foundation  │
-│  Docker-in-Docker   - Containers within containers, a paradox      │
-│  k3d & k9s          - Orchestrating clusters in miniature worlds   │
-│  DevSpace           - Streamlined Kubernetes development workflows │
-│  mise               - Polyglot tool manager (Node, Python, Go, Ruby)│
-│  Ruby               - Preinstalled via mise; Rails install as needed │
-│  UV                 - Python's swift shadow, installing dependencies│
-│  GitHub CLI (gh)    - Command your repositories with mystical powers│
-│  Zsh + Starship     - Modern shell with a stellar prompt           │
-│  container-use      - Sandboxed dev environments for coding agents │
-│                                                                    │
-└────────────────────────────────────────────────────────────────────┘
+Need more tools?
+  Most extras install on demand via curated Brewfiles.
 
-USEFUL COMMANDS TO TRY
+  $ ujust bbrew
+  $ ujust brew-install-all
+  $ brew install <tool>
 
-  $ docker ps                # Observe the containers you have summoned
-  $ k3d cluster create       # Conjure a Kubernetes cluster from nothing
-  $ k9s                      # Navigate the ethereal dashboard
-  $ devspace version         # Check your Kubernetes development accelerator
-  $ mise --version           # Verify your polyglot tool manager
-  $ gh repo list             # List your GitHub repositories
-  $ uv --version             # Verify the version of your package conjurer
-  $ ruby --version           # Verify the default mise-managed Ruby
-  $ gem install rails        # Install Rails into the active mise Ruby
-  $ container-use version    # Check your sandboxed environment manager
-  $ dagger version           # Verify your CI/CD pipeline orchestrator
-  $ starship bug-report      # Verify Starship prompt configuration
+  dev   - rg, fd, fzf, jq, yq, tmux
+  cloud - kubectl, helm, terraform, k3d, k9s
+  ror   - Codex, Claude Code, RCC, Action Server
+
+Try:
+  $ ujust info
+  $ mise list
+  $ docker info
 
 
 
