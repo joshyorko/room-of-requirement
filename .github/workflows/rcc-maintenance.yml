@@ -49,7 +49,6 @@ jobs:
           key: rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-${{ hashFiles('automation/maintenance-robot/robot.yaml', 'automation/maintenance-robot/conda.yaml') }}
           restore-keys: |
             rcc-home-${{ runner.os }}-${{ env.RCC_VERSION }}-
-            rcc-home-${{ runner.os }}-
 
       - name: Disable RCC telemetry
         run: rcc config identity -t
