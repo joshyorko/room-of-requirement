@@ -25,12 +25,13 @@ REPO_ROOT = ROBOT_ROOT.parent.parent
 
 @task
 def maintenance() -> None:
-    """Run all maintenance tasks: update workflows, PyPI packages, and run pre-commit.
+    """Run all maintenance tasks: update workflows, dependency pins, and run pre-commit.
 
     This robot focuses on:
     1. GitHub Actions workflow version updates (github_actions.json)
     2. PyPI package updates for the maintenance robot itself (downloads.json)
-    3. Homebrew version tracking (informational only)
+    3. Pre-commit hook repo updates from `.pre-commit-config.yaml`
+    4. Homebrew version tracking (informational only)
 
     Homebrew tools are NOT auto-updated - they're managed via curated Brewfiles
     and updated manually or via `brew update && brew upgrade`.
@@ -182,6 +183,29 @@ def _write_report(report: MaintenanceReport) -> None:
     logging.info("Wrote maintenance report for task '%s' to %s", _current_task_name(), report_path)
 
 
+def _refresh_precommit_configuration() -> None:
+    """Keep the repository's pre-commit configuration current."""
+    logging.info("Migrating pre-commit configuration...")
+    migrate_result = subprocess.run(
+        ["pre-commit", "migrate-config"],
+        cwd=str(REPO_ROOT),
+        capture_output=False,
+        text=True,
+    )
+    if migrate_result.returncode != 0:
+        logging.warning("Failed to migrate pre-commit configuration")
+
+    logging.info("Refreshing all configured pre-commit hook repos...")
+    autoupdate_result = subprocess.run(
+        ["pre-commit", "autoupdate"],
+        cwd=str(REPO_ROOT),
+        capture_output=False,
+        text=True,
+    )
+    if autoupdate_result.returncode != 0:
+        logging.warning("Failed to autoupdate pre-commit hook repos")
+
+
 def _run_precommit_autofixes() -> None:
     """Run pre-commit hooks to auto-fix formatting issues."""
     logging.info("Running pre-commit auto-fixes...")
@@ -200,8 +224,11 @@ def _run_precommit_autofixes() -> None:
         else:
             logging.warning("Prettier had issues: %s", prettier_result.stderr)
 
-        # First ensure pre-commit hooks are installed (downloads all tools)
-        logging.info("Installing pre-commit hooks...")
+        _refresh_precommit_configuration()
+
+        # Pre-install hook environments without touching .git/hooks; the robot
+        # invokes pre-commit directly in CI and local maintenance runs.
+        logging.info("Installing pre-commit hook environments...")
         install_result = subprocess.run(
             ["pre-commit", "install-hooks"],
             cwd=str(REPO_ROOT),
@@ -209,7 +236,7 @@ def _run_precommit_autofixes() -> None:
             text=True,
         )
         if install_result.returncode != 0:
-            logging.warning("Failed to install pre-commit hooks")
+            logging.warning("Failed to install pre-commit hook environments")
             return
 
         # Run pre-commit with output visible

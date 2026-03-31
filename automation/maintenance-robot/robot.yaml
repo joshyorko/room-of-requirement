@@ -2,7 +2,7 @@
 # https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-robotyaml
 
 tasks:
-  # Full maintenance run - updates workflows, PyPI packages, and runs pre-commit
+  # Full maintenance run - updates workflows, dependency pins, refreshes pre-commit, and runs hooks
   maintenance:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t maintenance
 

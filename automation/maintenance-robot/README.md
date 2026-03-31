@@ -8,7 +8,8 @@ This robot keeps the repository fresh by automating version updates for:
 
 1. **GitHub Actions workflows** - Updates `uses:` references based on allowlisted actions
 2. **PyPI packages** - Updates pinned versions in `conda.yaml` for the maintenance robot itself
-3. **Homebrew tracking** - Logs formula versions (informational only)
+3. **Pre-commit hook repos** - Refreshes configured hook revisions in `.pre-commit-config.yaml`
+4. **Homebrew tracking** - Logs formula versions (informational only)
 
 ### What This Robot Does NOT Update
 
@@ -122,4 +123,4 @@ No file updates are performed. This is useful for:
 
 ## CI Integration
 
-The GitHub Actions workflow `.github/workflows/rcc-maintenance.yml` executes the `maintenance` task daily. When changes are detected, they are committed back to the repository.
+The GitHub Actions workflow `.github/workflows/rcc-maintenance.yml` executes the `maintenance` task daily. When changes are detected (including pre-commit hook revision bumps), they are committed back to the repository.
