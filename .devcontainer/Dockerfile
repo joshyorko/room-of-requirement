@@ -307,9 +307,10 @@ RUN chmod +x /usr/local/bin/mise-seed-cache.sh
 COPY --chown=vscode:vscode .devcontainer/scripts/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
 RUN chmod +x /usr/local/bin/fix-docker-permissions.sh
 
-# Copy cgroup v2 memory controller delegation script (for k3d/k3s in Codespaces)
+# Copy cgroup v2 memory controller delegation scripts (for k3d/k3s in Codespaces)
 COPY .devcontainer/scripts/enable-cgroup-memory.sh /usr/local/bin/enable-cgroup-memory.sh
-RUN chmod +x /usr/local/bin/enable-cgroup-memory.sh
+COPY .devcontainer/scripts/fix-cgroup-delegation.sh /usr/local/bin/fix-cgroup-delegation.sh
+RUN chmod +x /usr/local/bin/enable-cgroup-memory.sh /usr/local/bin/fix-cgroup-delegation.sh
 
 # Copy entrypoint wrapper for Docker-in-Docker (handles both DevPod and Codespaces)
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh

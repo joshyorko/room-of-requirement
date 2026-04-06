@@ -18,8 +18,14 @@ Need more tools?
   $ brew install <tool>
 
   dev   - rg, fd, fzf, jq, yq, tmux
-  cloud - kubectl, helm, terraform, k3d, k9s
+  cloud - kubectl, helm, terraform, k3d, kind, k9s
   ror   - Codex, Claude Code, RCC, Action Server
+
+Kubernetes in Codespaces:
+  $ ujust cgroup-check       # Check k3d/k3s compatibility
+  $ ujust fix-cgroups        # Fix cgroup delegation issues
+  $ ujust k3d-create         # Create k3d cluster (Codespaces-compatible)
+  $ kind create cluster      # Alternative: Kind (better Codespaces support)
 
 Try:
   $ ujust info

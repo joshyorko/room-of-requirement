@@ -17,6 +17,7 @@ brew "k9s"                 # Kubernetes TUI
 
 # Kubernetes cluster management
 brew "k3d"                 # k3s in Docker - local Kubernetes clusters
+brew "kind"                # Kubernetes in Docker - better Codespaces compatibility
 brew "skaffold"            # Kubernetes development workflow
 
 # Container development

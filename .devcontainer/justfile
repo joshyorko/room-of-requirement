@@ -142,6 +142,7 @@ cgroup-check:
             echo "⚠ Memory controller NOT delegated - k3d/k3s will FAIL"
             echo ""
             echo "This is a known limitation in GitHub Codespaces."
+            echo "Try running: ujust fix-cgroups"
             echo "See: https://github.com/joshyorko/room-of-requirement/issues/<issue_number>"
         fi
         echo ""
@@ -154,6 +155,57 @@ cgroup-check:
     echo ""
     echo "Docker cgroup info:"
     docker info 2>/dev/null | awk -F': +' '/Cgroup Driver/ {d=$2} /Cgroup Version/ {v=$2} END {if (d != "") print d " (v" v ")"; else print "Docker not running"}'
+
+# Fix cgroup delegation for k3d/k3s (run if k3d fails with cgroup errors)
+fix-cgroups:
+    @echo "Attempting to fix cgroup v2 memory delegation..."
+    @sudo /usr/local/bin/fix-cgroup-delegation.sh || true
+    @echo ""
+    @echo "Checking result:"
+    @just cgroup-check
+
+# Create a k3d cluster with Codespaces-compatible settings
+k3d-create cluster_name='mycluster':
+    #!/usr/bin/env bash
+    echo "Creating k3d cluster '{{cluster_name}}' with Codespaces-compatible settings..."
+    export K3D_FIX_CGROUPV2=1
+    k3d cluster create {{cluster_name}} \
+        --volume /sys/fs/cgroup:/sys/fs/cgroup:rw \
+        --k3s-arg '--kubelet-arg=feature-gates=KubeletInUserNamespace=true@server:*' || {
+        echo ""
+        echo "❌ k3d cluster creation failed"
+        echo ""
+        echo "Troubleshooting steps:"
+        echo "1. Check cgroup status: ujust cgroup-check"
+        echo "2. Try fixing cgroups: ujust fix-cgroups"
+        echo "3. If still failing, use Kind instead: kind create cluster"
+        exit 1
+    }
+    echo "✓ Cluster created successfully"
+    kubectl cluster-info
+
+# Test k3d/k3s with full diagnostics
+k3d-test:
+    #!/usr/bin/env bash
+    echo "=== k3d/k3s Test Suite ==="
+    echo ""
+    echo "1. Checking cgroup delegation..."
+    just cgroup-check
+    echo ""
+    echo "2. Attempting cluster creation..."
+    TEST_CLUSTER="test-$$"
+    if just k3d-create "$TEST_CLUSTER" >/dev/null 2>&1; then
+        echo "✓ k3d cluster creation: SUCCESS"
+        k3d cluster delete "$TEST_CLUSTER" >/dev/null 2>&1
+    else
+        echo "❌ k3d cluster creation: FAILED"
+        echo ""
+        echo "Try: ujust fix-cgroups"
+        exit 1
+    fi
+    echo ""
+    echo "✓ All tests passed - k3d should work in this environment"
+
 
 # Show system info
 info:
