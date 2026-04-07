@@ -9,12 +9,13 @@ log() {
     echo "[Entrypoint] $*" >&2
 }
 
-# Enable cgroup v2 memory controller delegation for k3d/k3s support
-# This must run early, before dockerd starts, to ensure proper delegation
-# Note: In GitHub Codespaces this will likely fail due to infrastructure restrictions,
-# but we try anyway and provide clear diagnostic output for troubleshooting
-if [ -x /usr/local/bin/enable-cgroup-memory.sh ]; then
-    /usr/local/bin/enable-cgroup-memory.sh || true
+# Fix cgroup v2 memory controller delegation for k3d/k3s support
+# This implements process evacuation strategy to enable memory delegation
+# Must run early, before dockerd starts
+if [ -x /usr/local/bin/fix-cgroup-delegation.sh ]; then
+    /usr/local/bin/fix-cgroup-delegation.sh || true
+elif [ -x /workspaces/room-of-requirement/.devcontainer/scripts/fix-cgroup-delegation.sh ]; then
+    /workspaces/room-of-requirement/.devcontainer/scripts/fix-cgroup-delegation.sh || true
 fi
 
 # Runtime selection:
