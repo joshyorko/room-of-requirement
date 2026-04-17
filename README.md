@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, `nushell`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `rcc`, `action-server`, `codex`, and `claude-code` are available via `ujust bbrew` → select `ror`.
+Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, and `claude-code` are available via `ujust bbrew` → select `ror`.
 
 ### Option 2: Open This Repository
 
@@ -55,7 +55,7 @@ devpod up https://github.com/joshyorko/room-of-requirement
 │  └─────────────────────────────────────────────────────────┘│
 │  ┌─────────────────────────────────────────────────────────┐│
 │  │  Curated Brewfiles (.devcontainer/brew/)               ││
-│  │  • core.Brewfile  - mise, starship, zoxide, nushell    ││
+│  │  • core.Brewfile  - mise, starship, zoxide, bbrew      ││
 │  │  • dev.Brewfile   - bat, eza, fzf, ripgrep, jq, yq     ││
 │  │  • cloud.Brewfile - aws, azure, terraform, k8s tools   ││
 │  │  • ror.Brewfile   - rcc, action-server, codex, Claude  ││
@@ -85,7 +85,6 @@ These are baked into the image for instant availability:
 | **mise** | Polyglot version manager (Node, Python, Go, Ruby, etc.) |
 | **starship** | Cross-shell prompt with git/tool status |
 | **zoxide** | Smart directory navigation (`z` command) |
-| **nushell** | Modern shell alternative |
 | **bbrew** | Bold Brew TUI baked in as the exception to on-demand installs |
 
 
@@ -100,7 +99,7 @@ ujust brew-install-all  # Install everything
 
 | Brewfile | Tools Included |
 |----------|----------------|
-| **core** | mise, starship, zoxide, nushell |
+| **core** | mise, starship, zoxide, bbrew |
 | **dev** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux, git-lfs |
 | **cloud** | aws-cli, azure-cli, terraform, kubectl, helm, k9s, k3d, dagger, devspace |
 | **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server |
@@ -225,7 +224,7 @@ room-of-requirement/
 │   ├── post-create.sh       # Post-creation hydration script
 │   ├── justfile             # ujust commands (bbrew, etc.)
 │   └── brew/                # Curated Brewfiles
-│       ├── core.Brewfile    # mise, starship, zoxide, nushell
+│       ├── core.Brewfile    # mise, starship, zoxide, bbrew
 │       ├── dev.Brewfile     # CLI tools, terminal utilities
 │       ├── cloud.Brewfile   # Cloud CLIs, Kubernetes, IaC
 │       └── ror.Brewfile     # rcc, uv, gh, databases
@@ -240,7 +239,7 @@ room-of-requirement/
 
 ## 🎛️ Customization Examples
 
-### Standard Setup (Everything Pre-baked)
+### Standard Setup (Core Tools Pre-baked)
 
 ```json
 {
@@ -248,7 +247,7 @@ room-of-requirement/
 }
 ```
 
-All tools are pre-installed: mise, starship, zoxide, nushell. Use `ujust bbrew` for additional tools (rcc, uv, gh available via `ror` Brewfile).
+Core tools are pre-installed: mise, starship, zoxide, bbrew, plus default Node, Go, and Ruby runtimes. Use `ujust bbrew` for additional tools from the curated Brewfiles, including the `ror` bundle.
 
 ### With Additional Kubernetes Tools
 

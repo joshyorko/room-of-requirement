@@ -14,7 +14,7 @@ This robot keeps the repository fresh by automating version updates for:
 ### What This Robot Does NOT Update
 
 **Homebrew packages are NOT auto-updated.** With our Homebrew-first architecture:
-- Core tools (mise, starship, zoxide, nushell) are baked into the image via `core.Brewfile`
+- Core tools (mise, starship, zoxide, bbrew) are baked into the image via `core.Brewfile`
 - On-demand tools are installed via curated Brewfiles in `.devcontainer/brew/`
 - Homebrew handles versioning naturally via `brew update && brew upgrade`
 - The `homebrew.json` allowlist is informational only - it logs versions but doesn't modify files

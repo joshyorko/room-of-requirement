@@ -7,7 +7,6 @@ WELCOME TO THE ROOM OF REQUIREMENT
 
 Ready now:
   Wolfi OS • Homebrew • mise • Docker
-  gh • uv • sqlite • duckdb
   zsh • starship • zoxide • bbrew
 
 Need more tools?
@@ -19,7 +18,7 @@ Need more tools?
 
   dev   - rg, fd, fzf, jq, yq, tmux
   cloud - kubectl, helm, terraform, k3d, kind, k9s
-  ror   - Codex, Claude Code, RCC, Action Server
+  ror   - gh, uv, sqlite, duckdb, Codex, Claude Code, RCC, Action Server
 
 Kubernetes in Codespaces:
   $ ujust cgroup-check       # Check k3d/k3s compatibility
