@@ -329,6 +329,7 @@ ignore:
     package:
       name: go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
       type: go-module
+  # Same advisory is reported independently for OTLP trace + metric HTTP exporters.
   - vulnerability: GHSA-w8rr-5gcm-pp58
     package:
       name: go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp
