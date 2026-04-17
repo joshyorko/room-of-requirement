@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.13.0](https://github.com/joshyorko/room-of-requirement/compare/v1.12.1...v1.13.0) (2026-04-17)
+
+
+### ✨ Features
+
+* enhance DevContainer setup with curated Brewfile validation and runtime hydration ([0a90624](https://github.com/joshyorko/room-of-requirement/commit/0a906241755ba9a6def21d96e20c22c6e4d55980))
+
 ## [1.12.1](https://github.com/joshyorko/room-of-requirement/compare/v1.12.0...v1.12.1) (2026-04-17)
 
 
