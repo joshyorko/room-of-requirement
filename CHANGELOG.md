@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.12.1](https://github.com/joshyorko/room-of-requirement/compare/v1.12.0...v1.12.1) (2026-04-17)
+
+
+### ♻️ Refactoring
+
+* update core tools in Brewfile and documentation ([26f9ca4](https://github.com/joshyorko/room-of-requirement/commit/26f9ca478f154116f6e3fe7c270e71bfe5034ac1))
+
 ## [1.12.0](https://github.com/joshyorko/room-of-requirement/compare/v1.11.1...v1.12.0) (2026-03-18)
 
 
