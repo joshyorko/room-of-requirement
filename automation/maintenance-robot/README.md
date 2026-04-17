@@ -10,11 +10,13 @@ This robot keeps the repository fresh by automating version updates for:
 2. **PyPI packages** - Updates pinned versions in `conda.yaml` for the maintenance robot itself
 3. **Pre-commit hook repos** - Refreshes configured hook revisions in `.pre-commit-config.yaml`
 4. **Homebrew tracking** - Logs formula versions (informational only)
+5. **Curated Brewfile validation** - Catches renamed formulas or missing taps before post-create hydration breaks
 
 ### What This Robot Does NOT Update
 
 **Homebrew packages are NOT auto-updated.** With our Homebrew-first architecture:
-- Core tools (mise, starship, zoxide, bbrew) are baked into the image via `core.Brewfile`
+- Shell essentials (`mise`, `starship`, `zoxide`) are baked into the image
+- Curated Brewfiles, including `bbrew`, are hydrated during DevContainer post-create
 - On-demand tools are installed via curated Brewfiles in `.devcontainer/brew/`
 - Homebrew handles versioning naturally via `brew update && brew upgrade`
 - The `homebrew.json` allowlist is informational only - it logs versions but doesn't modify files
@@ -72,6 +74,7 @@ The robot prefers freeze artifacts from `output/environment_*_freeze.yaml` when 
 | **update-downloads** | `--task update-downloads` | Update PyPI packages only |
 | **update-lockfile** | `--task update-lockfile` | Regenerate devcontainer-lock.json only |
 | **update-homebrew** | `--task update-homebrew` | Log Homebrew versions (informational only) |
+| **validate-brewfiles** | `--task validate-brewfiles` | Validate curated Brewfiles resolve through Homebrew |
 | **test-devcontainer** | `--task test-devcontainer` | Test devcontainer build |
 
 To inspect the resolved environment without running the robot:
@@ -115,11 +118,20 @@ Constrains GitHub Actions updates by:
 
 ### homebrew.json
 
-**Informational only** - tracks versions of core tools baked into the image.
+**Informational only** - tracks versions of core tools we rely on across the image and post-create hydration flow.
 No file updates are performed. This is useful for:
 - Monitoring what versions are available
 - Reporting in maintenance logs
 - Knowing when to rebuild the image for security patches
+
+### Curated Brewfile validation
+
+The robot now validates `.devcontainer/brew/*.Brewfile` entries with Homebrew itself before
+declaring a maintenance run healthy. This is intentionally validation-only:
+- It does not rewrite Brewfiles
+- It does not auto-upgrade formulas
+- It does catch renamed formulas, missing taps, and other resolution errors that would otherwise
+  surface later during DevPod/Codespaces post-create hydration
 
 ## CI Integration
 

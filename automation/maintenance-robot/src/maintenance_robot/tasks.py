@@ -10,6 +10,7 @@ from typing import Dict
 from robocorp.tasks import get_current_task, get_output_dir, task
 
 from maintenance_robot.allowlist_loader import load_allowlist
+from maintenance_robot.brewfiles import BrewfileValidator
 from maintenance_robot.downloads import DownloadsUpdater
 from maintenance_robot.github_actions import GitHubActionsUpdater
 from maintenance_robot.homebrew import HomebrewUpdater
@@ -32,6 +33,7 @@ def maintenance() -> None:
     2. PyPI package updates for the maintenance robot itself (downloads.json)
     3. Pre-commit hook repo updates from `.pre-commit-config.yaml`
     4. Homebrew version tracking (informational only)
+    5. Curated Brewfile validation to catch renamed or missing formulae early
 
     Homebrew tools are NOT auto-updated - they're managed via curated Brewfiles
     and updated manually or via `brew update && brew upgrade`.
@@ -39,6 +41,7 @@ def maintenance() -> None:
 
     allowlists = _load_allowlists()
     report = MaintenanceReport()
+    failures: list[str] = []
 
     # Update GitHub Actions workflows
     actions_allowlist = allowlists.get("github_actions", {})
@@ -65,6 +68,16 @@ def maintenance() -> None:
         if versions:
             logging.info("Homebrew formula versions (baked into image): %s", versions)
 
+    brewfile_issues = _validate_curated_brewfiles()
+    if brewfile_issues:
+        failures.append(
+            "Curated Brewfile validation failed: "
+            + "; ".join(
+                f"{issue.brewfile.name} -> {issue.entry_type} {issue.name}: {issue.detail}"
+                for issue in brewfile_issues
+            )
+        )
+
     # Regenerate devcontainer lockfile to keep feature digests pinned
     update_devcontainer_lockfile(REPO_ROOT, report)
 
@@ -72,6 +85,8 @@ def maintenance() -> None:
     _run_precommit_autofixes()
 
     _write_report(report)
+    if failures:
+        raise RuntimeError("\n".join(failures))
 
 
 @task
@@ -151,6 +166,22 @@ def update_homebrew_only() -> None:
     _write_report(report)
 
 
+@task
+def validate_brewfiles_only() -> None:
+    """Validate curated Brewfiles without installing their full contents."""
+    report = MaintenanceReport()
+    issues = _validate_curated_brewfiles()
+    _write_report(report)
+    if issues:
+        raise RuntimeError(
+            "Curated Brewfile validation failed:\n"
+            + "\n".join(
+                f"- {issue.brewfile.name}: {issue.entry_type} {issue.name}: {issue.detail}"
+                for issue in issues
+            )
+        )
+
+
 def _load_allowlists() -> Dict[str, Dict[str, dict]]:
     allowlists_dir = ROBOT_ROOT / "allowlists"
     return {
@@ -158,6 +189,19 @@ def _load_allowlists() -> Dict[str, Dict[str, dict]]:
         "downloads": load_allowlist(allowlists_dir / "downloads.json"),
         "homebrew": load_allowlist(allowlists_dir / "homebrew.json"),
     }
+
+
+def _validate_curated_brewfiles():
+    brew_dir = REPO_ROOT / ".devcontainer" / "brew"
+    if not brew_dir.exists():
+        logging.info("No curated Brewfile directory found at %s", brew_dir)
+        return []
+
+    validator = BrewfileValidator()
+    issues = validator.validate_directory(brew_dir)
+    if not issues:
+        logging.info("Curated Brewfile validation passed")
+    return issues
 
 
 def _resolve_output_dir() -> Path:

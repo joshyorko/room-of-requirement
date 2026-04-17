@@ -22,6 +22,10 @@ tasks:
   update-homebrew:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t update_homebrew_only
 
+  # Validate curated Brewfiles so post-create hydration doesn't break on renamed formulas/taps
+  validate-brewfiles:
+    shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t validate_brewfiles_only
+
   # Test devcontainer build
   test-devcontainer:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t test_devcontainer_build

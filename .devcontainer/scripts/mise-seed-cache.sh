@@ -1,6 +1,6 @@
 #!/bin/bash
-# Seed user mise cache from system installation if empty
-# This enables instant startup by copying pre-installed runtimes from the Docker image
+# Seed user mise cache from a system installation if one is available
+# This enables fast startup for images that choose to pre-populate runtimes
 # to the user's volume-mounted cache directory
 
 SYSTEM_DIR="/usr/local/share/mise"

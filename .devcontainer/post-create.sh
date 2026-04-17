@@ -30,11 +30,11 @@ WORKSPACE_DIR="${1:-.}"
 cd "$WORKSPACE_DIR" || error "Failed to change to workspace directory"
 
 # ============================================================================
-# MISE CACHE SEEDING (Instant Startup)
+# MISE CACHE SEEDING
 # ============================================================================
-# Seed user mise cache from system installation if empty
-# This copies pre-installed node/python/go from the Docker image to the user's
-# volume-mounted cache directory, enabling instant startup
+# Seed the user mise cache if a system-level runtime seed exists.
+# On slimmer images this is a no-op, but we keep the hook so derived images can
+# still pre-populate runtimes if they choose to.
 if [ -x /usr/local/bin/mise-seed-cache.sh ]; then
     /usr/local/bin/mise-seed-cache.sh
 fi
@@ -50,13 +50,39 @@ if ! command -v brew &> /dev/null; then
 else
     log "Homebrew found at $(which brew)"
 
-    # Update Homebrew to get latest formulae (image may have stale index)
-    # This ensures new packages like container-use from taps are discoverable
+    # Update Homebrew to get latest formulae/tap metadata before bundle hydration
     log "Updating Homebrew formulae index..."
     if brew update --quiet; then
         log "✓ Homebrew updated to $(brew --version | head -1)"
     else
         warn "Homebrew update had issues, continuing with existing formulae"
+    fi
+
+    # Install curated Homebrew bundles during post-create instead of baking them
+    # into the image so rebuilds stay fast while first-run hydration stays easy.
+    BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
+    if [ ! -d "$BREW_DIR" ]; then
+        for ws in /workspaces/*/; do
+            if [ -d "${ws}.devcontainer/brew" ]; then
+                BREW_DIR="${ws}.devcontainer/brew"
+                break
+            fi
+        done
+    fi
+
+    if [ -d "$BREW_DIR" ]; then
+        log "Installing curated Homebrew bundles from $BREW_DIR"
+        for brewfile in "$BREW_DIR"/*.Brewfile; do
+            [ -e "$brewfile" ] || continue
+            log "Installing Homebrew bundle: $(basename "$brewfile")"
+            if brew bundle install --file="$brewfile"; then
+                log "✓ Installed $(basename "$brewfile")"
+            else
+                warn "Homebrew bundle had issues: $(basename "$brewfile")"
+            fi
+        done
+    else
+        warn "No curated Brewfile directory found, skipping Homebrew bundle hydration"
     fi
 
     # =========================================================================
@@ -65,16 +91,17 @@ else
     # Install default runtimes - these are cached in the mise volume for fast restarts
     log "Installing global language runtimes (node, python, go, ruby)..."
     # Ensure mise is active for this session
+    export MISE_RUBY_COMPILE=0
     eval "$(mise activate bash)"
 
-    mise use -g node@lts python@latest go@latest ruby@latest
+    mise install node@lts python@latest go@latest ruby@latest
 
     # Update npm to latest to fix potential vulnerabilities
     log "Updating npm to latest..."
     mise exec -- npm install -g npm@latest 2>/dev/null || warn "npm update had issues"
     mise exec -- npm cache clean --force 2>/dev/null || true
 
-    log "✓ Core image tools installed (bbrew, starship, zoxide, mise)"
+    log "✓ Core runtimes installed and cached via mise"
 fi
 
 # ============================================================================
@@ -87,6 +114,7 @@ if [ -f ".mise.toml" ]; then
         warn "mise not found in PATH, skipping mise install"
     else
         log "Installing mise dependencies from .mise.toml"
+        export MISE_RUBY_COMPILE=0
         if mise install; then
             log "✓ mise dependencies installed successfully"
         else
@@ -168,8 +196,8 @@ fi
 log "✓ Post-create hydration completed successfully"
 log ""
 log "Environment ready! You can now:"
-log "  • Run 'ujust bbrew' to launch Bold Brew TUI and install packages"
-log "  • Run 'ujust brew-install-all' to install all packages from Brewfile"
+log "  • Run 'ujust bbrew' to launch Bold Brew TUI after the curated bundles finish hydrating"
+log "  • Re-run 'ujust brew-install-all' if you want to force-refresh every Brewfile"
 log "  • Run 'ujust' to see all available commands"
 log "  • Run 'mise --version' to verify tool management"
 log "  • Run 'docker info' to check Docker status"

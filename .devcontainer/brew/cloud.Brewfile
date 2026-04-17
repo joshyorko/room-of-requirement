@@ -1,11 +1,13 @@
 # Cloud Provider CLIs and Infrastructure Tools
 
+tap "hashicorp/tap"
+
 # Cloud CLIs
 brew "awscli"              # AWS CLI v2
 brew "azure-cli"           # Azure CLI
 
 # Infrastructure as Code
-brew "terraform"           # Infrastructure as code
+brew "hashicorp/tap/terraform"  # Infrastructure as code
 
 
 # Kubernetes and Cloud Native Tools
@@ -24,7 +26,6 @@ brew "skaffold"            # Kubernetes development workflow
 tap "dagger/tap"
 brew "dagger"              # Portable devkit for CI/CD pipelines
 brew "devspace"            # Kubernetes development tool
-brew "dagger/tap/container-use"  # Container MCP for coding agents
 
 # Supply Chain Security Tools
 

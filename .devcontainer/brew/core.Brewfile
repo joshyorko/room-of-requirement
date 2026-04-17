@@ -1,5 +1,5 @@
 # Core Shell Foundation Tools
-# These are baked into the Docker image for immediate availability
+# Hydrated during post-create so the image can stay lean
 
 # Shell and prompt
 brew "starship"            # Cross-shell prompt
@@ -9,4 +9,4 @@ brew "mise"                # Polyglot version manager (node, python, go, etc.)
 brew "zoxide"              # Smart directory navigation (z command)
 
 tap "valkyrie00/bbrew"
-brew "valkyrie00/bbrew/bbrew" # Bold Brew TUI is the baked-in exception
+brew "valkyrie00/bbrew/bbrew" # Bold Brew TUI joins the post-create hydration flow

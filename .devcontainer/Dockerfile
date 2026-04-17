@@ -184,14 +184,9 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     RUBY_CFLAGS="-O1" \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
-# Install core shell tools (baked into image for faster startup)
-# These are essential tools that should always be available immediately.
-COPY .devcontainer/brew/core.Brewfile /tmp/core.Brewfile
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew bundle --file=/tmp/core.Brewfile" && \
-    rm /tmp/core.Brewfile
-
-# Pre-tap Bold Brew so the baked-in TUI is ready on first use.
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap --force valkyrie00/bbrew"
+# Install the always-on shell foundation directly in the image.
+# Heavier curated tool bundles are hydrated in post-create instead.
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide"
 
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
@@ -206,30 +201,14 @@ RUN mkdir -p \
     chmod 775 /home/linuxbrew/.linuxbrew
 
 # ============================================================================
-# Pre-install mise runtimes to system location for instant startup
-# Volume mount overlays user cache, so we install to /usr/local/share/mise
-# and seed the user cache on first run via mise-seed-cache.sh
+# Prepare mise cache directories for post-create runtime hydration
 # ============================================================================
-RUN mkdir -p /usr/local/share/mise && \
-    chown -R vscode:vscode /usr/local/share/mise
-
-# Install runtimes as vscode user to system location.
-# Python is intentionally not baked into the image until CPython 3.15.0 is
-# available via trusted upstream tooling; current 3.14.3 builds are flagged by
-# GitHub code scanning.
-# Note: Must use bash explicitly because mise activate generates bash-specific code
-USER vscode
-ENV MISE_DATA_DIR=/usr/local/share/mise
-SHELL ["/bin/bash", "-c"]
-RUN eval "$(/home/linuxbrew/.linuxbrew/bin/mise activate bash)" && \
-    /home/linuxbrew/.linuxbrew/bin/mise install node@lts go@latest ruby@latest && \
-    # Keep npm at latest to reduce bundled transitive CVE exposure.
-    /home/linuxbrew/.linuxbrew/bin/mise exec node@lts -- npm install -g npm@latest && \
-    /home/linuxbrew/.linuxbrew/bin/mise reshim
-SHELL ["/bin/sh", "-c"]
-USER root
-# Reset for final image (user location for runtime)
-ENV MISE_DATA_DIR=/home/vscode/.local/share/mise
+RUN mkdir -p \
+    /usr/local/share/mise \
+    /home/vscode/.cache/mise \
+    /home/vscode/.local/share/mise \
+    /home/vscode/.config/mise && \
+    chown -R vscode:vscode /usr/local/share/mise /home/vscode/.cache /home/vscode/.local /home/vscode/.config
 
 # ============================================================================
 # STAGE 4: Final Image (Optimized for size - tools installed in post-create)

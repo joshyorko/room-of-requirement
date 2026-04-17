@@ -74,6 +74,7 @@ ruby-enable ruby_version='latest':
         echo "mise not found in PATH" >&2
         exit 1
     fi
+    export MISE_RUBY_COMPILE=0
     eval "$(mise activate bash)"
     echo "Installing Ruby with mise: ruby@{{ruby_version}}"
     mise use -g ruby@{{ruby_version}}
@@ -89,6 +90,7 @@ rails-enable ruby_version='latest' rails_version='latest':
         echo "mise not found in PATH" >&2
         exit 1
     fi
+    export MISE_RUBY_COMPILE=0
     eval "$(mise activate bash)"
     echo "Installing Ruby with mise: ruby@{{ruby_version}}"
     mise use -g ruby@{{ruby_version}}
