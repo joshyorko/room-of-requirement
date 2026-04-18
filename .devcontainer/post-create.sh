@@ -58,31 +58,23 @@ else
         warn "Homebrew update had issues, continuing with existing formulae"
     fi
 
-    # Install curated Homebrew bundles during post-create instead of baking them
-    # into the image so rebuilds stay fast while first-run hydration stays easy.
-    BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
-    if [ ! -d "$BREW_DIR" ]; then
-        for ws in /workspaces/*/; do
-            if [ -d "${ws}.devcontainer/brew" ]; then
-                BREW_DIR="${ws}.devcontainer/brew"
-                break
-            fi
-        done
+    # Only hydrate a workspace-provided Brewfile; curated bundles stay opt-in via `ujust bbrew`.
+    PROJECT_BREWFILE=""
+    if [ -f "Brewfile" ]; then
+        PROJECT_BREWFILE="Brewfile"
+    elif [ -f ".devcontainer/Brewfile" ]; then
+        PROJECT_BREWFILE=".devcontainer/Brewfile"
     fi
 
-    if [ -d "$BREW_DIR" ]; then
-        log "Installing curated Homebrew bundles from $BREW_DIR"
-        for brewfile in "$BREW_DIR"/*.Brewfile; do
-            [ -e "$brewfile" ] || continue
-            log "Installing Homebrew bundle: $(basename "$brewfile")"
-            if brew bundle install --file="$brewfile"; then
-                log "✓ Installed $(basename "$brewfile")"
-            else
-                warn "Homebrew bundle had issues: $(basename "$brewfile")"
-            fi
-        done
+    if [ -n "$PROJECT_BREWFILE" ]; then
+        log "Installing project Homebrew bundle: $PROJECT_BREWFILE"
+        if brew bundle install --file="$PROJECT_BREWFILE"; then
+            log "✓ Installed $(basename "$PROJECT_BREWFILE")"
+        else
+            warn "Homebrew bundle had issues: $(basename "$PROJECT_BREWFILE")"
+        fi
     else
-        warn "No curated Brewfile directory found, skipping Homebrew bundle hydration"
+        log "No project Brewfile detected; curated bundles are opt-in via 'ujust bbrew' or 'ujust brew-install-all'"
     fi
 
     # =========================================================================
