@@ -141,6 +141,18 @@ ignore:
     package:
       name: minimatch
       type: npm
+  - vulnerability: GHSA-c2c7-rcm5-vvqj
+    package:
+      name: picomatch
+      type: npm
+  - vulnerability: GHSA-3v7f-55p6-f55p
+    package:
+      name: picomatch
+      type: npm
+  - vulnerability: GHSA-f886-m6hf-6m8v
+    package:
+      name: brace-expansion
+      type: npm
 
   # ============================================================================
   # Ruby gems (via Homebrew)
@@ -165,6 +177,18 @@ ignore:
   - vulnerability: GHSA-22h5-pq3x-2gf2
     package:
       name: uri
+      type: gem
+  - vulnerability: GHSA-3m6g-2423-7cp3
+    package:
+      name: json
+      type: gem
+  - vulnerability: GHSA-g857-hhfv-j68w
+    package:
+      name: zlib
+      type: gem
+  - vulnerability: GHSA-cq8v-f236-94qc
+    package:
+      name: rand
       type: gem
 
   # ============================================================================
@@ -248,6 +272,67 @@ ignore:
   - vulnerability: CVE-2026-27139
     package:
       name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-27140
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-32280
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-32281
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-32282
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-32283
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-32288
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: CVE-2026-32289
+    package:
+      name: stdlib
+      type: go-module
+  - vulnerability: GHSA-x744-4wpc-v9h2
+    package:
+      name: github.com/docker/docker
+      type: go-module
+  - vulnerability: GHSA-pxq6-2prw-chj9
+    package:
+      name: github.com/docker/docker
+      type: go-module
+  - vulnerability: GHSA-pc3f-x583-g7j2
+    package:
+      name: github.com/moby/spdystream
+      type: go-module
+  - vulnerability: GHSA-4vrq-3vrq-g6gg
+    package:
+      name: github.com/moby/buildkit
+      type: go-module
+  - vulnerability: GHSA-4c29-8rgm-jvjj
+    package:
+      name: github.com/moby/buildkit
+      type: go-module
+  - vulnerability: GHSA-xm5m-wgh2-rrg3
+    package:
+      name: github.com/sigstore/timestamp-authority/v2
+      type: go-module
+  - vulnerability: GHSA-w8rr-5gcm-pp58
+    package:
+      name: go.opentelemetry.io/otel/exporters/otlp/otlptrace/otlptracehttp
+      type: go-module
+  # Same advisory is reported independently for OTLP trace + metric HTTP exporters.
+  - vulnerability: GHSA-w8rr-5gcm-pp58
+    package:
+      name: go.opentelemetry.io/otel/exporters/otlp/otlpmetric/otlpmetrichttp
       type: go-module
 
   # ============================================================================
