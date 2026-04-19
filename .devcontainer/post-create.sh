@@ -80,6 +80,32 @@ else
         else
             warn "Homebrew bundle had issues: $(basename "$ROR_BREWFILE")"
         fi
+
+        # brew bundle ensures desired packages are installed, but it does not
+        # reliably upgrade existing tap-hosted casks. Refresh the RoR tap tools
+        # explicitly so containers pick up newer RCC and Action Server releases.
+        log "Refreshing tap-hosted RoR tools to latest available revisions"
+        for tool_cask in joshyorko/tools/rcc joshyorko/tools/action-server; do
+            if brew list --cask "$tool_cask" >/dev/null 2>&1; then
+                if brew upgrade --cask "$tool_cask"; then
+                    log "✓ Upgraded cask: $tool_cask"
+                else
+                    warn "Failed to upgrade cask: $tool_cask"
+                fi
+            else
+                warn "Expected cask not installed after bundle: $tool_cask"
+            fi
+        done
+
+        if brew list --formula joshyorko/tools/t3code-cli-main >/dev/null 2>&1; then
+            if brew upgrade joshyorko/tools/t3code-cli-main; then
+                log "✓ Upgraded formula: joshyorko/tools/t3code-cli-main"
+            else
+                warn "Failed to upgrade formula: joshyorko/tools/t3code-cli-main"
+            fi
+        else
+            warn "Expected formula not installed after bundle: joshyorko/tools/t3code-cli-main"
+        fi
     else
         warn "No RoR Brewfile found, skipping Homebrew bundle hydration"
     fi

@@ -30,7 +30,7 @@ def maintenance() -> None:
 
     This robot focuses on:
     1. GitHub Actions workflow version updates (github_actions.json)
-    2. PyPI package updates for the maintenance robot itself (downloads.json)
+    2. External download pin updates (PyPI, Docker Hub, and similar sources via downloads.json)
     3. Pre-commit hook repo updates from `.pre-commit-config.yaml`
     4. Homebrew version tracking (informational only)
     5. Curated Brewfile validation to catch renamed or missing formulae early
@@ -102,7 +102,7 @@ def update_workflows_only() -> None:
 
 @task
 def update_downloads_only() -> None:
-    """Update PyPI packages with version updates."""
+    """Update external download pins with version/digest updates."""
     allowlists = _load_allowlists()
     report = MaintenanceReport()
     downloads_updater = DownloadsUpdater(

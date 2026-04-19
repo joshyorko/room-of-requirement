@@ -7,7 +7,7 @@ Automated upkeep for the Room of Requirement repository leveraging `rcc` and Rob
 This robot keeps the repository fresh by automating version updates for:
 
 1. **GitHub Actions workflows** - Updates `uses:` references based on allowlisted actions
-2. **PyPI packages** - Updates pinned versions in `conda.yaml` for the maintenance robot itself
+2. **External download pins** - Updates pinned versions and digests from sources like PyPI and Docker Hub
 3. **Pre-commit hook repos** - Refreshes configured hook revisions in `.pre-commit-config.yaml`
 4. **Homebrew tracking** - Logs formula versions (informational only)
 5. **Curated Brewfile validation** - Catches renamed formulas or missing taps before post-create hydration breaks
@@ -26,7 +26,7 @@ This robot keeps the repository fresh by automating version updates for:
 ```
 automation/maintenance-robot/
 ├── allowlists/
-│   ├── downloads.json          # PyPI packages (with regex patterns)
+│   ├── downloads.json          # external download pins (with regex patterns)
 │   ├── github_actions.json     # allowlisted GitHub Actions + version constraints
 │   └── homebrew.json           # core Homebrew tools (informational/logging only)
 ├── conda.yaml                  # execution environment (Python 3.13 + uv + robocorp)
@@ -71,7 +71,7 @@ The robot prefers freeze artifacts from `output/environment_*_freeze.yaml` when 
 |------|---------|-------------|
 | **maintenance** | `--task maintenance` | Full maintenance run (recommended) |
 | **update-workflows** | `--task update-workflows` | Update GitHub Actions only |
-| **update-downloads** | `--task update-downloads` | Update PyPI packages only |
+| **update-downloads** | `--task update-downloads` | Update external download pins only |
 | **update-lockfile** | `--task update-lockfile` | Regenerate devcontainer-lock.json only |
 | **update-homebrew** | `--task update-homebrew` | Log Homebrew versions (informational only) |
 | **validate-brewfiles** | `--task validate-brewfiles` | Validate curated Brewfiles resolve through Homebrew |
@@ -89,8 +89,9 @@ A summary of changes is written to `automation/maintenance-robot/output/maintena
 
 ### downloads.json
 
-Targets files for version updates:
+Targets files for version and digest updates:
 - **PyPI packages**: Fetch latest version for Python dependencies
+- **Docker Hub images**: Fetch latest matching tag and refresh pinned digests
 - Uses regex patterns with named groups: `(?P<version>...)`
 
 Example entry:

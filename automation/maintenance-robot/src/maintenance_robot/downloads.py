@@ -9,6 +9,7 @@ from typing import Dict, Optional
 
 from packaging.version import InvalidVersion, Version
 
+from .docker_hub_api import fetch_latest_version as fetch_docker_hub_version
 from .github_api import fetch_latest_version as fetch_github_version
 from .npm_api import fetch_latest_version as fetch_npm_version
 from .pypi_api import fetch_latest_version as fetch_pypi_version
@@ -39,6 +40,7 @@ class DownloadsUpdater:
             include_prerelease = bool(config.get("include_prerelease", False))
             max_major = config.get("max_major")
             version_format = config.get("version_format", "full")  # full, major_only, major_minor
+            latest_sha256 = None
             logger.info("  Source: %s, Prerelease: %s, Max Major: %s", source, include_prerelease, max_major)
 
             # Fetch version info based on source type
@@ -95,6 +97,34 @@ class DownloadsUpdater:
                 except Exception as e:
                     logger.warning("  ⚠ Failed to fetch custom version for %s: %s", identifier, e)
                     continue
+            elif source == "docker_hub":
+                repo = config.get("repo")
+                tag_regex = config.get("tag_regex")
+                if not repo or not tag_regex:
+                    logger.warning(
+                        "Docker Hub source requires 'repo' and 'tag_regex' fields for %s",
+                        identifier,
+                    )
+                    continue
+                logger.info("  Fetching Docker Hub tag from repo: %s", repo)
+                tag_info = fetch_docker_hub_version(
+                    repo=repo,
+                    tag_regex=tag_regex,
+                    include_prerelease=include_prerelease,
+                    max_major=max_major,
+                )
+                if tag_info is None:
+                    logger.warning("  ⚠ No Docker Hub tag found for %s", identifier)
+                    continue
+                version = tag_info.version
+                version_str = str(tag_info.version)
+                latest_sha256 = tag_info.digest
+                logger.info(
+                    "  ✓ Latest Docker Hub tag: %s (version: %s, digest: %s)",
+                    tag_info.tag,
+                    version_str,
+                    latest_sha256 or "<missing>",
+                )
             else:
                 # GitHub release or tag
                 repo = config.get("repo")
@@ -144,7 +174,8 @@ class DownloadsUpdater:
                     logger.info("    Pattern %d: %s", pattern_idx, pattern_str[:80] + "..." if len(pattern_str) > 80 else pattern_str)
                     pattern = re.compile(pattern_str, re.MULTILINE)
                     self._update_file(path, pattern, identifier, version, version_format,
-                                    sha256_pattern_str, download_url_template, manifest_url_template, platform)
+                                    sha256_pattern_str, download_url_template, manifest_url_template, platform,
+                                    latest_sha256)
 
     def _update_file(
         self,
@@ -157,6 +188,7 @@ class DownloadsUpdater:
         download_url_template: Optional[str] = None,
         manifest_url_template: Optional[str] = None,
         platform: Optional[str] = None,
+        latest_sha256: Optional[str] = None,
     ) -> None:
         """Update all occurrences of a version pattern in a file, and optionally update SHA256."""
         text = path.read_text(encoding="utf-8")
@@ -245,10 +277,14 @@ class DownloadsUpdater:
             )
 
             # If SHA256 pattern is provided, update the checksum too
-            if sha256_pattern_str and (download_url_template or manifest_url_template):
+            if sha256_pattern_str and (latest_sha256 or download_url_template or manifest_url_template):
                 logger.info("      🔐 Updating SHA256 checksum...")
                 self._update_sha256(path, sha256_pattern_str, formatted_version,
-                                    download_url_template, manifest_url_template, platform)
+                                    download_url_template, manifest_url_template, platform, latest_sha256)
+        elif sha256_pattern_str and (latest_sha256 or download_url_template or manifest_url_template):
+            logger.info("      🔐 Checking SHA256 checksum without version change...")
+            self._update_sha256(path, sha256_pattern_str, self._format_version(latest_version, version_format),
+                                download_url_template, manifest_url_template, platform, latest_sha256)
 
     def _update_sha256(
         self,
@@ -258,10 +294,13 @@ class DownloadsUpdater:
         download_url_template: Optional[str] = None,
         manifest_url_template: Optional[str] = None,
         platform: Optional[str] = None,
+        new_sha256: Optional[str] = None,
     ) -> None:
         """Update SHA256 checksum for a given version."""
         # Determine if we need to fetch from manifest or compute from download
-        if manifest_url_template and platform:
+        if new_sha256:
+            pass
+        elif manifest_url_template and platform:
             # Fetch SHA256 from manifest (e.g., Claude Code)
             manifest_url = manifest_url_template.format(version=version)
             new_sha256 = self._fetch_sha256_from_manifest(manifest_url, platform)
@@ -276,6 +315,7 @@ class DownloadsUpdater:
         if not new_sha256:
             logger.warning("      ⚠ Could not compute SHA256, skipping checksum update")
             return
+        new_sha256 = new_sha256.removeprefix("sha256:")
 
         # Update SHA256 in file
         text = path.read_text(encoding="utf-8")
