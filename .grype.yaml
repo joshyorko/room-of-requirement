@@ -126,6 +126,20 @@ ignore:
       type: go-module
 
   # ============================================================================
+  # Docker CLI upstream binary
+  # Docker Hub currently publishes docker:29.4.0-cli with Go 1.26.1, which
+  # Grype still flags for CVE-2026-27143. We pin to that image because it is
+  # newer than Wolfi's docker package (Go 1.25.8), and scope this ignore only
+  # to the embedded stdlib in /usr/bin/docker until Docker ships a rebuilt CLI.
+  # ============================================================================
+  - vulnerability: CVE-2026-27143
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.1
+      location: /usr/bin/docker
+
+  # ============================================================================
   # Node.js (via mise) - npm bundled/transitive packages
   # These are shipped within npm itself and update with npm releases.
   # ============================================================================
