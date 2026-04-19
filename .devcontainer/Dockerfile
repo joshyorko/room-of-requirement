@@ -8,6 +8,12 @@
 # ============================================================================
 # Wolfi base image - kept current by maintenance robot for security patches
 ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest
+# Official Docker CLI image used to override Wolfi's CLI binary while Wolfi's
+# docker-cli package is still built with a vulnerable Go stdlib revision.
+ARG DOCKER_CLI_IMAGE=docker:29.4.0-cli@sha256:2efe7c8e806b35050def6ba1ba0ddad67b521a0a6d37f4910b3d88f11b495d03
+
+# Upstream Docker CLI binary built with a patched Go toolchain.
+FROM ${DOCKER_CLI_IMAGE} AS docker-cli-upstream
 
 # ============================================================================
 # STAGE 1: Base Image with System Packages
@@ -98,6 +104,11 @@ RUN apk add --no-cache \
     # Verify critical security tools
     curl --version && \
     git --version
+
+# Replace only the Docker CLI binary. Keep Wolfi's dockerd/DinD packages, but
+# use the upstream CLI while Wolfi's package still embeds vulnerable go1.25.8.
+COPY --from=docker-cli-upstream /usr/local/bin/docker /usr/bin/docker
+RUN docker --version
 
 # ============================================================================
 # STAGE 2: User Setup
