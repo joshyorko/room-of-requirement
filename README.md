@@ -50,7 +50,8 @@ devpod up https://github.com/joshyorko/room-of-requirement
 │  ┌─────────────────────────────────────────────────────────┐│
 │  │  Homebrew Foundation (First-Class Package Manager)     ││
 │  │  • Core tools pre-installed: mise, starship, zoxide    ││
-│  │  • Curated Brewfiles for on-demand tool installation   ││
+│  │  • Curated Brewfiles for on-demand installs plus RoR   ││
+│  │    post-create hydration                               ││
 │  │  • /home/linuxbrew/.linuxbrew in PATH                  ││
 │  └─────────────────────────────────────────────────────────┘│
 │  ┌─────────────────────────────────────────────────────────┐│
@@ -85,12 +86,12 @@ These are baked into the image for instant availability:
 | **mise** | Polyglot version manager (Node, Python, Go, Ruby, etc.) |
 | **starship** | Cross-shell prompt with git/tool status |
 | **zoxide** | Smart directory navigation (`z` command) |
-| **bbrew** | Bold Brew TUI baked in as the exception to on-demand installs |
+| **bbrew** | Bold Brew TUI baked in for browsing optional Brewfile installs |
 
 
-### On-Demand Brewfiles
+### Curated Brewfiles
 
-Install additional tool bundles using the TUI:
+The `ror` bundle hydrates during post-create. Install any additional bundles using the TUI:
 
 ```bash
 ujust bbrew          # Interactive TUI to select Brewfiles

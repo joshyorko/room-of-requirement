@@ -10,7 +10,8 @@ Ready now:
   zsh • starship • zoxide • bbrew
 
 Need more tools?
-  Most extras install on demand via curated Brewfiles.
+  The ror bundle hydrates during post-create.
+  Most extras still install on demand via curated Brewfiles.
 
   $ ujust bbrew
   $ ujust brew-install-all
@@ -18,7 +19,7 @@ Need more tools?
 
   dev   - rg, fd, fzf, jq, yq, tmux
   cloud - kubectl, helm, terraform, k3d, kind, k9s
-  ror   - gh, uv, sqlite, duckdb, Codex, Claude Code, RCC, Action Server
+  ror   - gh, uv, sqlite, duckdb, Codex, Claude Code, RCC, Action Server (auto)
 
 Kubernetes in Codespaces:
   $ ujust cgroup-check       # Check k3d/k3s compatibility
