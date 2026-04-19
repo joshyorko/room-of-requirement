@@ -1,6 +1,7 @@
 #!/bin/bash
 # Post-create script for Room of Requirement DevContainer
-# Hydrates project with dependencies from Brewfile, .mise.toml, package.json
+# Hydrates project with RoR defaults plus project dependencies from .mise.toml,
+# package.json, and related setup hooks.
 # T026-T030: Project hydration implementation
 
 set -euo pipefail
@@ -58,31 +59,29 @@ else
         warn "Homebrew update had issues, continuing with existing formulae"
     fi
 
-    # Install curated Homebrew bundles during post-create instead of baking them
-    # into the image so rebuilds stay fast while first-run hydration stays easy.
-    BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
-    if [ ! -d "$BREW_DIR" ]; then
-        for ws in /workspaces/*/; do
-            if [ -d "${ws}.devcontainer/brew" ]; then
-                BREW_DIR="${ws}.devcontainer/brew"
-                break
-            fi
-        done
+    # Hydrate only the RoR developer bundle during post-create. The other
+    # curated Brewfiles stay opt-in via `ujust bbrew` or `ujust brew-install-all`.
+    ROR_BREWFILE="${ROR_BREWFILE:-/usr/share/ror/brew/ror.Brewfile}"
+    if [ ! -f "$ROR_BREWFILE" ] && [ -f ".devcontainer/brew/ror.Brewfile" ]; then
+        ROR_BREWFILE=".devcontainer/brew/ror.Brewfile"
     fi
 
-    if [ -d "$BREW_DIR" ]; then
-        log "Installing curated Homebrew bundles from $BREW_DIR"
-        for brewfile in "$BREW_DIR"/*.Brewfile; do
-            [ -e "$brewfile" ] || continue
-            log "Installing Homebrew bundle: $(basename "$brewfile")"
-            if brew bundle install --file="$brewfile"; then
-                log "✓ Installed $(basename "$brewfile")"
-            else
-                warn "Homebrew bundle had issues: $(basename "$brewfile")"
-            fi
-        done
+    if [ -f "$ROR_BREWFILE" ]; then
+        log "Ensuring tap is available: joshyorko/tools"
+        if brew tap joshyorko/tools; then
+            log "✓ Tap ready: joshyorko/tools"
+        else
+            warn "Unable to tap joshyorko/tools before RoR bundle install"
+        fi
+
+        log "Installing Homebrew bundle: $(basename "$ROR_BREWFILE")"
+        if brew bundle install --file="$ROR_BREWFILE"; then
+            log "✓ Installed $(basename "$ROR_BREWFILE")"
+        else
+            warn "Homebrew bundle had issues: $(basename "$ROR_BREWFILE")"
+        fi
     else
-        warn "No curated Brewfile directory found, skipping Homebrew bundle hydration"
+        warn "No RoR Brewfile found, skipping Homebrew bundle hydration"
     fi
 
     # =========================================================================
@@ -196,8 +195,8 @@ fi
 log "✓ Post-create hydration completed successfully"
 log ""
 log "Environment ready! You can now:"
-log "  • Run 'ujust bbrew' to launch Bold Brew TUI after the curated bundles finish hydrating"
-log "  • Re-run 'ujust brew-install-all' if you want to force-refresh every Brewfile"
+log "  • Run 'ujust bbrew' to install optional curated bundles"
+log "  • Re-run 'ujust brew-install-all' if you want to hydrate every Brewfile"
 log "  • Run 'ujust' to see all available commands"
 log "  • Run 'mise --version' to verify tool management"
 log "  • Run 'docker info' to check Docker status"

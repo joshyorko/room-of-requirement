@@ -1,5 +1,5 @@
 # ROR Development Tools
-# Install on demand via `ujust bbrew` or `brew bundle --file=ror.Brewfile`
+# Hydrated during post-create after tapping `joshyorko/tools`
 
 # Python
 brew "uv"                  # Fast Python package installer
