@@ -1,5 +1,18 @@
 # Changelog
 
+## [1.14.0](https://github.com/joshyorko/room-of-requirement/compare/v1.13.0...v1.14.0) (2026-04-19)
+
+
+### ✨ Features
+
+* update Dockerfile to use upstream Docker CLI binary for improved security ([67bfd1f](https://github.com/joshyorko/room-of-requirement/commit/67bfd1f760886d78380ad5b93130e7d92e40759b))
+
+
+### 🐛 Bug Fixes
+
+* automate docker cli pin refresh and tool upgrades ([95aa1bf](https://github.com/joshyorko/room-of-requirement/commit/95aa1bf540bcd5f8d6ad1b6d5963bb96af5c7304))
+* scope docker cli CVE scan workaround ([19abf52](https://github.com/joshyorko/room-of-requirement/commit/19abf5295ac90385239397be32111d8cc876fad6))
+
 ## [1.13.0](https://github.com/joshyorko/room-of-requirement/compare/v1.12.1...v1.13.0) (2026-04-17)
 
 
