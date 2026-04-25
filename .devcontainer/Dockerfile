@@ -46,6 +46,7 @@ RUN apk add --no-cache \
     curl \
     findutils \
     git \
+    bubblewrap \
     glibc \
     glibc-locales \
     just \
