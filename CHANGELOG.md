@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.15.0](https://github.com/joshyorko/room-of-requirement/compare/v1.14.0...v1.15.0) (2026-04-25)
+
+
+### ✨ Features
+
+* add bubblewrap to system packages in Dockerfile ([a7e00e6](https://github.com/joshyorko/room-of-requirement/commit/a7e00e632865e0af434c78b7da809f2c07420fe7))
+
 ## [1.14.0](https://github.com/joshyorko/room-of-requirement/compare/v1.13.0...v1.14.0) (2026-04-19)
 
 
