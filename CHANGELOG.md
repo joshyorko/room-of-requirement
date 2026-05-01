@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.16.0](https://github.com/joshyorko/room-of-requirement/compare/v1.15.0...v1.16.0) (2026-05-01)
+
+
+### ✨ Features
+
+* add fizzy-cli and fizzy-popper to Brewfile and update README ([ed6f20e](https://github.com/joshyorko/room-of-requirement/commit/ed6f20e54f7e64395f8ace7fcdbe9a875f3edb39))
+
 ## [1.15.0](https://github.com/joshyorko/room-of-requirement/compare/v1.14.0...v1.15.0) (2026-04-25)
 
 
