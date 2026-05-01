@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, and `claude-code` are available via `ujust bbrew` → select `ror`.
+Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, and `fizzy-popper-self-hosted` are available via `ujust bbrew` → select `ror`.
 
 ### Option 2: Open This Repository
 
@@ -59,7 +59,8 @@ devpod up https://github.com/joshyorko/room-of-requirement
 │  │  • core.Brewfile  - mise, starship, zoxide, bbrew      ││
 │  │  • dev.Brewfile   - bat, eza, fzf, ripgrep, jq, yq     ││
 │  │  • cloud.Brewfile - aws, azure, terraform, k8s tools   ││
-│  │  • ror.Brewfile   - rcc, action-server, codex, Claude  ││
+│  │  • ror.Brewfile   - rcc, action-server, codex, Claude, ││
+│  │                     fizzy-cli, fizzy-popper            ││
 │  └─────────────────────────────────────────────────────────┘│
 └─────────────────────────────────────────────────────────────┘
 ```
@@ -103,7 +104,7 @@ ujust brew-install-all  # Install everything
 | **core** | mise, starship, zoxide, bbrew |
 | **dev** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux, git-lfs |
 | **cloud** | aws-cli, azure-cli, terraform, kubectl, helm, k9s, k3d, dagger, devspace |
-| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server |
+| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server, t3code-cli-main, fizzy-cli-master, fizzy-popper-self-hosted |
 
 ---
 

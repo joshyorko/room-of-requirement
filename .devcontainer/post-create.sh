@@ -81,10 +81,19 @@ else
             warn "Homebrew bundle had issues: $(basename "$ROR_BREWFILE")"
         fi
 
-        # brew bundle ensures desired packages are installed, but it does not
-        # reliably upgrade existing tap-hosted casks. Refresh the RoR tap tools
-        # explicitly so containers pick up newer RCC and Action Server releases.
-        log "Refreshing tap-hosted RoR tools to latest available revisions"
+        # brew bundle can occasionally resolve an unintended upstream package.
+        # Install tap-qualified casks explicitly to enforce joshyorko/tools.
+        log "Enforcing tap-qualified RoR cask installs"
+        for tool_cask in joshyorko/tools/rcc joshyorko/tools/action-server; do
+            if brew install --cask "$tool_cask"; then
+                log "✓ Installed cask from preferred tap: $tool_cask"
+            else
+                warn "Failed explicit cask install: $tool_cask"
+            fi
+        done
+
+        # Refresh tap-hosted RoR casks to latest available revisions.
+        log "Refreshing tap-hosted RoR casks to latest available revisions"
         for tool_cask in joshyorko/tools/rcc joshyorko/tools/action-server; do
             if brew list --cask "$tool_cask" >/dev/null 2>&1; then
                 if brew upgrade --cask "$tool_cask"; then
@@ -93,7 +102,7 @@ else
                     warn "Failed to upgrade cask: $tool_cask"
                 fi
             else
-                warn "Expected cask not installed after bundle: $tool_cask"
+                warn "Expected cask not installed after explicit install: $tool_cask"
             fi
         done
 
