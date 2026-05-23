@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.17.0](https://github.com/joshyorko/room-of-requirement/compare/v1.16.0...v1.17.0) (2026-05-23)
+
+
+### ✨ Features
+
+* add multi-base devcontainer factory ([6acf39b](https://github.com/joshyorko/room-of-requirement/commit/6acf39b967a7a142b4d6d1cc67b2aee81e31582c)), closes [#219](https://github.com/joshyorko/room-of-requirement/issues/219)
+
+
+### 🐛 Bug Fixes
+
+* avoid wolfi apk wrapper shellcheck warning ([0228b21](https://github.com/joshyorko/room-of-requirement/commit/0228b21e68c8dc3641a6ad61bdc5e597b32f2141))
+
 ## [1.16.0](https://github.com/joshyorko/room-of-requirement/compare/v1.15.0...v1.16.0) (2026-05-01)
 
 
