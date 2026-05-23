@@ -2,9 +2,9 @@
 
 # Room of Requirement 🧙
 
-> _A modular, secure, bleeding-edge DevContainer platform built on Wolfi OS_
+> _A multi-base DevContainer image factory with a Homebrew-first developer workflow_
 
-**Instant startup. Homebrew-first tooling. Supply chain security. Curated Brewfiles.**
+**Codespaces-compatible by default. Wolfi preserved for secure/minimal experiments. Homebrew, mise, and `ujust` everywhere.**
 
 ---
 
@@ -16,11 +16,23 @@ Add to your project's `.devcontainer/devcontainer.json`:
 
 ```json
 {
-  "image": "ghcr.io/joshyorko/ror:latest"
+  "image": "ghcr.io/joshyorko/room-of-requirement:latest"
 }
 ```
 
-Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
+`latest` points at the Ubuntu Noble variant, which is the default Codespaces path. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
+
+Published variant tags:
+
+| Tag | Variant | Purpose |
+|-----|---------|---------|
+| `latest` | Ubuntu Noble | Default general-purpose image |
+| `codespaces` | Ubuntu Noble + DinD | Default GitHub Codespaces path |
+| `ubuntu-noble` | Ubuntu Noble | Microsoft Ubuntu base |
+| `ubuntu-noble-dind` | Ubuntu Noble + DinD | Explicit Docker-in-Docker alias |
+| `debian-trixie` | Debian Trixie | Microsoft Debian comparison baseline |
+| `wolfi` | Wolfi | Chainguard secure/minimal variant |
+| `secure` | Wolfi | Secure/minimal alias |
 
 ### Option 2: Open This Repository
 
@@ -40,31 +52,17 @@ devpod up https://github.com/joshyorko/room-of-requirement
 ## 📦 Architecture Overview
 
 ```
-┌─────────────────────────────────────────────────────────────┐
-│                     ror:latest Image                        │
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │  Wolfi OS Base (cgr.dev/chainguard/wolfi-base)         ││
-│  │  • Minimal attack surface  • glibc compatible          ││
-│  │  • Rapid CVE patching      • UTF-8 locale configured   ││
-│  └─────────────────────────────────────────────────────────┘│
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │  Homebrew Foundation (First-Class Package Manager)     ││
-│  │  • Core tools pre-installed: mise, starship, zoxide,   ││
-│  │    bbrew                                               ││
-│  │  • Curated Brewfiles for on-demand installs and        ││
-│  │    download-only cache warming                         ││
-│  │  • /home/linuxbrew/.linuxbrew in PATH                  ││
-│  └─────────────────────────────────────────────────────────┘│
-│  ┌─────────────────────────────────────────────────────────┐│
-│  │  Curated Brewfiles (.devcontainer/brew/)               ││
-│  │  • core.Brewfile  - mise, starship, zoxide, bbrew      ││
-│  │  • dev.Brewfile   - bat, eza, fzf, ripgrep, jq, yq     ││
-│  │  • cloud.Brewfile - aws, azure, terraform, k8s tools   ││
-│  │  • ror.Brewfile   - rcc, action-server, codex, Claude, ││
-│  │                     fizzy-cli, fizzy-popper            ││
-│  └─────────────────────────────────────────────────────────┘│
-└─────────────────────────────────────────────────────────────┘
+room-of-requirement/
+├── .devcontainer/                  # Default local/Codespaces entrypoint
+├── src/
+│   ├── ubuntu-noble/.devcontainer/ # Default Microsoft Ubuntu variant
+│   ├── debian-trixie/.devcontainer # Microsoft Debian baseline
+│   ├── wolfi/.devcontainer/        # Chainguard secure/minimal variant
+│   └── common/                     # Shared Brewfiles, config, scripts, ujust
+└── docker-bake.hcl                 # Variant targets and tag aliases
 ```
+
+All variants share the same Homebrew-first workflow. Base images provide OS compatibility, Homebrew provides CLI tools, mise provides language runtimes, `ujust` provides user-facing commands, and Dev Container Features are reserved for platform plumbing such as Docker-in-Docker.
 
 ---
 
@@ -107,6 +105,30 @@ ujust brew-download-ror # Download the RoR Brewfile artifacts without installing
 | **dev** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux, git-lfs |
 | **cloud** | aws-cli, azure-cli, terraform, kubectl, helm, k9s, k3d, dagger, devspace |
 | **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server, t3code-cli-main, fizzy-cli-master, fizzy-popper-self-hosted, fizzy-symphony, oracle |
+
+---
+
+## 🏭 Building Variants
+
+Inspect the factory build plan:
+
+```bash
+docker buildx bake --print
+```
+
+Build a single variant locally:
+
+```bash
+docker build -f src/ubuntu-noble/.devcontainer/Dockerfile .
+docker build -f src/debian-trixie/.devcontainer/Dockerfile .
+docker build -f src/wolfi/.devcontainer/Dockerfile .
+```
+
+Build with Dev Container feature processing:
+
+```bash
+devcontainer build --workspace-folder . --config src/ubuntu-noble/.devcontainer/devcontainer.json
+```
 
 ---
 
@@ -200,7 +222,7 @@ brew bundle --file=<path-to-Brewfile>
 
 ## 🔐 Security
 
-### Wolfi OS Foundation
+### Wolfi OS Variant
 - **Minimal attack surface**: Only essential packages installed
 - **Rapid CVE patching**: Chainguard's security-focused distribution
 - **glibc compatible**: Works with most Linux binaries (native glibc, not musl like Alpine)
@@ -213,8 +235,9 @@ brew bundle --file=<path-to-Brewfile>
 - **CVE scanning**: Critical vulnerabilities block releases
 
 ### Docker-in-Docker
-- Built-in via Wolfi's official `docker-dind` package
-- Uses `--privileged` mode (required for DinD functionality)
+- Ubuntu Noble and Debian use the official Dev Container Docker-in-Docker feature.
+- Wolfi uses Chainguard's native `docker-dind` packages.
+- All Docker-capable variants use `--privileged` mode.
 
 ---
 
@@ -222,20 +245,15 @@ brew bundle --file=<path-to-Brewfile>
 
 ```
 room-of-requirement/
-├── .devcontainer/           # DevContainer configuration
-│   ├── devcontainer.json    # Container configuration
-│   ├── Dockerfile           # Wolfi OS + Homebrew base image
-│   ├── post-create.sh       # Post-creation hydration script
-│   ├── justfile             # ujust commands (bbrew, etc.)
-│   └── brew/                # Curated Brewfiles
-│       ├── core.Brewfile    # mise, starship, zoxide, bbrew
-│       ├── dev.Brewfile     # CLI tools, terminal utilities
-│       ├── cloud.Brewfile   # Cloud CLIs, Kubernetes, IaC
-│       └── ror.Brewfile     # rcc, uv, gh, databases
+├── .devcontainer/           # Default devcontainer, points at Ubuntu Noble
+├── src/
+│   ├── common/              # Shared Brewfiles, config, scripts, post-create
+│   ├── ubuntu-noble/        # Default Microsoft Ubuntu variant
+│   ├── debian-trixie/       # Microsoft Debian baseline variant
+│   └── wolfi/               # Chainguard secure/minimal variant
+├── docker-bake.hcl          # Variant build targets and tag aliases
 ├── templates/               # Project starter templates
-│   └── ror-starter/         # Basic RoR template
 ├── automation/              # Maintenance automation
-│   └── maintenance-robot/   # RCC-powered version updater
 └── specs/                   # Architecture specifications
 ```
 
@@ -247,7 +265,7 @@ room-of-requirement/
 
 ```json
 {
-  "image": "ghcr.io/joshyorko/ror:latest"
+  "image": "ghcr.io/joshyorko/room-of-requirement:latest"
 }
 ```
 
@@ -257,7 +275,7 @@ Core tools are pre-installed: mise, starship, zoxide, bbrew, plus default Node, 
 
 ```json
 {
-  "image": "ghcr.io/joshyorko/ror:latest",
+  "image": "ghcr.io/joshyorko/room-of-requirement:latest",
   "postCreateCommand": "brew bundle --file=/tmp/brew/k8s.Brewfile"
 }
 ```
@@ -266,7 +284,7 @@ Core tools are pre-installed: mise, starship, zoxide, bbrew, plus default Node, 
 
 ```json
 {
-  "image": "ghcr.io/joshyorko/ror:latest",
+  "image": "ghcr.io/joshyorko/room-of-requirement:latest",
   "postCreateCommand": "brew bundle --file=Brewfile"
 }
 ```

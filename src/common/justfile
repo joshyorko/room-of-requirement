@@ -1,0 +1,243 @@
+# Room of Requirement DevContainer Commands
+# Usage: just <command> (or ujust <command>)
+
+# Default recipe - show available commands
+default:
+    @just --list
+
+# Install applications from curated Brewfiles
+bbrew:
+    #!/usr/bin/env bash
+    BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
+    # Fallback chain for development/edge cases
+    if [ ! -d "$BREW_DIR" ]; then
+        # Try factory shared path
+        if [ -d "src/common/brew" ]; then
+            BREW_DIR="src/common/brew"
+        fi
+    fi
+    if [ ! -d "$BREW_DIR" ]; then
+        # Try workspace-relative path
+        for ws in /workspaces/*/; do
+            if [ -d "${ws}src/common/brew" ]; then
+                BREW_DIR="${ws}src/common/brew"
+                break
+            fi
+            if [ -d "${ws}.devcontainer/brew" ]; then
+                BREW_DIR="${ws}.devcontainer/brew"
+                break
+            fi
+        done
+    fi
+    if ! command -v gum &>/dev/null; then
+        echo "Installing gum..."
+        brew install gum
+    fi
+    if ! command -v bbrew &>/dev/null; then
+        echo "Installing Bold Brew (bbrew)..."
+        brew tap valkyrie00/bbrew
+        brew install valkyrie00/bbrew/bbrew
+    fi
+    bbrew -f "${BREW_DIR}/$(gum choose $(find "${BREW_DIR}"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
+
+# Install bbrew TUI only (minimal setup)
+install-bbrew:
+    @echo "Installing bbrew (Bold Brew TUI)..."
+    brew tap valkyrie00/bbrew
+    brew install valkyrie00/bbrew/bbrew
+    @echo "Done! Run 'ujust bbrew' to launch the TUI."
+
+# Install all Homebrew packages from all Brewfiles (full setup)
+brew-install-all:
+    #!/usr/bin/env bash
+    echo "Installing ALL Homebrew packages from all Brewfiles..."
+    echo "This may take a while..."
+    BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
+    # Fallback chain for development/edge cases
+    if [ ! -d "$BREW_DIR" ]; then
+        if [ -d "src/common/brew" ]; then
+            BREW_DIR="src/common/brew"
+        fi
+    fi
+    if [ ! -d "$BREW_DIR" ]; then
+        for ws in /workspaces/*/; do
+            if [ -d "${ws}src/common/brew" ]; then
+                BREW_DIR="${ws}src/common/brew"
+                break
+            fi
+            if [ -d "${ws}.devcontainer/brew" ]; then
+                BREW_DIR="${ws}.devcontainer/brew"
+                break
+            fi
+        done
+    fi
+    for brewfile in "$BREW_DIR"/*.Brewfile; do
+        echo "Installing from $(basename "$brewfile")..."
+        brew bundle install --file="$brewfile" || true
+    done
+    echo "Done! Run 'ujust bbrew' for the TUI or 'brew list' to see packages."
+
+# Download all Homebrew packages from the RoR Brewfile without installing them
+brew-download-ror:
+    #!/usr/bin/env bash
+    exec ror-brew-download.sh
+
+# Install specific brew formula
+brew-install formula:
+    brew install {{formula}}
+
+# Update Homebrew and upgrade packages
+brew-update:
+    brew update && brew upgrade
+
+# Enable Ruby tooling on demand via mise (recommended)
+ruby-enable ruby_version='latest':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v mise &>/dev/null; then
+        echo "mise not found in PATH" >&2
+        exit 1
+    fi
+    export MISE_RUBY_COMPILE=0
+    eval "$(mise activate bash)"
+    echo "Installing Ruby with mise: ruby@{{ruby_version}}"
+    mise use -g ruby@{{ruby_version}}
+    mise reshim
+    echo "Ruby ready: $(mise exec -- ruby --version)"
+    echo "Bundler: $(mise exec -- bundle --version)"
+
+# Enable Rails on demand via mise-managed Ruby
+rails-enable ruby_version='latest' rails_version='latest':
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v mise &>/dev/null; then
+        echo "mise not found in PATH" >&2
+        exit 1
+    fi
+    export MISE_RUBY_COMPILE=0
+    eval "$(mise activate bash)"
+    echo "Installing Ruby with mise: ruby@{{ruby_version}}"
+    mise use -g ruby@{{ruby_version}}
+    if [ "{{rails_version}}" = "latest" ]; then
+        echo "Installing latest Rails gem"
+        mise exec -- gem install rails
+    else
+        echo "Installing Rails gem version {{rails_version}}"
+        mise exec -- gem install rails -v "{{rails_version}}"
+    fi
+    mise reshim
+    echo "Ruby: $(mise exec -- ruby --version)"
+    echo "Rails: $(mise exec -- rails --version)"
+
+# Show Docker status
+docker-status:
+    @docker info 2>/dev/null && echo "Docker is running" || echo "Docker is not running"
+
+# Start Docker daemon (if not running)
+docker-start:
+    @if ! docker info >/dev/null 2>&1; then \
+        echo "Starting Docker daemon..."; \
+        sudo /usr/bin/dockerd-entrypoint.sh dockerd &; \
+        sleep 3; \
+    else \
+        echo "Docker is already running"; \
+    fi
+
+# Clean up Docker resources
+docker-clean:
+    docker system prune -af
+
+# Check cgroup v2 memory controller status (for k3d/k3s troubleshooting)
+cgroup-check:
+    #!/usr/bin/env bash
+    echo "=== cgroup v2 Status (for k3d/k3s) ==="
+    echo ""
+    if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
+        echo "✓ cgroup v2 detected"
+        echo ""
+        echo "Available controllers at root:"
+        cat /sys/fs/cgroup/cgroup.controllers
+        echo ""
+        echo "Delegated to subtree (child cgroups):"
+        cat /sys/fs/cgroup/cgroup.subtree_control
+        echo ""
+        SUBTREE=$(cat /sys/fs/cgroup/cgroup.subtree_control 2>/dev/null || echo "")
+        if echo "$SUBTREE" | grep -q "memory"; then
+            echo "✓ Memory controller is delegated - k3d/k3s should work"
+        else
+            echo "⚠ Memory controller NOT delegated - k3d/k3s will FAIL"
+            echo ""
+            echo "This is a known limitation in GitHub Codespaces."
+            echo "Try running: ujust fix-cgroups"
+            echo "See: https://github.com/joshyorko/room-of-requirement/issues/<issue_number>"
+        fi
+        echo ""
+        CURRENT_CGROUP=$(cat /proc/self/cgroup | cut -d: -f3)
+        echo "Current cgroup: $CURRENT_CGROUP"
+    else
+        echo "⚠ cgroup v2 not detected (using cgroup v1)"
+        echo "k3d/k3s may still work on cgroup v1"
+    fi
+    echo ""
+    echo "Docker cgroup info:"
+    docker info 2>/dev/null | awk -F': +' '/Cgroup Driver/ {d=$2} /Cgroup Version/ {v=$2} END {if (d != "") print d " (v" v ")"; else print "Docker not running"}'
+
+# Fix cgroup delegation for k3d/k3s (run if k3d fails with cgroup errors)
+fix-cgroups:
+    @echo "Attempting to fix cgroup v2 memory delegation..."
+    @sudo /usr/local/bin/fix-cgroup-delegation.sh || true
+    @echo ""
+    @echo "Checking result:"
+    @just cgroup-check
+
+# Create a k3d cluster with Codespaces-compatible settings
+k3d-create cluster_name='mycluster':
+    #!/usr/bin/env bash
+    echo "Creating k3d cluster '{{cluster_name}}' with Codespaces-compatible settings..."
+    export K3D_FIX_CGROUPV2=1
+    k3d cluster create {{cluster_name}} \
+        --volume /sys/fs/cgroup:/sys/fs/cgroup:rw \
+        --k3s-arg '--kubelet-arg=feature-gates=KubeletInUserNamespace=true@server:*' || {
+        echo ""
+        echo "❌ k3d cluster creation failed"
+        echo ""
+        echo "Troubleshooting steps:"
+        echo "1. Check cgroup status: ujust cgroup-check"
+        echo "2. Try fixing cgroups: ujust fix-cgroups"
+        echo "3. If still failing, use Kind instead: kind create cluster"
+        exit 1
+    }
+    echo "✓ Cluster created successfully"
+    kubectl cluster-info
+
+# Test k3d/k3s with full diagnostics
+k3d-test:
+    #!/usr/bin/env bash
+    echo "=== k3d/k3s Test Suite ==="
+    echo ""
+    echo "1. Checking cgroup delegation..."
+    just cgroup-check
+    echo ""
+    echo "2. Attempting cluster creation..."
+    TEST_CLUSTER="test-$$"
+    if just k3d-create "$TEST_CLUSTER" >/dev/null 2>&1; then
+        echo "✓ k3d cluster creation: SUCCESS"
+        k3d cluster delete "$TEST_CLUSTER" >/dev/null 2>&1
+    else
+        echo "❌ k3d cluster creation: FAILED"
+        echo ""
+        echo "Try: ujust fix-cgroups"
+        exit 1
+    fi
+    echo ""
+    echo "✓ All tests passed - k3d should work in this environment"
+
+
+# Show system info
+info:
+    @echo "=== Room of Requirement DevContainer ==="
+    @echo "OS: $(cat /etc/os-release | grep PRETTY_NAME | cut -d= -f2)"
+    @echo "Shell: $SHELL"
+    @echo "Homebrew: $(brew --version | head -1)"
+    @echo "Docker: $(docker --version 2>/dev/null || echo 'not running')"
+    @echo "Just: $(just --version)"

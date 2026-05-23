@@ -36,6 +36,10 @@ on:
         description: "Additional tags (comma-separated)"
         type: string
         default: ""
+      variant:
+        description: "Devcontainer variant to build"
+        type: string
+        default: "ubuntu-noble"
       sign:
         description: "Sign image with Cosign"
         type: boolean
@@ -66,6 +70,14 @@ on:
         description: "Additional tags (comma-separated)"
         type: string
         default: ""
+      variant:
+        description: "Devcontainer variant to build"
+        type: choice
+        default: "ubuntu-noble"
+        options:
+          - "ubuntu-noble"
+          - "debian-trixie"
+          - "wolfi"
       sign:
         description: "Sign image with Cosign"
         type: boolean
@@ -85,7 +97,8 @@ on:
 
 env:
   REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository_owner }}/ror
+  IMAGE_NAME: ${{ github.repository }}
+  VARIANT: ${{ inputs.variant || 'ubuntu-noble' }}
   FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
 
 permissions:
@@ -107,7 +120,7 @@ jobs:
       - name: Run hadolint
         uses: hadolint/hadolint-action@2332a7b74a6de0dda2e2221d575162eba76ba5e5 # v3.3.0
         with:
-          dockerfile: .devcontainer/Dockerfile
+          dockerfile: src/${{ env.VARIANT }}/.devcontainer/Dockerfile
           failure-threshold: error
           format: sarif
           output-file: hadolint.sarif
@@ -151,14 +164,49 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Resolve variant tags
+        id: variant-tags
+        run: |
+          case "${VARIANT}" in
+            ubuntu-noble)
+              {
+                echo "tags<<EOF"
+                echo "type=raw,value=ubuntu-noble"
+                echo "type=raw,value=ubuntu-noble-dind"
+                echo "type=raw,value=latest,enable={{is_default_branch}}"
+                echo "type=raw,value=codespaces,enable={{is_default_branch}}"
+                echo "EOF"
+              } >> "$GITHUB_OUTPUT"
+              ;;
+            debian-trixie)
+              {
+                echo "tags<<EOF"
+                echo "type=raw,value=debian-trixie"
+                echo "EOF"
+              } >> "$GITHUB_OUTPUT"
+              ;;
+            wolfi)
+              {
+                echo "tags<<EOF"
+                echo "type=raw,value=wolfi"
+                echo "type=raw,value=secure,enable={{is_default_branch}}"
+                echo "EOF"
+              } >> "$GITHUB_OUTPUT"
+              ;;
+            *)
+              echo "::error::Unsupported variant: ${VARIANT}"
+              exit 1
+              ;;
+          esac
+
       - name: Extract metadata for Docker
         id: meta
         uses: docker/metadata-action@030e881283bb7a6894de51c315a6bfe6a94e05cf # v6.0.0
         with:
           images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
           tags: |
-            # Set latest tag for main branch
-            type=raw,value=latest,enable={{is_default_branch}}
+            # Variant and alias tags
+            ${{ steps.variant-tags.outputs.tags }}
             # Set stable tag for scheduled builds (monthly)
             type=raw,value=stable,enable=${{ github.event_name == 'schedule' }}
             # Semantic version tags (v1.0.0)
@@ -181,9 +229,11 @@ jobs:
           # Build with devcontainer CLI to properly process features
           # Skipped on PRs because features aren't published yet
           IMAGE_NAME="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:build-${{ github.run_id }}"
+          VARIANT="${{ env.VARIANT }}"
 
           devcontainer build \
             --workspace-folder . \
+            --config "src/${VARIANT}/.devcontainer/devcontainer.json" \
             --image-name "$IMAGE_NAME" \
             --platform "${{ inputs.platforms || 'linux/amd64' }}"
 
@@ -505,7 +555,7 @@ jobs:
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
       # Note: env context not available in reusable workflow inputs, using literal values
-      image: ghcr.io/${{ github.repository_owner }}/ror
+      image: ghcr.io/${{ github.repository }}
       digest: ${{ needs.build.outputs.digest }}
       registry-username: ${{ github.actor }}
     secrets:

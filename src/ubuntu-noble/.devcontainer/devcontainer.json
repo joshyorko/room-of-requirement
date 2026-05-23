@@ -1,8 +1,8 @@
 {
-  "name": "Room of Requirement",
+  "name": "Room of Requirement Ubuntu Noble",
   "build": {
-    "dockerfile": "../src/ubuntu-noble/.devcontainer/Dockerfile",
-    "context": ".."
+    "dockerfile": "Dockerfile",
+    "context": "../../.."
   },
   "workspaceFolder": "/workspaces/room-of-requirement",
   "remoteUser": "vscode",
@@ -20,6 +20,19 @@
     "source=ror-zsh-history,target=/home/vscode/.zsh_history_dir,type=volume",
     "source=ror-docker-data,target=/var/lib/docker,type=volume"
   ],
+  "features": {
+    "ghcr.io/devcontainers/features/docker-in-docker:2": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "v2"
+    }
+  },
+  "privileged": true,
+  "overrideCommand": false,
+  "runArgs": [
+    "--privileged"
+  ],
+  "postCreateCommand": "cp /usr/share/ror/config/.zshrc ~/.zshrc 2>/dev/null || true; cp /usr/share/ror/config/.bashrc ~/.bashrc 2>/dev/null || true; mkdir -p ~/.config/mise && cp /usr/share/ror/config/starship.toml ~/.config/starship.toml 2>/dev/null || true; cp /usr/share/ror/config/mise.toml ~/.config/mise/config.toml 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || true",
   "customizations": {
     "vscode": {
       "extensions": [
@@ -58,18 +71,5 @@
         "github.copilot.advanced": {}
       }
     }
-  },
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2": {
-      "version": "latest",
-      "moby": true,
-      "dockerDashComposeVersion": "v2"
-    }
-  },
-  "privileged": true,
-  "overrideCommand": false,
-  "runArgs": [
-    "--privileged"
-  ],
-  "postCreateCommand": "cp /usr/share/ror/config/.zshrc ~/.zshrc 2>/dev/null || true; cp /usr/share/ror/config/.bashrc ~/.bashrc 2>/dev/null || true; mkdir -p ~/.config/mise && cp /usr/share/ror/config/starship.toml ~/.config/starship.toml 2>/dev/null || true; cp /usr/share/ror/config/mise.toml ~/.config/mise/config.toml 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || true"
+  }
 }
