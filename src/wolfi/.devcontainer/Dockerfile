@@ -252,21 +252,23 @@ RUN apk update && \
 # VS Code/DevPod keeps trying to install gcompat even with DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true
 # This wrapper intercepts those requests and silently ignores gcompat
 RUN mv /sbin/apk /sbin/apk.real && \
-    printf '#!/bin/bash\n\
-# apk wrapper to filter out gcompat (not available in Wolfi, not needed with native glibc)\n\
-args=()\n\
-for arg in "$@"; do\n\
-    if [[ "$arg" != "gcompat" && "$arg" != *"gcompat"* ]]; then\n\
-        args+=("$arg")\n\
-    fi\n\
-done\n\
-# Also remove gcompat from world file if somehow added\n\
-sed -i "/gcompat/d" /etc/apk/world 2>/dev/null || true\n\
-# If only command remains (e.g., "add" with no packages), skip\n\
-if [[ ${#args[@]} -le 1 ]]; then\n\
-    exit 0\n\
-fi\n\
-exec /sbin/apk.real "${args[@]}"\n' > /sbin/apk && \
+    { \
+        echo "#!/bin/bash"; \
+        echo "# apk wrapper to filter out gcompat (not available in Wolfi, not needed with native glibc)"; \
+        echo "args=()"; \
+        echo "for arg in \"\$@\"; do"; \
+        echo "    if [[ \"\$arg\" != \"gcompat\" && \"\$arg\" != *\"gcompat\"* ]]; then"; \
+        echo "        args+=(\"\$arg\")"; \
+        echo "    fi"; \
+        echo "done"; \
+        echo "# Also remove gcompat from world file if somehow added"; \
+        echo "sed -i \"/gcompat/d\" /etc/apk/world 2>/dev/null || true"; \
+        echo "# If only command remains (e.g., \"add\" with no packages), skip"; \
+        echo "if [[ \${#args[@]} -le 1 ]]; then"; \
+        echo "    exit 0"; \
+        echo "fi"; \
+        echo "exec /sbin/apk.real \"\${args[@]}\""; \
+    } > /sbin/apk && \
     chmod +x /sbin/apk
 
 # Copy first run notice for VS Code to display
