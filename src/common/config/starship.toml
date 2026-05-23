@@ -1,0 +1,152 @@
+# Starship prompt configuration for Room of Requirement containers
+# Optimized for container environments with minimal module overhead
+# Renders in <100ms with Nerd Font symbols
+
+# Prompt format: directory - git - cloud - duration - newline - prompt char
+format = """
+$status\
+$directory\
+$git_branch\
+$git_status\
+$aws\
+$gcloud\
+$azure\
+$kubernetes\
+$cmd_duration\
+$line_break\
+$character """
+
+add_newline = false
+
+# Prompt character (❯ style like default bash starship)
+[character]
+success_symbol = "[❯](bold green)"
+error_symbol = "[❯](bold red)"
+
+# Exit status from last command
+[status]
+format = "[\\[$symbol$common_meaning$signal_name$maybe_int\\]]($style) "
+success_symbol = ""
+not_executable_symbol = "🚫"
+not_found_symbol = "🔍"
+sigint_symbol = "⚡"
+signal_symbol = "⚡"
+style = "bold red"
+map_symbol = true
+disabled = false
+
+# Working directory
+[directory]
+style = "bold cyan"
+truncation_length = 3
+truncate_to_repo = true
+format = "[$path]($style) "
+
+[directory.substitutions]
+"Documents" = "󰈙 "
+"Downloads" = " "
+"Music" = " "
+"Pictures" = " "
+
+# Git branch
+[git_branch]
+symbol = "🌱 "
+truncation_length = 20
+truncation_symbol = "…"
+format = "on [$symbol$branch]($style) "
+style = "bold purple"
+
+# Git status
+[git_status]
+format = "([\\[$all_status$ahead_behind\\]]($style) )"
+style = "bold red"
+ahead = "⇡${count}"
+diverged = "⇕⇡${ahead_count}⇣${behind_count}"
+behind = "⇣${count}"
+
+# Command duration - show if >500ms
+[cmd_duration]
+min_time = 500
+format = "took [$duration]($style) "
+style = "bold yellow"
+
+# Language toolchain indicators
+[nodejs]
+symbol = "⬢ "
+style = "bold green"
+detect_extensions = ["js", "mjs", "cjs", "ts"]
+detect_files = ["package.json", ".node-version"]
+
+[python]
+symbol = "🐍 "
+style = "yellow bold"
+detect_extensions = ["py"]
+detect_files = [".python-version", "Pipfile", "__pycache__", ".mise.toml"]
+
+[rust]
+symbol = "🦀 "
+style = "bold red"
+detect_extensions = ["rs"]
+detect_files = ["Cargo.toml"]
+
+[golang]
+symbol = "🐹 "
+style = "bold cyan"
+detect_extensions = ["go"]
+detect_files = ["go.mod", "go.sum"]
+
+[shell]
+fish_indicator = "🐠"
+powershell_indicator = "_"
+bash_indicator = "bsh"
+zsh_indicator = "zsh"
+unknown_indicator = "?"
+style = "cyan bold"
+disabled = false
+format = "[$indicator]($style) "
+
+[username]
+format = "[$user]($style) "
+style_root = "red bold"
+style_user = "white bold"
+show_always = false
+
+[hostname]
+ssh_only = true
+ssh_symbol = "🌐 "
+format = "on [$hostname]($style) "
+style = "bold dimmed white"
+
+# Disable container-specific modules (not useful in container context)
+[container]
+disabled = true
+
+[docker_context]
+disabled = true
+
+# AWS - shows region with cloud emoji (☁️)
+[aws]
+format = "on [$symbol($profile )(\\($region\\) )]($style)"
+symbol = "☁️  "
+style = "bold yellow"
+disabled = false
+
+# Google Cloud
+[gcloud]
+format = "on [$symbol$account(@$domain)(\\($region\\))]($style) "
+symbol = "☁️  "
+style = "bold blue"
+disabled = false
+
+# Azure
+[azure]
+format = "on [$symbol($subscription)]($style) "
+symbol = "☁️  "
+style = "bold blue"
+disabled = false
+
+# Kubernetes context
+[kubernetes]
+format = "on [⛵ $context(\\($namespace\\))]($style) "
+style = "bold blue"
+disabled = false

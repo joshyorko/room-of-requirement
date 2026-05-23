@@ -1,0 +1,51 @@
+# mise Configuration for Room of Requirement
+# Global config for default tool versions
+
+# ============================================================================
+# TOOL VERSIONS
+# ============================================================================
+# These define the default versions available in this environment
+# Users can override with project-specific .mise.toml files
+
+[tools]
+node = "lts"
+python = "latest"
+go = "latest"
+ruby = "latest"
+# Rust remains disabled by default to reduce initial startup time.
+# All build dependencies required for Ruby are available in the image.
+# Optional helper: ujust rails-enable <ruby_version> <rails_version>
+# To enable Rust as well: mise use -g rust@latest
+# rust = "latest"
+
+# ============================================================================
+# MISE SETTINGS
+# ============================================================================
+[settings]
+# Automatically install tools when entering directory
+auto_install = true
+
+# Show status messages
+quiet = false
+
+# Use pre-built Ruby binaries; never compile from source in postcreate
+ruby.compile = false
+
+# ============================================================================
+# ENVIRONMENT
+# ============================================================================
+[env]
+# Precedence: mise shims > Homebrew > standard system paths
+_.path = [
+  "/usr/local/share/mise/shims",
+  "/home/linuxbrew/.linuxbrew/bin",
+  "/home/linuxbrew/.linuxbrew/sbin"
+]
+
+# ============================================================================
+# TOOL ALIASES (disabled - mise alias syntax is in flux)
+# ============================================================================
+# Aliases are optional convenience shortcuts. Use explicit versions instead:
+#   mise use node@20    (instead of node@lts)
+#   mise use python@3.15.0
+#   mise use go@1.23.0
