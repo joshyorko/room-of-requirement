@@ -10,13 +10,12 @@ This robot keeps the repository fresh by automating version updates for:
 2. **External download pins** - Updates pinned versions and digests from sources like PyPI and Docker Hub
 3. **Pre-commit hook repos** - Refreshes configured hook revisions in `.pre-commit-config.yaml`
 4. **Homebrew tracking** - Logs formula versions (informational only)
-5. **Curated Brewfile validation** - Catches renamed formulas or missing taps before post-create hydration breaks
+5. **Curated Brewfile validation** - Catches renamed formulas or missing taps before image builds or on-demand installs break
 
 ### What This Robot Does NOT Update
 
 **Homebrew packages are NOT auto-updated.** With our Homebrew-first architecture:
-- Shell essentials (`mise`, `starship`, `zoxide`) are baked into the image
-- Curated Brewfiles, including `bbrew`, are hydrated during DevContainer post-create
+- Shell essentials plus `bbrew` are baked into the image
 - On-demand tools are installed via curated Brewfiles in `.devcontainer/brew/`
 - Homebrew handles versioning naturally via `brew update && brew upgrade`
 - The `homebrew.json` allowlist is informational only - it logs versions but doesn't modify files
@@ -119,7 +118,7 @@ Constrains GitHub Actions updates by:
 
 ### homebrew.json
 
-**Informational only** - tracks versions of core tools we rely on across the image and post-create hydration flow.
+**Informational only** - tracks versions of core tools we rely on across the image and on-demand Brewfile flow.
 No file updates are performed. This is useful for:
 - Monitoring what versions are available
 - Reporting in maintenance logs
@@ -132,7 +131,7 @@ declaring a maintenance run healthy. This is intentionally validation-only:
 - It does not rewrite Brewfiles
 - It does not auto-upgrade formulas
 - It does catch renamed formulas, missing taps, and other resolution errors that would otherwise
-  surface later during DevPod/Codespaces post-create hydration
+  surface later during image builds or on-demand installs
 
 ## CI Integration
 

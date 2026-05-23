@@ -33,8 +33,8 @@ class BrewfileValidator:
         """Validate all Brewfiles in a directory.
 
         Validation intentionally mirrors brew bundle resolution closely enough to
-        catch missing taps or renamed formulae before post-create hydration hits
-        them.
+        catch missing taps or renamed formulae before image builds or
+        on-demand installs hit them.
         """
         if not self.brew_executable:
             logger.warning("brew not found in PATH; skipping curated Brewfile validation")

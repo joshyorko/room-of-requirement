@@ -59,65 +59,8 @@ else
         warn "Homebrew update had issues, continuing with existing formulae"
     fi
 
-    # Hydrate only the RoR developer bundle during post-create. The other
-    # curated Brewfiles stay opt-in via `ujust bbrew` or `ujust brew-install-all`.
-    ROR_BREWFILE="${ROR_BREWFILE:-/usr/share/ror/brew/ror.Brewfile}"
-    if [ ! -f "$ROR_BREWFILE" ] && [ -f ".devcontainer/brew/ror.Brewfile" ]; then
-        ROR_BREWFILE=".devcontainer/brew/ror.Brewfile"
-    fi
-
-    if [ -f "$ROR_BREWFILE" ]; then
-        log "Ensuring tap is available: joshyorko/tools"
-        if brew tap joshyorko/tools; then
-            log "✓ Tap ready: joshyorko/tools"
-        else
-            warn "Unable to tap joshyorko/tools before RoR bundle install"
-        fi
-
-        log "Installing Homebrew bundle: $(basename "$ROR_BREWFILE")"
-        if brew bundle install --file="$ROR_BREWFILE"; then
-            log "✓ Installed $(basename "$ROR_BREWFILE")"
-        else
-            warn "Homebrew bundle had issues: $(basename "$ROR_BREWFILE")"
-        fi
-
-        # brew bundle can occasionally resolve an unintended upstream package.
-        # Install tap-qualified casks explicitly to enforce joshyorko/tools.
-        log "Enforcing tap-qualified RoR cask installs"
-        for tool_cask in joshyorko/tools/rcc joshyorko/tools/action-server; do
-            if brew install --cask "$tool_cask"; then
-                log "✓ Installed cask from preferred tap: $tool_cask"
-            else
-                warn "Failed explicit cask install: $tool_cask"
-            fi
-        done
-
-        # Refresh tap-hosted RoR casks to latest available revisions.
-        log "Refreshing tap-hosted RoR casks to latest available revisions"
-        for tool_cask in joshyorko/tools/rcc joshyorko/tools/action-server; do
-            if brew list --cask "$tool_cask" >/dev/null 2>&1; then
-                if brew upgrade --cask "$tool_cask"; then
-                    log "✓ Upgraded cask: $tool_cask"
-                else
-                    warn "Failed to upgrade cask: $tool_cask"
-                fi
-            else
-                warn "Expected cask not installed after explicit install: $tool_cask"
-            fi
-        done
-
-        if brew list --formula joshyorko/tools/t3code-cli-main >/dev/null 2>&1; then
-            if brew upgrade joshyorko/tools/t3code-cli-main; then
-                log "✓ Upgraded formula: joshyorko/tools/t3code-cli-main"
-            else
-                warn "Failed to upgrade formula: joshyorko/tools/t3code-cli-main"
-            fi
-        else
-            warn "Expected formula not installed after bundle: joshyorko/tools/t3code-cli-main"
-        fi
-    else
-        warn "No RoR Brewfile found, skipping Homebrew bundle hydration"
-    fi
+    log "Skipping RoR Brewfile install during post-create"
+    log "Use 'ujust bbrew' to install curated bundles or 'ujust brew-download-ror' to pre-download the RoR bundle"
 
     # =========================================================================
     # MISE: Install Global Runtimes (cached via volume mount)

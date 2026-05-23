@@ -199,8 +199,8 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 # Install the always-on shell foundation directly in the image.
-# Heavier curated tool bundles are hydrated in post-create instead.
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide"
+# Heavier curated tool bundles stay opt-in through ujust/bbrew recipes.
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap valkyrie00/bbrew && /home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide valkyrie00/bbrew/bbrew"
 
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
@@ -225,7 +225,7 @@ RUN mkdir -p \
     chown -R vscode:vscode /usr/local/share/mise /home/vscode/.cache /home/vscode/.local /home/vscode/.config
 
 # ============================================================================
-# STAGE 4: Final Image (Optimized for size - tools installed in post-create)
+# STAGE 4: Final Image (Optimized for size - heavy tools installed on demand)
 # ============================================================================
 FROM homebrew AS final
 
@@ -304,6 +304,10 @@ RUN chmod +x /usr/local/bin/fix-docker-permissions.sh
 COPY .devcontainer/scripts/enable-cgroup-memory.sh /usr/local/bin/enable-cgroup-memory.sh
 COPY .devcontainer/scripts/fix-cgroup-delegation.sh /usr/local/bin/fix-cgroup-delegation.sh
 RUN chmod +x /usr/local/bin/enable-cgroup-memory.sh /usr/local/bin/fix-cgroup-delegation.sh
+
+# Copy Homebrew helper scripts
+COPY --chown=vscode:vscode .devcontainer/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh
+RUN chmod +x /usr/local/bin/ror-brew-download.sh
 
 # Copy entrypoint wrapper for Docker-in-Docker (handles both DevPod and Codespaces)
 COPY .devcontainer/entrypoint.sh /usr/local/bin/entrypoint.sh

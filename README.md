@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, and `fizzy-popper-self-hosted` are available via `ujust bbrew` → select `ror`.
+Everything is pre-baked into the image - no features required. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
 
 ### Option 2: Open This Repository
 
@@ -49,9 +49,10 @@ devpod up https://github.com/joshyorko/room-of-requirement
 │  └─────────────────────────────────────────────────────────┘│
 │  ┌─────────────────────────────────────────────────────────┐│
 │  │  Homebrew Foundation (First-Class Package Manager)     ││
-│  │  • Core tools pre-installed: mise, starship, zoxide    ││
-│  │  • Curated Brewfiles for on-demand installs plus RoR   ││
-│  │    post-create hydration                               ││
+│  │  • Core tools pre-installed: mise, starship, zoxide,   ││
+│  │    bbrew                                               ││
+│  │  • Curated Brewfiles for on-demand installs and        ││
+│  │    download-only cache warming                         ││
 │  │  • /home/linuxbrew/.linuxbrew in PATH                  ││
 │  └─────────────────────────────────────────────────────────┘│
 │  ┌─────────────────────────────────────────────────────────┐│
@@ -92,11 +93,12 @@ These are baked into the image for instant availability:
 
 ### Curated Brewfiles
 
-The `ror` bundle hydrates during post-create. Install any additional bundles using the TUI:
+The `ror` bundle is opt-in instead of installed during post-create. Install bundles using the TUI, or pre-download the RoR bundle into the Homebrew cache:
 
 ```bash
 ujust bbrew          # Interactive TUI to select Brewfiles
 ujust brew-install-all  # Install everything
+ujust brew-download-ror # Download the RoR Brewfile artifacts without installing
 ```
 
 | Brewfile | Tools Included |
@@ -104,7 +106,7 @@ ujust brew-install-all  # Install everything
 | **core** | mise, starship, zoxide, bbrew |
 | **dev** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux, git-lfs |
 | **cloud** | aws-cli, azure-cli, terraform, kubectl, helm, k9s, k3d, dagger, devspace |
-| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server, t3code-cli-main, fizzy-cli-master, fizzy-popper-self-hosted |
+| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server, t3code-cli-main, fizzy-cli-master, fizzy-popper-self-hosted, fizzy-symphony, oracle |
 
 ---
 

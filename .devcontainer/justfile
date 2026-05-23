@@ -58,6 +58,11 @@ brew-install-all:
     done
     echo "Done! Run 'ujust bbrew' for the TUI or 'brew list' to see packages."
 
+# Download all Homebrew packages from the RoR Brewfile without installing them
+brew-download-ror:
+    #!/usr/bin/env bash
+    exec ror-brew-download.sh
+
 # Install specific brew formula
 brew-install formula:
     brew install {{formula}}
