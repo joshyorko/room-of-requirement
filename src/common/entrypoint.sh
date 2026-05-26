@@ -97,12 +97,12 @@ start_dockerd() {
     log "DOCKER_HOST set to ${DOCKER_HOST}"
 
     # Wait for Docker socket (max 30 seconds)
-    for ((attempt = 1; attempt <= 30; attempt++)); do
+    for attempt in $(seq 1 30); do
         if [ -S "${docker_socket}" ]; then
             log "Docker daemon is ready"
             break
         fi
-        sleep 1
+        [ "$attempt" -lt 30 ] && sleep 1
     done
 
     if [ ! -S "${docker_socket}" ]; then
@@ -142,13 +142,13 @@ if [ -n "${CODESPACES:-}" ]; then
 
     # Brief wait for Codespaces Docker socket (if host provides one)
     SOCKET_FOUND=false
-    for ((attempt = 1; attempt <= 5; attempt++)); do
+    for attempt in $(seq 1 5); do
         if [ -S /var/run/docker.sock ]; then
             log "Docker socket found from Codespaces host"
             SOCKET_FOUND=true
             break
         fi
-        sleep 1
+        [ "$attempt" -lt 5 ] && sleep 1
     done
 
     if [ "${DOCKER_BACKEND}" = "dind" ]; then
