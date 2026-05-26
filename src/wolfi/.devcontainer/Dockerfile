@@ -26,6 +26,7 @@ LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement"
 LABEL org.opencontainers.image.description="Modular DevContainer with Wolfi OS - tools via features"
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
+LABEL devcontainer.metadata='[{"remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged"],"remoteEnv":{"SHELL":"/bin/zsh","DOCKER_BUILDKIT":"1","ROR_DOCKER_BACKEND":"auto","DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL":"true"},"postStartCommand":"ujust docker-start || true"}]'
 
 # UTF-8 locale and timezone
 # DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL prevents VS Code from trying to install gcompat

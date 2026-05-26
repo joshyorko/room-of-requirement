@@ -6,6 +6,7 @@ LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement Ubuntu Noble"
 LABEL org.opencontainers.image.description="Codespaces-focused Room of Requirement DevContainer variant"
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
+LABEL devcontainer.metadata='[{"remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged"],"remoteEnv":{"SHELL":"/bin/zsh","DOCKER_BUILDKIT":"1","ROR_DOCKER_BACKEND":"auto"},"postStartCommand":"ujust docker-start || true"}]'
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -27,6 +28,9 @@ RUN apt-get update && \
         build-essential \
         ca-certificates \
         curl \
+        docker-buildx \
+        docker-compose-v2 \
+        docker.io \
         file \
         git \
         git-lfs \
@@ -42,6 +46,9 @@ RUN apt-get update && \
         zsh && \
     locale-gen C.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -f docker && \
+    usermod -aG docker vscode
 
 RUN groupadd -f -g 2000 linuxbrew && \
     id -u linuxbrew >/dev/null 2>&1 || useradd -m -u 2000 -g linuxbrew -s /bin/bash linuxbrew && \

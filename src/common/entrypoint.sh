@@ -83,46 +83,53 @@ start_dockerd() {
     if [ -x /usr/bin/dockerd-entrypoint.sh ]; then
         # Start dockerd-entrypoint.sh in background as root
         sudo /usr/bin/dockerd-entrypoint.sh dockerd --host="${docker_host}" &
-        DOCKERD_PID=$!
-
-        # Wait for Docker socket (max 30 seconds)
-        for i in $(seq 1 30); do
-            if [ -S "${docker_socket}" ]; then
-                log "Docker daemon is ready"
-                break
-            fi
-            [ "$i" -eq 30 ] && log "Warning: Docker daemon didn't start in 30s"
-            sleep 1
-        done
-
-        # Fix socket permissions for vscode user
-        if [ -S "${docker_socket}" ]; then
-            sudo chown root:docker "${docker_socket}" 2>/dev/null || true
-            sudo chmod 660 "${docker_socket}" 2>/dev/null || true
-        fi
-
-        # Make Docker available at the conventional path for all new exec sessions
-        # (VS Code terminals do not inherit runtime exports from this entrypoint).
-        if [ "${docker_socket}" != "/var/run/docker.sock" ] && [ -S "${docker_socket}" ]; then
-            sudo mkdir -p /var/run
-            if [ "${link_default}" = "true" ] && [ ! -S /var/run/docker.sock ]; then
-                sudo ln -sf "${docker_socket}" /var/run/docker.sock
-                sudo chmod 755 /var/run 2>/dev/null || true
-                log "Linked /var/run/docker.sock -> ${docker_socket}"
-            else
-                sudo mkdir -p /etc/profile.d
-                echo "export DOCKER_HOST=${docker_host}" | sudo tee /etc/profile.d/ror-docker-host.sh > /dev/null || true
-                sudo chmod 644 /etc/profile.d/ror-docker-host.sh 2>/dev/null || true
-                log "Persisted DOCKER_HOST for new shells (${docker_host})"
-            fi
-        fi
-
-        # Ensure all child processes (including shells/tasks) use the selected socket.
-        export DOCKER_HOST="${docker_host}"
-        log "DOCKER_HOST set to ${DOCKER_HOST}"
+    elif command -v dockerd >/dev/null 2>&1; then
+        # Prebuilt Ubuntu/Debian images include distro Docker packages but not
+        # the Dev Container Feature entrypoint.
+        sudo dockerd --host="${docker_host}" &
     else
-        log "Warning: dockerd-entrypoint.sh not found"
+        log "Warning: neither dockerd-entrypoint.sh nor dockerd found"
+        return
     fi
+
+    # Ensure all child processes (including shells/tasks) use the selected socket.
+    export DOCKER_HOST="${docker_host}"
+    log "DOCKER_HOST set to ${DOCKER_HOST}"
+
+    # Wait for Docker socket (max 30 seconds)
+    for attempt in $(seq 1 30); do
+        if [ -S "${docker_socket}" ]; then
+            log "Docker daemon is ready"
+            break
+        fi
+        [ "$attempt" -lt 30 ] && sleep 1
+    done
+
+    if [ ! -S "${docker_socket}" ]; then
+        log "Warning: Docker daemon is unavailable on ${docker_socket}"
+        return
+    fi
+
+    # Fix socket permissions for vscode user
+    sudo chown root:docker "${docker_socket}" 2>/dev/null || true
+    sudo chmod 660 "${docker_socket}" 2>/dev/null || true
+
+    # Make Docker available at the conventional path for all new exec sessions
+    # (VS Code terminals do not inherit runtime exports from this entrypoint).
+    if [ "${docker_socket}" != "/var/run/docker.sock" ] && [ -S "${docker_socket}" ]; then
+        sudo mkdir -p /var/run
+        if [ "${link_default}" = "true" ] && [ ! -S /var/run/docker.sock ]; then
+            sudo ln -sf "${docker_socket}" /var/run/docker.sock
+            sudo chmod 755 /var/run 2>/dev/null || true
+            log "Linked /var/run/docker.sock -> ${docker_socket}"
+        else
+            sudo mkdir -p /etc/profile.d
+            echo "export DOCKER_HOST=${docker_host}" | sudo tee /etc/profile.d/ror-docker-host.sh > /dev/null || true
+            sudo chmod 644 /etc/profile.d/ror-docker-host.sh 2>/dev/null || true
+            log "Persisted DOCKER_HOST for new shells (${docker_host})"
+        fi
+    fi
+
 }
 
 # GitHub Codespaces may or may not provide Docker - check first, then fallback.
@@ -135,13 +142,13 @@ if [ -n "${CODESPACES:-}" ]; then
 
     # Brief wait for Codespaces Docker socket (if host provides one)
     SOCKET_FOUND=false
-    for i in $(seq 1 5); do
+    for attempt in $(seq 1 5); do
         if [ -S /var/run/docker.sock ]; then
             log "Docker socket found from Codespaces host"
             SOCKET_FOUND=true
             break
         fi
-        sleep 1
+        [ "$attempt" -lt 5 ] && sleep 1
     done
 
     if [ "${DOCKER_BACKEND}" = "dind" ]; then

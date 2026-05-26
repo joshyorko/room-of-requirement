@@ -6,6 +6,7 @@ LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement Debian Trixie"
 LABEL org.opencontainers.image.description="Debian baseline Room of Requirement DevContainer variant"
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
+LABEL devcontainer.metadata='[{"remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged"],"remoteEnv":{"SHELL":"/bin/zsh","DOCKER_BUILDKIT":"1","ROR_DOCKER_BACKEND":"auto"},"postStartCommand":"ujust docker-start || true"}]'
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -20,6 +21,8 @@ ENV LANG=C.UTF-8 \
 
 USER root
 
+# Debian Trixie splits the Docker CLI and daemon packages; Compose v2 is
+# packaged as docker-compose in Debian.
 RUN apt-get update && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \
@@ -27,6 +30,10 @@ RUN apt-get update && \
         build-essential \
         ca-certificates \
         curl \
+        docker-buildx \
+        docker-cli \
+        docker-compose \
+        docker.io \
         file \
         git \
         git-lfs \
@@ -42,6 +49,9 @@ RUN apt-get update && \
         zsh && \
     locale-gen C.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -f docker && \
+    usermod -aG docker vscode
 
 RUN groupadd -f -g 2000 linuxbrew && \
     id -u linuxbrew >/dev/null 2>&1 || useradd -m -u 2000 -g linuxbrew -s /bin/bash linuxbrew && \
