@@ -142,7 +142,7 @@ docker-start:
         elif command -v dockerd >/dev/null 2>&1; then \
             sudo dockerd & \
         else \
-            echo "dockerd not found"; \
+            echo "Error: dockerd not found. Ensure Docker is installed or enable the Dev Container Docker-in-Docker feature."; \
             exit 1; \
         fi; \
         sleep 3; \

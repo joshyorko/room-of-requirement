@@ -66,6 +66,7 @@ start_dockerd() {
     local docker_socket="${1:-/var/run/docker.sock}"
     local link_default="${2:-true}"
     local docker_host="unix://${docker_socket}"
+    local dockerd_pid=""
 
     log "Starting Docker daemon (Wolfi native) on ${docker_socket}..."
 
@@ -83,10 +84,12 @@ start_dockerd() {
     if [ -x /usr/bin/dockerd-entrypoint.sh ]; then
         # Start dockerd-entrypoint.sh in background as root
         sudo /usr/bin/dockerd-entrypoint.sh dockerd --host="${docker_host}" &
+        dockerd_pid=$!
     elif command -v dockerd >/dev/null 2>&1; then
         # Prebuilt Ubuntu/Debian images include distro Docker packages but not
         # the Dev Container Feature entrypoint.
         sudo dockerd --host="${docker_host}" &
+        dockerd_pid=$!
     else
         log "Warning: neither dockerd-entrypoint.sh nor dockerd found"
         return
@@ -96,6 +99,11 @@ start_dockerd() {
     for i in $(seq 1 30); do
         if [ -S "${docker_socket}" ]; then
             log "Docker daemon is ready"
+            break
+        fi
+        if ! kill -0 "${dockerd_pid}" 2>/dev/null; then
+            wait "${dockerd_pid}" || true
+            log "Warning: Docker daemon exited before ${docker_socket} appeared"
             break
         fi
         [ "$i" -eq 30 ] && log "Warning: Docker daemon didn't start in 30s"
