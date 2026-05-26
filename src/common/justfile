@@ -137,7 +137,14 @@ docker-status:
 docker-start:
     @if ! docker info >/dev/null 2>&1; then \
         echo "Starting Docker daemon..."; \
-        sudo /usr/bin/dockerd-entrypoint.sh dockerd &; \
+        if [ -x /usr/bin/dockerd-entrypoint.sh ]; then \
+            sudo /usr/bin/dockerd-entrypoint.sh dockerd & \
+        elif command -v dockerd >/dev/null 2>&1; then \
+            sudo dockerd & \
+        else \
+            echo "dockerd not found"; \
+            exit 1; \
+        fi; \
         sleep 3; \
     else \
         echo "Docker is already running"; \

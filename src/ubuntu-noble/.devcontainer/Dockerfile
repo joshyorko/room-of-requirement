@@ -27,6 +27,9 @@ RUN apt-get update && \
         build-essential \
         ca-certificates \
         curl \
+        docker-buildx \
+        docker-compose-v2 \
+        docker.io \
         file \
         git \
         git-lfs \
@@ -40,6 +43,8 @@ RUN apt-get update && \
         unzip \
         wget \
         zsh && \
+    groupadd -f docker && \
+    usermod -aG docker vscode && \
     locale-gen C.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
 
