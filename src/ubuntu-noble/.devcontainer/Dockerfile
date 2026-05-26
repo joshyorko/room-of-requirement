@@ -43,10 +43,11 @@ RUN apt-get update && \
         unzip \
         wget \
         zsh && \
-    groupadd -f docker && \
-    usermod -aG docker vscode && \
     locale-gen C.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
+
+RUN groupadd -f docker && \
+    usermod -aG docker vscode
 
 RUN groupadd -f -g 2000 linuxbrew && \
     id -u linuxbrew >/dev/null 2>&1 || useradd -m -u 2000 -g linuxbrew -s /bin/bash linuxbrew && \
