@@ -66,7 +66,7 @@ start_dockerd() {
     local docker_socket="${1:-/var/run/docker.sock}"
     local link_default="${2:-true}"
     local docker_host="unix://${docker_socket}"
-    local dockerd_pid=""
+    local dockerd_pid=0
 
     log "Starting Docker daemon (Wolfi native) on ${docker_socket}..."
 
@@ -110,11 +110,14 @@ start_dockerd() {
         sleep 1
     done
 
-    # Fix socket permissions for vscode user
-    if [ -S "${docker_socket}" ]; then
-        sudo chown root:docker "${docker_socket}" 2>/dev/null || true
-        sudo chmod 660 "${docker_socket}" 2>/dev/null || true
+    if [ ! -S "${docker_socket}" ]; then
+        log "Warning: Docker daemon is unavailable on ${docker_socket}"
+        return
     fi
+
+    # Fix socket permissions for vscode user
+    sudo chown root:docker "${docker_socket}" 2>/dev/null || true
+    sudo chmod 660 "${docker_socket}" 2>/dev/null || true
 
     # Make Docker available at the conventional path for all new exec sessions
     # (VS Code terminals do not inherit runtime exports from this entrypoint).
