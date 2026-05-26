@@ -21,6 +21,8 @@ ENV LANG=C.UTF-8 \
 
 USER root
 
+# Debian Trixie splits the Docker CLI and daemon packages; Compose v2 is
+# packaged as docker-compose in Debian.
 RUN apt-get update && \
     export DEBIAN_FRONTEND=noninteractive && \
     apt-get install -y --no-install-recommends \

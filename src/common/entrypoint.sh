@@ -92,13 +92,16 @@ start_dockerd() {
         return
     fi
 
+    # Ensure all child processes (including shells/tasks) use the selected socket.
+    export DOCKER_HOST="${docker_host}"
+    log "DOCKER_HOST set to ${DOCKER_HOST}"
+
     # Wait for Docker socket (max 30 seconds)
-    for i in $(seq 1 30); do
+    for _ in $(seq 1 30); do
         if [ -S "${docker_socket}" ]; then
             log "Docker daemon is ready"
             break
         fi
-        [ "$i" -eq 30 ] && log "Warning: Docker daemon didn't start in 30s"
         sleep 1
     done
 
@@ -127,9 +130,6 @@ start_dockerd() {
         fi
     fi
 
-    # Ensure all child processes (including shells/tasks) use the selected socket.
-    export DOCKER_HOST="${docker_host}"
-    log "DOCKER_HOST set to ${DOCKER_HOST}"
 }
 
 # GitHub Codespaces may or may not provide Docker - check first, then fallback.
@@ -142,7 +142,7 @@ if [ -n "${CODESPACES:-}" ]; then
 
     # Brief wait for Codespaces Docker socket (if host provides one)
     SOCKET_FOUND=false
-    for i in $(seq 1 5); do
+    for _ in $(seq 1 5); do
         if [ -S /var/run/docker.sock ]; then
             log "Docker socket found from Codespaces host"
             SOCKET_FOUND=true
