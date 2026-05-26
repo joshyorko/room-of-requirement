@@ -33,6 +33,7 @@
     "--privileged"
   ],
   "postCreateCommand": "cp /usr/share/ror/config/.zshrc ~/.zshrc 2>/dev/null || true; cp /usr/share/ror/config/.bashrc ~/.bashrc 2>/dev/null || true; mkdir -p ~/.config/mise && cp /usr/share/ror/config/starship.toml ~/.config/starship.toml 2>/dev/null || true; cp /usr/share/ror/config/mise.toml ~/.config/mise/config.toml 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || true",
+  "postStartCommand": "ujust docker-start || true",
   "customizations": {
     "vscode": {
       "extensions": [

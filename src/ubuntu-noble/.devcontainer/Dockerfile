@@ -6,6 +6,7 @@ LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement Ubuntu Noble"
 LABEL org.opencontainers.image.description="Codespaces-focused Room of Requirement DevContainer variant"
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
+LABEL devcontainer.metadata='[{"remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged"],"remoteEnv":{"SHELL":"/bin/zsh","DOCKER_BUILDKIT":"1","ROR_DOCKER_BACKEND":"auto"},"postStartCommand":"ujust docker-start || true"}]'
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
