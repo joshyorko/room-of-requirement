@@ -32,6 +32,7 @@ RUN apt-get update && \
         docker-compose-v2 \
         docker.io \
         file \
+        fuse-overlayfs \
         git \
         git-lfs \
         gnupg \
@@ -95,6 +96,7 @@ COPY --chown=vscode:vscode src/common/config/mise.toml /home/vscode/.config/mise
 COPY --chown=vscode:vscode src/common/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 COPY --chown=vscode:vscode src/common/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
 COPY --chown=vscode:vscode src/common/scripts/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
+COPY --chown=vscode:vscode src/common/scripts/ror-docker-start.sh /usr/local/bin/ror-docker-start.sh
 COPY src/common/scripts/enable-cgroup-memory.sh /usr/local/bin/enable-cgroup-memory.sh
 COPY src/common/scripts/fix-cgroup-delegation.sh /usr/local/bin/fix-cgroup-delegation.sh
 COPY --chown=vscode:vscode src/common/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh
@@ -106,6 +108,7 @@ RUN chmod +x \
         /usr/local/bin/devcontainer-post-create.sh \
         /usr/local/bin/mise-seed-cache.sh \
         /usr/local/bin/fix-docker-permissions.sh \
+        /usr/local/bin/ror-docker-start.sh \
         /usr/local/bin/enable-cgroup-memory.sh \
         /usr/local/bin/fix-cgroup-delegation.sh \
         /usr/local/bin/ror-brew-download.sh \

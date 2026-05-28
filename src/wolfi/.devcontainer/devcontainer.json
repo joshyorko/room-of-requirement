@@ -15,6 +15,7 @@
     "HOMEBREW_NO_AUTO_UPDATE": "1",
     "DOCKER_BUILDKIT": "1",
     "ROR_DOCKER_BACKEND": "auto",
+    "ROR_DOCKER_STORAGE_DRIVER": "auto",
     "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
   },
   "mounts": [

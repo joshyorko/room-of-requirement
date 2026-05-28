@@ -58,16 +58,12 @@ fix_user_dir_permissions "${HOME}/.local/share/mise" "mise cache"
 fix_user_dir_permissions "${HOME}/.zsh_history_dir" "zsh history"
 fix_user_dir_permissions "${HOME}/.npm" "npm cache"
 
-# Function to start Wolfi's native dockerd
-# cgroup v2 nesting (process evacuation, subtree_control, mount --make-rshared)
-# is handled by the dind script invoked via dockerd-entrypoint.sh, which finds
-# /usr/local/bin/dind from the docker-dind-compat package.
+# Function to start the Docker daemon.
+# cgroup v2 nesting is still handled by dockerd-entrypoint.sh/dind when present.
 start_dockerd() {
     local docker_socket="${1:-/var/run/docker.sock}"
     local link_default="${2:-true}"
     local docker_host="unix://${docker_socket}"
-
-    log "Starting Docker daemon (Wolfi native) on ${docker_socket}..."
 
     # Ensure /var/run is accessible (755) - dockerd creates it with 700 by default
     # which blocks non-root users from accessing the socket even with correct group membership
@@ -78,58 +74,61 @@ start_dockerd() {
         sudo chmod 755 /var/run
     fi
 
-    sudo mkdir -p "$(dirname "${docker_socket}")"
-
-    if [ -x /usr/bin/dockerd-entrypoint.sh ]; then
-        # Start dockerd-entrypoint.sh in background as root
-        sudo /usr/bin/dockerd-entrypoint.sh dockerd --host="${docker_host}" &
-    elif command -v dockerd >/dev/null 2>&1; then
-        # Prebuilt Ubuntu/Debian images include distro Docker packages but not
-        # the Dev Container Feature entrypoint.
-        sudo dockerd --host="${docker_host}" &
+    if [ -x /usr/local/bin/ror-docker-start.sh ]; then
+        /usr/local/bin/ror-docker-start.sh --socket "${docker_socket}" --link-default "${link_default}"
     else
-        log "Warning: neither dockerd-entrypoint.sh nor dockerd found"
-        return
+        log "Warning: ror-docker-start.sh not found"
+        sudo mkdir -p "$(dirname "${docker_socket}")"
+
+        if [ -x /usr/bin/dockerd-entrypoint.sh ]; then
+            sudo /usr/bin/dockerd-entrypoint.sh dockerd --host="${docker_host}" &
+        elif command -v dockerd >/dev/null 2>&1; then
+            # Prebuilt Ubuntu/Debian images include distro Docker packages but not
+            # the Dev Container Feature entrypoint.
+            sudo dockerd --host="${docker_host}" &
+        else
+            log "Warning: neither dockerd-entrypoint.sh nor dockerd found"
+            return
+        fi
+
+        # Wait for Docker socket (max 30 seconds)
+        for attempt in $(seq 1 30); do
+            if [ -S "${docker_socket}" ]; then
+                log "Docker daemon is ready"
+                break
+            fi
+            [ "$attempt" -lt 30 ] && sleep 1
+        done
+
+        if [ ! -S "${docker_socket}" ]; then
+            log "Warning: Docker daemon is unavailable on ${docker_socket}"
+            return
+        fi
+
+        # Fix socket permissions for vscode user
+        sudo chown root:docker "${docker_socket}" 2>/dev/null || true
+        sudo chmod 660 "${docker_socket}" 2>/dev/null || true
+
+        # Make Docker available at the conventional path for all new exec sessions
+        # (VS Code terminals do not inherit runtime exports from this entrypoint).
+        if [ "${docker_socket}" != "/var/run/docker.sock" ] && [ -S "${docker_socket}" ]; then
+            sudo mkdir -p /var/run
+            if [ "${link_default}" = "true" ] && [ ! -S /var/run/docker.sock ]; then
+                sudo ln -sf "${docker_socket}" /var/run/docker.sock
+                sudo chmod 755 /var/run 2>/dev/null || true
+                log "Linked /var/run/docker.sock -> ${docker_socket}"
+            else
+                sudo mkdir -p /etc/profile.d
+                echo "export DOCKER_HOST=${docker_host}" | sudo tee /etc/profile.d/ror-docker-host.sh > /dev/null || true
+                sudo chmod 644 /etc/profile.d/ror-docker-host.sh 2>/dev/null || true
+                log "Persisted DOCKER_HOST for new shells (${docker_host})"
+            fi
+        fi
     fi
 
     # Ensure all child processes (including shells/tasks) use the selected socket.
     export DOCKER_HOST="${docker_host}"
     log "DOCKER_HOST set to ${DOCKER_HOST}"
-
-    # Wait for Docker socket (max 30 seconds)
-    for attempt in $(seq 1 30); do
-        if [ -S "${docker_socket}" ]; then
-            log "Docker daemon is ready"
-            break
-        fi
-        [ "$attempt" -lt 30 ] && sleep 1
-    done
-
-    if [ ! -S "${docker_socket}" ]; then
-        log "Warning: Docker daemon is unavailable on ${docker_socket}"
-        return
-    fi
-
-    # Fix socket permissions for vscode user
-    sudo chown root:docker "${docker_socket}" 2>/dev/null || true
-    sudo chmod 660 "${docker_socket}" 2>/dev/null || true
-
-    # Make Docker available at the conventional path for all new exec sessions
-    # (VS Code terminals do not inherit runtime exports from this entrypoint).
-    if [ "${docker_socket}" != "/var/run/docker.sock" ] && [ -S "${docker_socket}" ]; then
-        sudo mkdir -p /var/run
-        if [ "${link_default}" = "true" ] && [ ! -S /var/run/docker.sock ]; then
-            sudo ln -sf "${docker_socket}" /var/run/docker.sock
-            sudo chmod 755 /var/run 2>/dev/null || true
-            log "Linked /var/run/docker.sock -> ${docker_socket}"
-        else
-            sudo mkdir -p /etc/profile.d
-            echo "export DOCKER_HOST=${docker_host}" | sudo tee /etc/profile.d/ror-docker-host.sh > /dev/null || true
-            sudo chmod 644 /etc/profile.d/ror-docker-host.sh 2>/dev/null || true
-            log "Persisted DOCKER_HOST for new shells (${docker_host})"
-        fi
-    fi
-
 }
 
 # GitHub Codespaces may or may not provide Docker - check first, then fallback.

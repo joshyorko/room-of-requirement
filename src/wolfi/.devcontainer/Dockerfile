@@ -63,14 +63,14 @@ RUN apk add --no-cache \
     wget \
     zsh \
     # Official Wolfi Docker-in-Docker packages (from Chainguard)
-    # docker-dind-compat creates /usr/local/bin/dind symlink so that
-    # dockerd-entrypoint.sh invokes the dind script with cgroup v2 nesting
-    # setup (required for k3d/kind to get cpu/memory controller delegation)
+    # docker-dind-compat provides dind support used by dockerd-entrypoint.sh
+    # for cgroup v2 nesting setup (required for k3d/kind delegation).
     docker \
     docker-compose \
     docker-dind \
     docker-dind-compat \
     dockerd-oci-entrypoint \
+    fuse-overlayfs \
     # Playwright and browser dependencies (headless Chromium support)
     # Playwright installed via Wolfi package for proper system integration
     # Based on wolfi-dev/os chromium.yaml runtime dependencies
@@ -302,6 +302,10 @@ RUN chmod +x /usr/local/bin/mise-seed-cache.sh
 # Copy Docker permission fix script for Codespaces
 COPY --chown=vscode:vscode src/common/scripts/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
 RUN chmod +x /usr/local/bin/fix-docker-permissions.sh
+
+# Copy shared Docker daemon starter with DevPod overlay-backed storage detection
+COPY --chown=vscode:vscode src/common/scripts/ror-docker-start.sh /usr/local/bin/ror-docker-start.sh
+RUN chmod +x /usr/local/bin/ror-docker-start.sh
 
 # Copy cgroup v2 memory controller delegation scripts (for k3d/k3s in Codespaces)
 COPY src/common/scripts/enable-cgroup-memory.sh /usr/local/bin/enable-cgroup-memory.sh

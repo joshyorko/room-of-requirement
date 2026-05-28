@@ -357,6 +357,27 @@ The container automatically fixes Docker socket permissions for Codespaces on st
 
 **Why this happens**: GitHub Codespaces mounts the Docker socket from the host with different group ownership than the container expects. The fix script detects Codespaces and adjusts permissions accordingly.
 
+### Docker Image Pull Failures in DevPod
+
+DevPod and Kubernetes-backed workspaces can place `/var/lib/docker` on an outer
+overlay mount. In that environment, Docker's default overlay-backed storage can
+fail while extracting image layers that contain overlay whiteouts.
+
+Room of Requirement starts the inner daemon with `ROR_DOCKER_STORAGE_DRIVER=auto`
+by default. Auto mode keeps Docker defaults on normal data roots, uses
+`fuse-overlayfs` on overlay-backed data roots when `/dev/fuse` is available, and
+falls back to `vfs` when FUSE is not available.
+
+To force a driver for one workspace, set this in your devcontainer environment:
+
+```json
+{
+  "remoteEnv": {
+    "ROR_DOCKER_STORAGE_DRIVER": "vfs"
+  }
+}
+```
+
 ---
 
 ## 📄 License
