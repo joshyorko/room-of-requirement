@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.17.1](https://github.com/joshyorko/room-of-requirement/compare/v1.17.0...v1.17.1) (2026-05-29)
+
+
+### 🐛 Bug Fixes
+
+* harden DinD storage for DevPod ([e8c8c23](https://github.com/joshyorko/room-of-requirement/commit/e8c8c23991180b413f957e4037792731267ae66a))
+* update RCC version to v18.17.4 in maintenance workflow ([3d7dd8d](https://github.com/joshyorko/room-of-requirement/commit/3d7dd8d5bcfc30345fa88c79fdf9e64c5c4ba88c))
+
 ## [1.17.0](https://github.com/joshyorko/room-of-requirement/compare/v1.16.0...v1.17.0) (2026-05-23)
 
 
