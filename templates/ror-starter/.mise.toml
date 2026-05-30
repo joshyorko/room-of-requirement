@@ -2,7 +2,7 @@
 # T061: Create example .mise.toml for ror-starter Template
 
 [tools]
-node = "20"
+node = "24"
 python = "3.14.5"
 go = "1.26.3"
 
