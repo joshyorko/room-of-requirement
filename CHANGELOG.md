@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.3](https://github.com/joshyorko/room-of-requirement/compare/v1.17.2...v1.17.3) (2026-05-30)
+
+
+### 🐛 Bug Fixes
+
+* harden devcontainer CVE scanning ([5b49ede](https://github.com/joshyorko/room-of-requirement/commit/5b49edec51478d244c4741e19d310814989b77f5))
+
 ## [1.17.2](https://github.com/joshyorko/room-of-requirement/compare/v1.17.1...v1.17.2) (2026-05-30)
 
 
