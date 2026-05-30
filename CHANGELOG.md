@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.17.2](https://github.com/joshyorko/room-of-requirement/compare/v1.17.1...v1.17.2) (2026-05-30)
+
+
+### 🐛 Bug Fixes
+
+* narrow PatchRaptor custom managers ([a0cfdb7](https://github.com/joshyorko/room-of-requirement/commit/a0cfdb7705d162e77cf97f04e68d1cc7d9dc32dd))
+
 ## [1.17.1](https://github.com/joshyorko/room-of-requirement/compare/v1.17.0...v1.17.1) (2026-05-29)
 
 
