@@ -7,7 +7,7 @@ Automated upkeep for the Room of Requirement repository leveraging `rcc` and Rob
 This robot keeps the repository fresh by automating version updates for:
 
 1. **GitHub Actions workflows** - Updates `uses:` references based on allowlisted actions
-2. **External download pins** - Updates pinned versions and digests from sources like PyPI and Docker Hub
+2. **External download pins** - Updates pinned versions and digests from sources like PyPI, GitHub releases, and Docker Hub
 3. **Pre-commit hook repos** - Refreshes configured hook revisions in `.pre-commit-config.yaml`
 4. **Homebrew tracking** - Logs formula versions (informational only)
 5. **Curated Brewfile validation** - Catches renamed formulas or missing taps before image builds or on-demand installs break
@@ -15,7 +15,9 @@ This robot keeps the repository fresh by automating version updates for:
 ### What This Robot Does NOT Update
 
 **Homebrew packages are NOT auto-updated.** With our Homebrew-first architecture:
-- Shell essentials plus `bbrew` are baked into the image
+- Shell essentials are baked into the image; `bbrew` installs on demand via `ujust bbrew`
+- Docker Compose is baked from the pinned upstream Docker Compose release, not from the
+  Docker-in-Docker feature's moving `v2` shortcut
 - On-demand tools are installed via curated Brewfiles in `.devcontainer/brew/`
 - Homebrew handles versioning naturally via `brew update && brew upgrade`
 - The `homebrew.json` allowlist is informational only - it logs versions but doesn't modify files
@@ -90,6 +92,7 @@ A summary of changes is written to `automation/maintenance-robot/output/maintena
 
 Targets files for version and digest updates:
 - **PyPI packages**: Fetch latest version for Python dependencies
+- **GitHub releases**: Fetch latest stable release tags such as Docker Compose
 - **Docker Hub images**: Fetch latest matching tag and refresh pinned digests
 - Uses regex patterns with named groups: `(?P<version>...)`
 
@@ -132,6 +135,10 @@ declaring a maintenance run healthy. This is intentionally validation-only:
 - It does not auto-upgrade formulas
 - It does catch renamed formulas, missing taps, and other resolution errors that would otherwise
   surface later during image builds or on-demand installs
+
+CI installs Homebrew before running the robot and sets `REQUIRE_BREWFILE_VALIDATION=1`, so missing
+`brew` is a hard failure there. Local runs without Homebrew still skip this validation unless that
+environment variable is set.
 
 ## CI Integration
 

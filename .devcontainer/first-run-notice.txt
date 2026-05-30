@@ -7,7 +7,7 @@ WELCOME TO THE ROOM OF REQUIREMENT
 
 Ready now:
   Wolfi OS • Homebrew • mise • Docker
-  zsh • starship • zoxide • bbrew
+  zsh • starship • zoxide
 
 Need more tools?
   The ror bundle is opt-in instead of installed during post-create.

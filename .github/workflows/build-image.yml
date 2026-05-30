@@ -426,15 +426,40 @@ jobs:
           image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
           fail-build: ${{ inputs.fail_on_critical != false }}
           severity-cutoff: critical
+          only-fixed: true
           # Note: .grype.yaml is automatically read from the working directory
           output-format: sarif
         continue-on-error: true
 
-      - name: Upload SARIF report
-        if: always()
+      - name: Filter SARIF report for critical findings
+        id: sarif
+        if: always() && steps.grype.outputs.sarif != ''
+        run: |
+          SARIF_FILE="${{ steps.grype.outputs.sarif }}"
+          FILTERED_SARIF="${RUNNER_TEMP}/grype-critical.sarif"
+
+          jq '
+            .runs |= map(
+              [
+                .results[]?
+                | select((.properties.severity // "" | ascii_downcase) == "critical")
+              ] as $critical_results
+              | .results = $critical_results
+              | .tool.driver.rules = [
+                .tool.driver.rules[]?
+                | . as $rule
+                | select(any($critical_results[]?; .ruleId == $rule.id))
+              ]
+            )
+          ' "${SARIF_FILE}" > "${FILTERED_SARIF}"
+
+          echo "sarif_file=${FILTERED_SARIF}" >> "$GITHUB_OUTPUT"
+
+      - name: Upload critical SARIF report
+        if: always() && steps.sarif.outputs.sarif_file != ''
         uses: github/codeql-action/upload-sarif@7211b7c8077ea37d8641b6271f6a365a22a5fbfa # v4.36.0
         with:
-          sarif_file: ${{ steps.grype.outputs.sarif }}
+          sarif_file: ${{ steps.sarif.outputs.sarif_file }}
 
       - name: Parse scan results
         id: scan

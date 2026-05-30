@@ -11,6 +11,7 @@ ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:441d6709305552a
 # Official Docker CLI image used to override Wolfi's CLI binary while Wolfi's
 # docker-cli package is still built with a vulnerable Go stdlib revision.
 ARG DOCKER_CLI_IMAGE=docker:29.5.2-cli@sha256:9ba8e32bfc35a2c7ae2feb1e3241b2778ae21dee80f4dcd31d04e1cfdea86ea2
+ARG DOCKER_COMPOSE_VERSION=v5.1.4
 
 # Upstream Docker CLI binary pinned to the newest published Docker CLI image.
 # Grype ignores the remaining stdlib CVE in /usr/bin/docker until Docker ships
@@ -21,6 +22,9 @@ FROM ${DOCKER_CLI_IMAGE} AS docker-cli-upstream
 # STAGE 1: Base Image with System Packages
 # ============================================================================
 FROM ${WOLFI_BASE_IMAGE} AS base
+
+ARG TARGETARCH
+ARG DOCKER_COMPOSE_VERSION
 
 LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement"
@@ -34,6 +38,8 @@ ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
     TZ=UTC \
     DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true
+
+COPY src/common/scripts/install-docker-compose.sh /usr/local/bin/install-docker-compose.sh
 
 # Install system packages (minimal set for devcontainer features to work)
 # Security: Use fixed versions where available, keep minimal footprint
@@ -66,7 +72,6 @@ RUN apk add --no-cache \
     # dockerd-entrypoint.sh invokes the dind script with cgroup v2 nesting
     # setup (required for k3d/kind to get cpu/memory controller delegation)
     docker \
-    docker-compose \
     docker-dind \
     docker-dind-compat \
     dockerd-oci-entrypoint \
@@ -102,8 +107,10 @@ RUN apk add --no-cache \
     pango \
     playwright \
     xdg-utils && \
-    # Enable docker compose plugin (V2 syntax) by symlinking to plugin directory
-    ln -sf /usr/bin/docker-compose /usr/libexec/docker/cli-plugins/docker-compose && \
+    chmod +x /usr/local/bin/install-docker-compose.sh && \
+    DOCKER_COMPOSE_VERSION="${DOCKER_COMPOSE_VERSION}" \
+    TARGETARCH="${TARGETARCH}" \
+    /usr/local/bin/install-docker-compose.sh && \
     # Verify critical security tools
     curl --version && \
     git --version
@@ -199,8 +206,8 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
 # Install the always-on shell foundation directly in the image.
-# Heavier curated tool bundles stay opt-in through ujust/bbrew recipes.
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap valkyrie00/bbrew && /home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide valkyrie00/bbrew/bbrew"
+# Heavier curated tool bundles, including bbrew, stay opt-in through ujust recipes.
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide"
 
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`

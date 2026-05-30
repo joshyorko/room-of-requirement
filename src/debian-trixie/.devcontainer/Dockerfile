@@ -2,6 +2,9 @@
 
 FROM mcr.microsoft.com/devcontainers/base:trixie@sha256:a07f1804d8e665ff64bf6adcd60f4d9b9223dc52ee18a1f1a7a8e1ee1a134d34
 
+ARG TARGETARCH
+ARG DOCKER_COMPOSE_VERSION=v5.1.4
+
 LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement Debian Trixie"
 LABEL org.opencontainers.image.description="Debian baseline Room of Requirement DevContainer variant"
@@ -21,23 +24,17 @@ ENV LANG=C.UTF-8 \
 
 USER root
 
-# Debian Trixie splits the Docker CLI and daemon packages; Compose v2 is
-# packaged as docker-compose in Debian.
 RUN apt-get update && \
     export DEBIAN_FRONTEND=noninteractive && \
+    apt-get upgrade -y --no-install-recommends && \
     apt-get install -y --no-install-recommends \
         bash \
         build-essential \
         ca-certificates \
         curl \
-        docker-buildx \
-        docker-cli \
-        docker-compose \
-        docker.io \
         file \
         fuse-overlayfs \
         git \
-        git-lfs \
         gnupg \
         just \
         locales \
@@ -50,6 +47,13 @@ RUN apt-get update && \
         zsh && \
     locale-gen C.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
+
+COPY src/common/scripts/install-docker-compose.sh /usr/local/bin/install-docker-compose.sh
+
+RUN chmod +x /usr/local/bin/install-docker-compose.sh && \
+    DOCKER_COMPOSE_VERSION="${DOCKER_COMPOSE_VERSION}" \
+    TARGETARCH="${TARGETARCH}" \
+    /usr/local/bin/install-docker-compose.sh
 
 RUN groupadd -f docker && \
     usermod -aG docker vscode
@@ -65,7 +69,7 @@ RUN groupadd -f -g 2000 linuxbrew && \
     su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew update --force" && \
     git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
 
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap joshyorko/tools && /home/linuxbrew/.linuxbrew/bin/brew tap valkyrie00/bbrew && /home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide valkyrie00/bbrew/bbrew" && \
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide" && \
     mkdir -p \
         /home/linuxbrew/.linuxbrew/var/homebrew/linked \
         /home/linuxbrew/.linuxbrew/var/homebrew/locks \

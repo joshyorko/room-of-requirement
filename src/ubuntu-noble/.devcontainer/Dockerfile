@@ -2,6 +2,9 @@
 
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04@sha256:d94c97dd9cacf183d0a6fd12a8e87b526e9e928307674ae9c94139139c0c6eae
 
+ARG TARGETARCH
+ARG DOCKER_COMPOSE_VERSION=v5.1.4
+
 LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement Ubuntu Noble"
 LABEL org.opencontainers.image.description="Codespaces-focused Room of Requirement DevContainer variant"
@@ -23,18 +26,15 @@ USER root
 
 RUN apt-get update && \
     export DEBIAN_FRONTEND=noninteractive && \
+    apt-get upgrade -y --no-install-recommends && \
     apt-get install -y --no-install-recommends \
         bash \
         build-essential \
         ca-certificates \
         curl \
-        docker-buildx \
-        docker-compose-v2 \
-        docker.io \
         file \
         fuse-overlayfs \
         git \
-        git-lfs \
         gnupg \
         just \
         locales \
@@ -47,6 +47,13 @@ RUN apt-get update && \
         zsh && \
     locale-gen C.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
+
+COPY src/common/scripts/install-docker-compose.sh /usr/local/bin/install-docker-compose.sh
+
+RUN chmod +x /usr/local/bin/install-docker-compose.sh && \
+    DOCKER_COMPOSE_VERSION="${DOCKER_COMPOSE_VERSION}" \
+    TARGETARCH="${TARGETARCH}" \
+    /usr/local/bin/install-docker-compose.sh
 
 RUN groupadd -f docker && \
     usermod -aG docker vscode
@@ -62,7 +69,7 @@ RUN groupadd -f -g 2000 linuxbrew && \
     su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew update --force" && \
     git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
 
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew tap joshyorko/tools && /home/linuxbrew/.linuxbrew/bin/brew tap valkyrie00/bbrew && /home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide valkyrie00/bbrew/bbrew" && \
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide" && \
     mkdir -p \
         /home/linuxbrew/.linuxbrew/var/homebrew/linked \
         /home/linuxbrew/.linuxbrew/var/homebrew/locks \

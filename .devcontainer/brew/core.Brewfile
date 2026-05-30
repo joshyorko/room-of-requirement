@@ -1,5 +1,6 @@
 # Core Shell Foundation Tools
-# Baked into the image; kept here so bbrew can still surface the full catalog
+# Shell foundation tools are baked into the image. bbrew stays here so it can be
+# installed on demand by `ujust bbrew` or `ujust install-bbrew`.
 
 # Shell and prompt
 brew "starship"            # Cross-shell prompt

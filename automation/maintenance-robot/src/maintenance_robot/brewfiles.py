@@ -1,6 +1,7 @@
 from __future__ import annotations
 
 import logging
+import os
 import re
 import shutil
 import subprocess
@@ -26,8 +27,11 @@ class BrewfileValidationIssue:
 class BrewfileValidator:
     """Validate curated Brewfiles without installing their full contents."""
 
-    def __init__(self, brew_executable: str | None = None) -> None:
+    def __init__(self, brew_executable: str | None = None, require_brew: bool | None = None) -> None:
         self.brew_executable = brew_executable or shutil.which("brew")
+        self.require_brew = require_brew if require_brew is not None else _env_flag("CI") or _env_flag(
+            "REQUIRE_BREWFILE_VALIDATION"
+        )
 
     def validate_directory(self, brew_dir: Path) -> List[BrewfileValidationIssue]:
         """Validate all Brewfiles in a directory.
@@ -37,7 +41,19 @@ class BrewfileValidator:
         on-demand installs hit them.
         """
         if not self.brew_executable:
-            logger.warning("brew not found in PATH; skipping curated Brewfile validation")
+            detail = "brew not found in PATH; cannot validate curated Brewfiles"
+            if self.require_brew:
+                logger.error(detail)
+                return [
+                    BrewfileValidationIssue(
+                        brewfile=brew_dir,
+                        entry_type="tool",
+                        name="brew",
+                        detail=detail,
+                    )
+                ]
+
+            logger.warning("%s; skipping validation outside CI", detail)
             return []
 
         brewfiles = sorted(brew_dir.glob("*.Brewfile"))
@@ -138,3 +154,7 @@ class BrewfileValidator:
             name=name,
             detail=detail,
         )
+
+
+def _env_flag(name: str) -> bool:
+    return os.getenv(name, "").lower() in {"1", "true", "yes", "on"}

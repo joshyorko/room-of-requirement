@@ -269,11 +269,11 @@ ignore:
   - vulnerability: CVE-2025-11468
 
   # ============================================================================
-  # Go stdlib CVEs in first-class CLI binaries
-  # Docker 29.3.0 and bbrew 2.2.1 are the latest upstream artifacts available on
-  # 2026-03-18, but they are still built with vulnerable Go 1.25.x toolchains.
-  # Docker remains required for DinD; bbrew is intentionally baked into the image
-  # as the one exception to the otherwise on-demand Homebrew flow.
+  # Go stdlib CVEs in first-class CLI binaries.
+  # Docker remains required for DinD, but distro Docker packages and bbrew are
+  # no longer baked into the Ubuntu/Debian variants. These ignores cover
+  # accepted residual findings in first-class toolchain binaries until upstream
+  # rebuilds are available.
   # ============================================================================
   - vulnerability: CVE-2026-25679
     package:
