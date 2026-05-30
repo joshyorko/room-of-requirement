@@ -4,7 +4,7 @@
 [tools]
 node = "20"
 python = "3.12"
-go = "1.22"
+go = "1.26.3"
 
 [settings]
 auto_install = true
