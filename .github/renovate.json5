@@ -1,0 +1,65 @@
+{
+  "$schema": "https://docs.renovatebot.com/renovate-schema.json",
+  "extends": [
+    "github>joshyorko/renovate-config:org-inherited-config"
+  ],
+
+  "pre-commit": {
+    "enabled": true
+  },
+
+  "customManagers": [
+    {
+      "customType": "regex",
+      "description": "Track conda-forge package pins in the RCC robot environment.",
+      "managerFilePatterns": [
+        "/^automation/maintenance-robot/conda\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "\\s+-\\s+(?<depName>python|uv|nodejs)=(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "packageNameTemplate": "conda-forge/{{{depName}}}",
+      "datasourceTemplate": "conda",
+      "versioningTemplate": "conda"
+    },
+    {
+      "customType": "regex",
+      "description": "Track pip package pins in the RCC robot environment.",
+      "managerFilePatterns": [
+        "/^automation/maintenance-robot/conda\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "\\s+-\\s+(?<packageName>[A-Za-z0-9_.-]+)==(?<currentValue>\\d+\\.\\d+\\.\\d+)"
+      ],
+      "datasourceTemplate": "pypi",
+      "versioningTemplate": "pep440"
+    },
+    {
+      "customType": "regex",
+      "description": "Track the RCC version used by the maintenance workflow.",
+      "managerFilePatterns": [
+        "/^\\.github/workflows/rcc-maintenance\\.ya?ml$/"
+      ],
+      "matchStrings": [
+        "RCC_VERSION:\\s*(?<currentValue>v?\\d+\\.\\d+\\.\\d+)",
+        "rcc/releases/download/(?<currentValue>v?\\d+\\.\\d+\\.\\d+)/"
+      ],
+      "depNameTemplate": "joshyorko/rcc",
+      "datasourceTemplate": "github-releases",
+      "versioningTemplate": "semver",
+      "extractVersionTemplate": "^v?(?<version>.*)$"
+    }
+  ],
+
+  "packageRules": [
+    {
+      "groupName": "RCC maintenance robot Python packages",
+      "matchManagers": [
+        "custom.regex"
+      ],
+      "matchFileNames": [
+        "automation/maintenance-robot/conda.yaml"
+      ]
+    }
+  ]
+}
