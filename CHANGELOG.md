@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.17.4](https://github.com/joshyorko/room-of-requirement/compare/v1.17.3...v1.17.4) (2026-06-05)
+
+
+### 🐛 Bug Fixes
+
+* restore Docker in published devcontainers ([2e755fa](https://github.com/joshyorko/room-of-requirement/commit/2e755fab8409cd1a992fb1dff99998d1d723d47c))
+* stabilize Docker contract verification ([286ed90](https://github.com/joshyorko/room-of-requirement/commit/286ed90934cbdd7e37bed1016596ed5749515cfa))
+
 ## [1.17.3](https://github.com/joshyorko/room-of-requirement/compare/v1.17.2...v1.17.3) (2026-05-30)
 
 
