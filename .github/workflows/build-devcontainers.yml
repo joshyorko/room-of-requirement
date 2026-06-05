@@ -146,7 +146,13 @@ jobs:
         run: |
           set -euo pipefail
 
-          docker run --rm --privileged "${BUILT_IMAGE}" bash -lc '
+          container="$(docker run -d --privileged "${BUILT_IMAGE}" sleep infinity)"
+          cleanup() {
+            docker rm -f "${container}" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
+          docker exec "${container}" bash --noprofile --norc -c '
             set -euo pipefail
             command -v docker
             command -v dockerd
