@@ -10,9 +10,7 @@
     "SHELL": "/bin/zsh",
     "HOMEBREW_NO_ANALYTICS": "1",
     "HOMEBREW_NO_AUTO_UPDATE": "1",
-    "DOCKER_BUILDKIT": "1",
-    "ROR_DOCKER_BACKEND": "auto",
-    "ROR_DOCKER_STORAGE_DRIVER": "auto"
+    "DOCKER_BUILDKIT": "1"
   },
   "mounts": [
     "source=ror-homebrew-cache,target=/home/linuxbrew/.cache/Homebrew,type=volume",
@@ -24,7 +22,7 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:3": {
       "version": "latest",
-      "moby": true,
+      "moby": false,
       "dockerDashComposeVersion": "none"
     }
   },
@@ -34,7 +32,6 @@
     "--privileged"
   ],
   "postCreateCommand": "cp /usr/share/ror/config/.zshrc ~/.zshrc 2>/dev/null || true; cp /usr/share/ror/config/.bashrc ~/.bashrc 2>/dev/null || true; mkdir -p ~/.config/mise && cp /usr/share/ror/config/starship.toml ~/.config/starship.toml 2>/dev/null || true; cp /usr/share/ror/config/mise.toml ~/.config/mise/config.toml 2>/dev/null || true; bash /usr/local/bin/devcontainer-post-create.sh || true",
-  "postStartCommand": "ujust docker-start || true",
   "customizations": {
     "vscode": {
       "extensions": [

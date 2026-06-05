@@ -59,10 +59,10 @@ room-of-requirement/
 │   ├── debian-trixie/.devcontainer # Microsoft Debian baseline
 │   ├── wolfi/.devcontainer/        # Chainguard secure/minimal variant
 │   └── common/                     # Shared Brewfiles, config, scripts, ujust
-└── docker-bake.hcl                 # Variant targets and tag aliases
+└── docker-bake.hcl                 # Dockerfile-only inspection targets
 ```
 
-All variants share the same Homebrew-first workflow. Base images provide OS compatibility, Homebrew provides CLI tools, mise provides language runtimes, `ujust` provides user-facing commands, and Dev Container Features are reserved for platform plumbing such as Docker-in-Docker.
+All variants share the same Homebrew-first workflow. Base images provide OS compatibility, Homebrew provides CLI tools, mise provides language runtimes, `ujust` provides user-facing commands, and Dev Container Features provide platform plumbing such as Docker-in-Docker.
 
 ---
 
@@ -110,13 +110,13 @@ ujust brew-download-ror # Download the RoR Brewfile artifacts without installing
 
 ## 🏭 Building Variants
 
-Inspect the factory build plan:
+Inspect the Dockerfile-only build plan:
 
 ```bash
 docker buildx bake --print
 ```
 
-Build a single variant locally:
+Build a raw Dockerfile layer for debugging:
 
 ```bash
 docker build -f src/ubuntu-noble/.devcontainer/Dockerfile .
@@ -124,11 +124,15 @@ docker build -f src/debian-trixie/.devcontainer/Dockerfile .
 docker build -f src/wolfi/.devcontainer/Dockerfile .
 ```
 
-Build with Dev Container feature processing:
+Build a runnable image with Dev Container feature processing:
 
 ```bash
 devcontainer build --workspace-folder . --config src/ubuntu-noble/.devcontainer/devcontainer.json
 ```
+
+Published GHCR images are built with `devcontainer build`, not raw `docker build`
+or `docker buildx bake`, so Docker-in-Docker and other Dev Container Features are
+present in image consumers such as Codespaces and DevPod.
 
 ---
 
@@ -251,7 +255,7 @@ room-of-requirement/
 │   ├── ubuntu-noble/        # Default Microsoft Ubuntu variant
 │   ├── debian-trixie/       # Microsoft Debian baseline variant
 │   └── wolfi/               # Chainguard secure/minimal variant
-├── docker-bake.hcl          # Variant build targets and tag aliases
+├── docker-bake.hcl          # Dockerfile-only inspection targets
 ├── templates/               # Project starter templates
 ├── automation/              # Maintenance automation
 └── specs/                   # Architecture specifications
@@ -341,42 +345,16 @@ core:node@lts: failed create_dir_all: ~/.local/share/mise/installs/node/24.13.0:
 
 **Why this happens**: GitHub Codespaces mounts named volumes with root ownership by default. The entrypoint script detects Codespaces and automatically fixes permissions for the mise cache directory during container initialization, ensuring mise commands work properly.
 
-### Docker Permission Issues in Codespaces
+### Docker in DevPod
 
-If you encounter "permission denied" errors when running Docker commands without `sudo` in GitHub Codespaces:
-
-```bash
-# Automatic fix (runs on container start/attach)
-bash /usr/local/bin/fix-docker-permissions.sh
-
-# Or restart your shell with the docker group
-newgrp docker
-```
-
-The container automatically fixes Docker socket permissions for Codespaces on startup. If issues persist, the fix script can be run manually.
-
-**Why this happens**: GitHub Codespaces mounts the Docker socket from the host with different group ownership than the container expects. The fix script detects Codespaces and adjusts permissions accordingly.
-
-### Docker Image Pull Failures in DevPod
-
-DevPod and Kubernetes-backed workspaces can place `/var/lib/docker` on an outer
-overlay mount. In that environment, Docker's default overlay-backed storage can
-fail while extracting image layers that contain overlay whiteouts.
-
-Room of Requirement starts the inner daemon with `ROR_DOCKER_STORAGE_DRIVER=auto`
-by default. Auto mode keeps Docker defaults on normal data roots, uses
-`fuse-overlayfs` on overlay-backed data roots when `/dev/fuse` is available, and
-falls back to `vfs` when FUSE is not available.
-
-To force a driver for one workspace, set this in your devcontainer environment:
-
-```json
-{
-  "remoteEnv": {
-    "ROR_DOCKER_STORAGE_DRIVER": "vfs"
-  }
-}
-```
+The published Ubuntu and Debian streams use the official Docker-in-Docker Dev
+Container Feature. The Wolfi stream uses Docker packages baked into the image.
+All published streams are expected to have `docker` on `PATH` and a daemon
+started by the container entrypoint. The image also ships
+`/etc/docker/daemon.json` with `fuse-overlayfs` as the storage driver so nested
+container runs work under project-container hosts such as DevPod and
+Codespaces. `docker info` and `docker run --rm hello-world` should work without
+a manual `ujust` repair step.
 
 ---
 

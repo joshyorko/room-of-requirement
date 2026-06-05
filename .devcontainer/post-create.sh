@@ -178,8 +178,5 @@ log "  • Re-run 'ujust brew-install-all' if you want to hydrate every Brewfile
 log "  • Run 'ujust' to see all available commands"
 log "  • Run 'mise --version' to verify tool management"
 log "  • Run 'docker info' to check Docker status"
-log ""
-log "Note: If Docker requires sudo, try 'bash /usr/local/bin/fix-docker-permissions.sh'"
-log "      or restart your shell with 'newgrp docker'"
 
 exit 0

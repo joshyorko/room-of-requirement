@@ -30,7 +30,7 @@ LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement"
 LABEL org.opencontainers.image.description="Modular DevContainer with Wolfi OS - tools via features"
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
-LABEL devcontainer.metadata='[{"remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged"],"remoteEnv":{"SHELL":"/bin/zsh","DOCKER_BUILDKIT":"1","ROR_DOCKER_BACKEND":"auto","DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL":"true"},"postStartCommand":"ujust docker-start || true"}]'
+LABEL devcontainer.metadata='[{"remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged"],"remoteEnv":{"SHELL":"/bin/zsh","DOCKER_BUILDKIT":"1","DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL":"true"}}]'
 
 # UTF-8 locale and timezone
 # DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL prevents VS Code from trying to install gcompat
@@ -284,7 +284,7 @@ RUN mkdir -p /usr/local/etc/vscode-dev-containers
 COPY src/common/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
 
 # Copy shell configuration (backup to /usr/share/ror/config/ survives home volume mounts)
-RUN mkdir -p /usr/share/ror/config
+RUN mkdir -p /usr/share/ror/config /etc/docker
 COPY --chown=vscode:vscode src/common/config/.zshrc /usr/share/ror/config/.zshrc
 COPY --chown=vscode:vscode src/common/config/.bashrc /usr/share/ror/config/.bashrc
 COPY --chown=vscode:vscode src/common/config/.zshrc /home/vscode/.zshrc
@@ -297,6 +297,7 @@ COPY --chown=vscode:vscode src/common/config/starship.toml /home/vscode/.config/
 # Copy mise configuration (global config for default tool versions)
 COPY --chown=vscode:vscode src/common/config/mise.toml /usr/share/ror/config/mise.toml
 COPY --chown=vscode:vscode src/common/config/mise.toml /home/vscode/.config/mise/config.toml
+COPY src/common/config/docker-daemon.json /etc/docker/daemon.json
 
 # Copy post-create script for pre-built image usage
 COPY --chown=vscode:vscode src/common/post-create.sh /usr/local/bin/devcontainer-post-create.sh
@@ -306,18 +307,9 @@ RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 COPY --chown=vscode:vscode src/common/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
 RUN chmod +x /usr/local/bin/mise-seed-cache.sh
 
-# Copy Docker permission fix script for Codespaces
-COPY --chown=vscode:vscode src/common/scripts/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
-RUN chmod +x /usr/local/bin/fix-docker-permissions.sh
-
 # Copy shared Docker daemon starter with DevPod overlay-backed storage detection
 COPY --chown=vscode:vscode src/common/scripts/ror-docker-start.sh /usr/local/bin/ror-docker-start.sh
 RUN chmod +x /usr/local/bin/ror-docker-start.sh
-
-# Copy cgroup v2 memory controller delegation scripts (for k3d/k3s in Codespaces)
-COPY src/common/scripts/enable-cgroup-memory.sh /usr/local/bin/enable-cgroup-memory.sh
-COPY src/common/scripts/fix-cgroup-delegation.sh /usr/local/bin/fix-cgroup-delegation.sh
-RUN chmod +x /usr/local/bin/enable-cgroup-memory.sh /usr/local/bin/fix-cgroup-delegation.sh
 
 # Copy Homebrew helper scripts
 COPY --chown=vscode:vscode src/common/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh

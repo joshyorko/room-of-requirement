@@ -75,6 +75,7 @@ RUN apk add --no-cache \
     docker-dind \
     docker-dind-compat \
     dockerd-oci-entrypoint \
+    fuse-overlayfs \
     # Playwright and browser dependencies (headless Chromium support)
     # Playwright installed via Wolfi package for proper system integration
     # Based on wolfi-dev/os chromium.yaml runtime dependencies
@@ -281,7 +282,7 @@ RUN mkdir -p /usr/local/etc/vscode-dev-containers
 COPY .devcontainer/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
 
 # Copy shell configuration (backup to /usr/share/ror/config/ survives home volume mounts)
-RUN mkdir -p /usr/share/ror/config
+RUN mkdir -p /usr/share/ror/config /etc/docker
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /usr/share/ror/config/.zshrc
 COPY --chown=vscode:vscode .devcontainer/config/.bashrc /usr/share/ror/config/.bashrc
 COPY --chown=vscode:vscode .devcontainer/config/.zshrc /home/vscode/.zshrc
@@ -294,6 +295,7 @@ COPY --chown=vscode:vscode .devcontainer/config/starship.toml /home/vscode/.conf
 # Copy mise configuration (global config for default tool versions)
 COPY --chown=vscode:vscode .devcontainer/config/mise.toml /usr/share/ror/config/mise.toml
 COPY --chown=vscode:vscode .devcontainer/config/mise.toml /home/vscode/.config/mise/config.toml
+COPY .devcontainer/config/docker-daemon.json /etc/docker/daemon.json
 
 # Copy post-create script for pre-built image usage
 COPY --chown=vscode:vscode .devcontainer/post-create.sh /usr/local/bin/devcontainer-post-create.sh
@@ -302,15 +304,6 @@ RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 # Copy mise cache seeding script (instant startup for runtimes)
 COPY --chown=vscode:vscode .devcontainer/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
 RUN chmod +x /usr/local/bin/mise-seed-cache.sh
-
-# Copy Docker permission fix script for Codespaces
-COPY --chown=vscode:vscode .devcontainer/scripts/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
-RUN chmod +x /usr/local/bin/fix-docker-permissions.sh
-
-# Copy cgroup v2 memory controller delegation scripts (for k3d/k3s in Codespaces)
-COPY .devcontainer/scripts/enable-cgroup-memory.sh /usr/local/bin/enable-cgroup-memory.sh
-COPY .devcontainer/scripts/fix-cgroup-delegation.sh /usr/local/bin/fix-cgroup-delegation.sh
-RUN chmod +x /usr/local/bin/enable-cgroup-memory.sh /usr/local/bin/fix-cgroup-delegation.sh
 
 # Copy Homebrew helper scripts
 COPY --chown=vscode:vscode .devcontainer/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh

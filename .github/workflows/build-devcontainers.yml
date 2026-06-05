@@ -6,14 +6,12 @@ on:
     paths:
       - "src/**"
       - ".devcontainer/**"
-      - "docker-bake.hcl"
       - ".github/workflows/build-devcontainers.yml"
   push:
     branches: [main]
     paths:
       - "src/**"
       - ".devcontainer/**"
-      - "docker-bake.hcl"
       - ".github/workflows/build-devcontainers.yml"
   schedule:
     - cron: "0 3 1 * *"
@@ -55,28 +53,49 @@ jobs:
           failure-threshold: error
           no-fail: false
 
-  bake-plan:
-    name: Validate Bake Plan
+  devcontainer-plan:
+    name: Validate Devcontainer Configs
     runs-on: ubuntu-latest
     needs: lint
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - ubuntu-noble
+          - debian-trixie
+          - wolfi
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
 
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
 
-      - name: Print default variant bake plan
-        run: docker buildx bake --print
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
 
-      - name: Print Codespaces bake plan
-        run: docker buildx bake --print codespaces
+      - name: Read merged devcontainer configuration
+        run: |
+          devcontainer read-configuration \
+            --workspace-folder . \
+            --config "src/${{ matrix.variant }}/.devcontainer/devcontainer.json" \
+            --include-features-configuration \
+            --include-merged-configuration
 
   publish:
     name: Publish Variant Images
     runs-on: ubuntu-latest
-    needs: bake-plan
+    needs: devcontainer-plan
     if: github.event_name == 'push' || github.event_name == 'schedule' || inputs.push == true
+    strategy:
+      fail-fast: false
+      matrix:
+        variant:
+          - ubuntu-noble
+          - debian-trixie
+          - wolfi
     steps:
       - name: Checkout repository
         uses: actions/checkout@df4cb1c069e1874edd31b4311f1884172cec0e10 # v6.0.3
@@ -87,6 +106,14 @@ jobs:
       - name: Set up Docker Buildx
         uses: docker/setup-buildx-action@d7f5e7f509e45cec5c76c4d5afdd7de93d0b3df5 # v4.1.0
 
+      - name: Set up Node.js
+        uses: actions/setup-node@48b55a011bda9f5d6aeb4c2d9c7362e8dae4041e # v6.4.0
+        with:
+          node-version: "24"
+
+      - name: Install devcontainer CLI
+        run: npm install -g @devcontainers/cli
+
       - name: Log in to Container Registry
         uses: docker/login-action@650006c6eb7dba73a995cc03b0b2d7f5ca915bee # v4.2.0
         with:
@@ -94,14 +121,76 @@ jobs:
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
 
-      - name: Publish default variants
+      - name: Build image with devcontainer CLI
+        id: build
         env:
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-        run: docker buildx bake --push
+          VARIANT: ${{ matrix.variant }}
+        run: |
+          set -euo pipefail
 
-      - name: Publish Codespaces alias
+          image="${REGISTRY}/${IMAGE_NAME}:build-${VARIANT}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
+
+          devcontainer build \
+            --workspace-folder . \
+            --config "src/${VARIANT}/.devcontainer/devcontainer.json" \
+            --image-name "${image}" \
+            --platform linux/amd64
+
+          echo "image=${image}" >> "$GITHUB_OUTPUT"
+
+      - name: Verify Docker contract
+        env:
+          BUILT_IMAGE: ${{ steps.build.outputs.image }}
+        run: |
+          set -euo pipefail
+
+          docker run --rm --privileged "${BUILT_IMAGE}" bash -lc '
+            set -euo pipefail
+            command -v docker
+            command -v dockerd
+            for _ in $(seq 1 30); do
+              if docker info >/dev/null 2>&1; then
+                docker info --format "driver={{.Driver}} root={{.DockerRootDir}}"
+                docker version
+                docker run --rm hello-world
+                exit 0
+              fi
+              sleep 1
+            done
+            docker version || true
+            test -f /tmp/dockerd.log && tail -200 /tmp/dockerd.log || true
+            exit 1
+          '
+
+      - name: Tag and push variant aliases
         env:
           REGISTRY: ${{ env.REGISTRY }}
           IMAGE_NAME: ${{ env.IMAGE_NAME }}
-        run: docker buildx bake --push codespaces
+          VARIANT: ${{ matrix.variant }}
+          BUILT_IMAGE: ${{ steps.build.outputs.image }}
+        run: |
+          set -euo pipefail
+
+          case "${VARIANT}" in
+            ubuntu-noble)
+              tags=(ubuntu-noble ubuntu-noble-dind latest codespaces)
+              ;;
+            debian-trixie)
+              tags=(debian-trixie)
+              ;;
+            wolfi)
+              tags=(wolfi secure)
+              ;;
+            *)
+              echo "::error::Unsupported variant: ${VARIANT}"
+              exit 1
+              ;;
+          esac
+
+          for tag in "${tags[@]}"; do
+            target="${REGISTRY}/${IMAGE_NAME}:${tag}"
+            docker tag "${BUILT_IMAGE}" "${target}"
+            docker push "${target}"
+          done

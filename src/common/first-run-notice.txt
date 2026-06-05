@@ -22,11 +22,10 @@ Need more tools?
   cloud - kubectl, helm, terraform, k3d, kind, k9s
   ror   - gh, uv, sqlite, duckdb, Codex, Claude Code, RCC, Action Server
 
-Kubernetes in Codespaces:
-  $ ujust cgroup-check       # Check k3d/k3s compatibility
-  $ ujust fix-cgroups        # Fix cgroup delegation issues
-  $ ujust k3d-create         # Create k3d cluster (Codespaces-compatible)
-  $ kind create cluster      # Alternative: Kind (better Codespaces support)
+Kubernetes:
+  $ ujust cgroup-check       # Inspect cgroup state
+  $ ujust k3d-create         # Create k3d cluster
+  $ kind create cluster      # Create Kind cluster
 
 Try:
   $ ujust info

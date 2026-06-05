@@ -9,7 +9,7 @@ LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement Debian Trixie"
 LABEL org.opencontainers.image.description="Debian baseline Room of Requirement DevContainer variant"
 LABEL org.opencontainers.image.source="https://github.com/joshyorko/room-of-requirement"
-LABEL devcontainer.metadata='[{"remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged"],"remoteEnv":{"SHELL":"/bin/zsh","DOCKER_BUILDKIT":"1","ROR_DOCKER_BACKEND":"auto"},"postStartCommand":"ujust docker-start || true"}]'
+LABEL devcontainer.metadata='[{"remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged"],"remoteEnv":{"SHELL":"/bin/zsh","DOCKER_BUILDKIT":"1"}}]'
 
 ENV LANG=C.UTF-8 \
     LC_ALL=C.UTF-8 \
@@ -85,6 +85,7 @@ RUN mkdir -p \
         /home/vscode/.cache/mise \
         /home/vscode/.local/share/mise \
         /home/vscode/.config/mise \
+        /etc/docker \
         /usr/local/etc/vscode-dev-containers \
         /usr/share/ror/config \
         /workspaces && \
@@ -100,12 +101,10 @@ COPY --chown=vscode:vscode src/common/config/starship.toml /usr/share/ror/config
 COPY --chown=vscode:vscode src/common/config/starship.toml /home/vscode/.config/starship.toml
 COPY --chown=vscode:vscode src/common/config/mise.toml /usr/share/ror/config/mise.toml
 COPY --chown=vscode:vscode src/common/config/mise.toml /home/vscode/.config/mise/config.toml
+COPY src/common/config/docker-daemon.json /etc/docker/daemon.json
 COPY --chown=vscode:vscode src/common/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 COPY --chown=vscode:vscode src/common/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
-COPY --chown=vscode:vscode src/common/scripts/fix-docker-permissions.sh /usr/local/bin/fix-docker-permissions.sh
 COPY --chown=vscode:vscode src/common/scripts/ror-docker-start.sh /usr/local/bin/ror-docker-start.sh
-COPY src/common/scripts/enable-cgroup-memory.sh /usr/local/bin/enable-cgroup-memory.sh
-COPY src/common/scripts/fix-cgroup-delegation.sh /usr/local/bin/fix-cgroup-delegation.sh
 COPY --chown=vscode:vscode src/common/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh
 COPY src/common/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY --chown=vscode:vscode src/common/brew /usr/share/ror/brew
@@ -114,10 +113,7 @@ COPY --chown=vscode:vscode src/common/justfile /usr/share/ror/justfile
 RUN chmod +x \
         /usr/local/bin/devcontainer-post-create.sh \
         /usr/local/bin/mise-seed-cache.sh \
-        /usr/local/bin/fix-docker-permissions.sh \
         /usr/local/bin/ror-docker-start.sh \
-        /usr/local/bin/enable-cgroup-memory.sh \
-        /usr/local/bin/fix-cgroup-delegation.sh \
         /usr/local/bin/ror-brew-download.sh \
         /usr/local/bin/entrypoint.sh && \
     chmod 644 /usr/share/ror/justfile && \

@@ -66,6 +66,14 @@ has_dev_fuse() {
     [ -c /dev/fuse ]
 }
 
+daemon_config_storage_driver() {
+    local config_path="${ROR_DOCKER_DAEMON_CONFIG:-/etc/docker/daemon.json}"
+
+    [ -f "${config_path}" ] || return 1
+
+    sed -nE 's/^[[:space:]]*"storage-driver"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "${config_path}" | head -n 1
+}
+
 auto_storage_driver() {
     local fstype
     fstype="$(data_root_fstype)"
@@ -86,6 +94,13 @@ auto_storage_driver() {
 
 selected_storage_driver() {
     local requested="${ROR_DOCKER_STORAGE_DRIVER:-auto}"
+    local configured
+
+    configured="$(daemon_config_storage_driver || true)"
+    if [ -n "${configured}" ]; then
+        echo ""
+        return
+    fi
 
     case "${requested}" in
         "" | auto)
@@ -177,6 +192,7 @@ if [ -z "${DRY_RUN}" ]; then
     run_as_root mkdir -p "${DOCKER_DATA_ROOT}" "$(dirname "${DOCKER_SOCKET}")"
 fi
 
+CONFIGURED_STORAGE_DRIVER="$(daemon_config_storage_driver || true)"
 STORAGE_DRIVER="$(selected_storage_driver)"
 DOCKERD_ARGS=(dockerd "--host=${DOCKER_HOST_VALUE}")
 
@@ -211,6 +227,8 @@ prepare_dind_runtime
 
 if [ -n "${STORAGE_DRIVER}" ]; then
     log "Starting Docker daemon on ${DOCKER_SOCKET} with ${DOCKERD_STARTER} and storage driver ${STORAGE_DRIVER}"
+elif [ -n "${CONFIGURED_STORAGE_DRIVER}" ]; then
+    log "Starting Docker daemon on ${DOCKER_SOCKET} with ${DOCKERD_STARTER} and daemon config storage driver ${CONFIGURED_STORAGE_DRIVER}"
 else
     log "Starting Docker daemon on ${DOCKER_SOCKET} with ${DOCKERD_STARTER} and Docker default storage driver"
 fi
