@@ -11,9 +11,6 @@ from typing import List
 
 logger = logging.getLogger(__name__)
 
-# Taps to skip during validation (upstream issues with specific casks in these taps)
-_SKIP_TAPS: set[str] = {"hashicorp/tap"}
-
 _TAP_RE = re.compile(r'^\s*tap\s+"([^"]+)"')
 _BREW_RE = re.compile(r'^\s*brew\s+"([^"]+)"')
 _CASK_RE = re.compile(r'^\s*cask\s+"([^"]+)"')
@@ -77,9 +74,6 @@ class BrewfileValidator:
             )
 
             for tap in taps:
-                if tap in _SKIP_TAPS:
-                    logger.debug("Skipping validation for tap: %s", tap)
-                    continue
                 issue = self._run_check(brewfile, "tap", tap, ["tap", tap])
                 if issue:
                     issues.append(issue)
