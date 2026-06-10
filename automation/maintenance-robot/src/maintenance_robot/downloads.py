@@ -9,6 +9,7 @@ from typing import Dict, Optional
 
 from packaging.version import InvalidVersion, Version
 
+from .conda_api import fetch_latest_version as fetch_conda_version
 from .docker_hub_api import fetch_latest_version as fetch_docker_hub_version
 from .github_api import fetch_latest_version as fetch_github_version
 from .npm_api import fetch_latest_version as fetch_npm_version
@@ -78,6 +79,27 @@ class DownloadsUpdater:
                 version = package_info.version
                 version_str = package_info.version_str
                 logger.info("  ✓ Latest npm version: %s", version_str)
+            elif source == "conda":
+                channel = config.get("channel", "conda-forge")
+                package = config.get("package")
+                platform = config.get("platform")
+                if not package:
+                    logger.warning("Conda source requires 'package' field for %s", identifier)
+                    continue
+                logger.info("  Fetching Conda package: %s/%s", channel, package)
+                package_info = fetch_conda_version(
+                    channel=channel,
+                    package=package,
+                    platform=platform,
+                    include_prerelease=include_prerelease,
+                    max_major=max_major,
+                )
+                if package_info is None:
+                    logger.warning("  ⚠ No package info found for %s", identifier)
+                    continue
+                version = package_info.version
+                version_str = package_info.version_str
+                logger.info("  ✓ Latest Conda version: %s", version_str)
             elif source == "custom":
                 # Handle custom version fetching (e.g., Claude Code)
                 stable_version_url = config.get("stable_version_url")

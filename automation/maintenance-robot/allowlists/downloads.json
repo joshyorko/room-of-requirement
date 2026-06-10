@@ -14,8 +14,10 @@
     ]
   },
   "uv": {
-    "source": "pypi",
+    "source": "conda",
+    "channel": "conda-forge",
     "package": "uv",
+    "platform": "linux-64",
     "max_major": null,
     "include_prerelease": false,
     "targets": [
