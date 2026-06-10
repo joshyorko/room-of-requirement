@@ -1,5 +1,20 @@
 # Changelog
 
+## [1.18.0](https://github.com/joshyorko/room-of-requirement/compare/v1.17.4...v1.18.0) (2026-06-10)
+
+
+### ✨ Features
+
+* integrate Conda package fetching into DownloadsUpdater and update uv dependency source ([7601de8](https://github.com/joshyorko/room-of-requirement/commit/7601de82d81ffd35ab15455ec1ac5f40c60c5107))
+
+
+### 🐛 Bug Fixes
+
+* correct RCC version format in maintenance workflow ([687ab58](https://github.com/joshyorko/room-of-requirement/commit/687ab584a3e9d8651800253bf749bc4b4062839e))
+* improve RCC installation script with dynamic version handling and error checking ([28ad7b3](https://github.com/joshyorko/room-of-requirement/commit/28ad7b390e74f210b2900ae23b9cced601bcf533))
+* update RCC installation path to version 18.17.6 in maintenance workflow ([bbd2621](https://github.com/joshyorko/room-of-requirement/commit/bbd26214d00b8ed665edbdcd897b78cb183018b6))
+* update uv dependency to 0.11.20 and add tap skipping logic in Brewfile validation ([258f64c](https://github.com/joshyorko/room-of-requirement/commit/258f64cda5c9953a9d40c250dc02764f9d5b75f1))
+
 ## [1.17.4](https://github.com/joshyorko/room-of-requirement/compare/v1.17.3...v1.17.4) (2026-06-05)
 
 
