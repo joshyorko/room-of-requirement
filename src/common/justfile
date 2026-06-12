@@ -8,6 +8,13 @@ default:
 # Install applications from curated Brewfiles
 bbrew:
     #!/usr/bin/env bash
+    set -euo pipefail
+    brew_trust_tap() {
+        local tap="$1"
+        if brew help trust >/dev/null 2>&1; then
+            brew trust --tap "$tap"
+        fi
+    }
     BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
     # Fallback chain for development/edge cases
     if [ ! -d "$BREW_DIR" ]; then
@@ -36,6 +43,7 @@ bbrew:
     if ! command -v bbrew &>/dev/null; then
         echo "Installing Bold Brew (bbrew)..."
         brew tap valkyrie00/bbrew
+        brew_trust_tap valkyrie00/bbrew
         brew install valkyrie00/bbrew/bbrew
     fi
     bbrew -f "${BREW_DIR}/$(gum choose $(find "${BREW_DIR}"/*.Brewfile -exec basename '{}' '.Brewfile' ';')).Brewfile"
@@ -44,12 +52,26 @@ bbrew:
 install-bbrew:
     @echo "Installing bbrew (Bold Brew TUI)..."
     brew tap valkyrie00/bbrew
+    if brew help trust >/dev/null 2>&1; then brew trust --tap valkyrie00/bbrew; fi
     brew install valkyrie00/bbrew/bbrew
     @echo "Done! Run 'ujust bbrew' to launch the TUI."
 
 # Install all Homebrew packages from all Brewfiles (full setup)
 brew-install-all:
     #!/usr/bin/env bash
+    set -euo pipefail
+    brew_trust_brewfile_taps() {
+        local brewfile="$1"
+        if ! brew help trust >/dev/null 2>&1; then
+            return
+        fi
+        while IFS= read -r line; do
+            line="${line%%#*}"
+            if [[ "$line" =~ ^[[:space:]]*tap[[:space:]]+\"([^\"]+)\" ]]; then
+                brew trust --tap "${BASH_REMATCH[1]}"
+            fi
+        done < "$brewfile"
+    }
     echo "Installing ALL Homebrew packages from all Brewfiles..."
     echo "This may take a while..."
     BREW_DIR="${BREW_DIR:-/usr/share/ror/brew}"
@@ -73,6 +95,7 @@ brew-install-all:
     fi
     for brewfile in "$BREW_DIR"/*.Brewfile; do
         echo "Installing from $(basename "$brewfile")..."
+        brew_trust_brewfile_taps "$brewfile"
         brew bundle install --file="$brewfile" || true
     done
     echo "Done! Run 'ujust bbrew' for the TUI or 'brew list' to see packages."

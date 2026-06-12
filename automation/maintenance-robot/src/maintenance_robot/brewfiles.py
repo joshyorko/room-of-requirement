@@ -74,7 +74,7 @@ class BrewfileValidator:
             )
 
             for tap in taps:
-                issue = self._run_check(brewfile, "tap", tap, ["tap", tap])
+                issue = self._run_check(brewfile, "tap", tap, ["tap-info", "--json", tap])
                 if issue:
                     issues.append(issue)
 
