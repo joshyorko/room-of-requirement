@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import subprocess
 import tempfile
 import unittest
@@ -28,6 +29,16 @@ class BrewfileValidatorTests(unittest.TestCase):
 
             def fake_run(args: list[str], **_kwargs: object) -> subprocess.CompletedProcess[str]:
                 calls.append(args)
+                if args == ["brew", "tap-info", "--json", "hashicorp/tap"]:
+                    stdout = json.dumps(
+                        [
+                            {
+                                "formula_names": ["hashicorp/tap/terraform"],
+                                "cask_tokens": [],
+                            }
+                        ]
+                    )
+                    return subprocess.CompletedProcess(args, 0, stdout=stdout, stderr="")
                 return subprocess.CompletedProcess(args, 0, stdout="{}", stderr="")
 
             validator = BrewfileValidator(brew_executable="brew", require_brew=True)
@@ -38,7 +49,7 @@ class BrewfileValidatorTests(unittest.TestCase):
             self.assertEqual([], issues)
             self.assertIn(["brew", "tap-info", "--json", "hashicorp/tap"], calls)
             self.assertNotIn(["brew", "tap", "hashicorp/tap"], calls)
-            self.assertIn(["brew", "info", "--json=v2", "--formula", "hashicorp/tap/terraform"], calls)
+            self.assertNotIn(["brew", "info", "--json=v2", "--formula", "hashicorp/tap/terraform"], calls)
 
 
 if __name__ == "__main__":

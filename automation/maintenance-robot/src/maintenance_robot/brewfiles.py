@@ -1,5 +1,6 @@
 from __future__ import annotations
 
+import json
 import logging
 import os
 import re
@@ -22,6 +23,19 @@ class BrewfileValidationIssue:
     entry_type: str
     name: str
     detail: str
+
+
+@dataclass(frozen=True)
+class TapEntries:
+    formulae: frozenset[str]
+    casks: frozenset[str]
+
+    @classmethod
+    def from_tap_info(cls, tap_info: dict[str, object]) -> "TapEntries":
+        return cls(
+            formulae=frozenset(str(name) for name in tap_info.get("formula_names", [])),
+            casks=frozenset(str(name) for name in tap_info.get("cask_tokens", [])),
+        )
 
 
 class BrewfileValidator:
@@ -65,6 +79,7 @@ class BrewfileValidator:
 
         for brewfile in brewfiles:
             taps, formulae, casks = self._parse_brewfile(brewfile)
+            tap_entries: dict[str, TapEntries] = {}
             logger.info(
                 "Validating %s (%d taps, %d formulae, %d casks)",
                 brewfile.name,
@@ -74,11 +89,19 @@ class BrewfileValidator:
             )
 
             for tap in taps:
-                issue = self._run_check(brewfile, "tap", tap, ["tap-info", "--json", tap])
+                issue, entries = self._load_tap_entries(brewfile, tap)
                 if issue:
                     issues.append(issue)
+                elif entries:
+                    tap_entries[tap] = entries
 
             for formula in formulae:
+                if _tap_name_from_entry(formula) in tap_entries:
+                    issue = self._validate_tapped_entry(brewfile, "formula", formula, tap_entries)
+                    if issue:
+                        issues.append(issue)
+                    continue
+
                 issue = self._run_check(
                     brewfile,
                     "formula",
@@ -89,6 +112,12 @@ class BrewfileValidator:
                     issues.append(issue)
 
             for cask in casks:
+                if _tap_name_from_entry(cask) in tap_entries:
+                    issue = self._validate_tapped_entry(brewfile, "cask", cask, tap_entries)
+                    if issue:
+                        issues.append(issue)
+                    continue
+
                 issue = self._run_check(
                     brewfile,
                     "cask",
@@ -126,6 +155,86 @@ class BrewfileValidator:
 
         return taps, formulae, casks
 
+    def _load_tap_entries(
+        self,
+        brewfile: Path,
+        tap: str,
+    ) -> tuple[BrewfileValidationIssue | None, TapEntries | None]:
+        assert self.brew_executable is not None
+
+        result = subprocess.run(
+            [self.brew_executable, "tap-info", "--json", tap],
+            capture_output=True,
+            text=True,
+            cwd=str(brewfile.parent),
+        )
+
+        if result.returncode != 0:
+            detail = result.stderr.strip() or result.stdout.strip() or "tap validation failed"
+            detail = detail.splitlines()[-1]
+            logger.error("Brewfile validation failed for tap %s in %s: %s", tap, brewfile.name, detail)
+            return (
+                BrewfileValidationIssue(
+                    brewfile=brewfile,
+                    entry_type="tap",
+                    name=tap,
+                    detail=detail,
+                ),
+                None,
+            )
+
+        try:
+            tap_info = json.loads(result.stdout)
+        except json.JSONDecodeError as error:
+            detail = f"tap-info returned invalid JSON: {error}"
+            logger.error("Brewfile validation failed for tap %s in %s: %s", tap, brewfile.name, detail)
+            return (
+                BrewfileValidationIssue(
+                    brewfile=brewfile,
+                    entry_type="tap",
+                    name=tap,
+                    detail=detail,
+                ),
+                None,
+            )
+
+        if not tap_info:
+            detail = "tap-info returned no tap metadata"
+            logger.error("Brewfile validation failed for tap %s in %s: %s", tap, brewfile.name, detail)
+            return (
+                BrewfileValidationIssue(
+                    brewfile=brewfile,
+                    entry_type="tap",
+                    name=tap,
+                    detail=detail,
+                ),
+                None,
+            )
+
+        return None, TapEntries.from_tap_info(tap_info[0])
+
+    def _validate_tapped_entry(
+        self,
+        brewfile: Path,
+        entry_type: str,
+        name: str,
+        tap_entries: dict[str, TapEntries],
+    ) -> BrewfileValidationIssue | None:
+        tap = _tap_name_from_entry(name)
+        entries = tap_entries[tap]
+        names = entries.formulae if entry_type == "formula" else entries.casks
+        if name in names:
+            return None
+
+        detail = f"{entry_type} is not listed by declared tap {tap}"
+        logger.error("Brewfile validation failed for %s %s in %s: %s", entry_type, name, brewfile.name, detail)
+        return BrewfileValidationIssue(
+            brewfile=brewfile,
+            entry_type=entry_type,
+            name=name,
+            detail=detail,
+        )
+
     def _run_check(
         self,
         brewfile: Path,
@@ -158,3 +267,10 @@ class BrewfileValidator:
 
 def _env_flag(name: str) -> bool:
     return os.getenv(name, "").lower() in {"1", "true", "yes", "on"}
+
+
+def _tap_name_from_entry(name: str) -> str | None:
+    parts = name.split("/")
+    if len(parts) < 3:
+        return None
+    return "/".join(parts[:2])
