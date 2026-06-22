@@ -96,10 +96,7 @@ class BrewfileValidator:
                     tap_entries[tap] = entries
 
             for formula in formulae:
-                if _tap_name_from_entry(formula) in tap_entries:
-                    issue = self._validate_tapped_entry(brewfile, "formula", formula, tap_entries)
-                    if issue:
-                        issues.append(issue)
+                if self._tap_entries_include(tap_entries, "formula", formula):
                     continue
 
                 issue = self._run_check(
@@ -112,10 +109,7 @@ class BrewfileValidator:
                     issues.append(issue)
 
             for cask in casks:
-                if _tap_name_from_entry(cask) in tap_entries:
-                    issue = self._validate_tapped_entry(brewfile, "cask", cask, tap_entries)
-                    if issue:
-                        issues.append(issue)
+                if self._tap_entries_include(tap_entries, "cask", cask):
                     continue
 
                 issue = self._run_check(
@@ -213,27 +207,19 @@ class BrewfileValidator:
 
         return None, TapEntries.from_tap_info(tap_info[0])
 
-    def _validate_tapped_entry(
+    def _tap_entries_include(
         self,
-        brewfile: Path,
+        tap_entries: dict[str, TapEntries],
         entry_type: str,
         name: str,
-        tap_entries: dict[str, TapEntries],
-    ) -> BrewfileValidationIssue | None:
+    ) -> bool:
         tap = _tap_name_from_entry(name)
+        if tap not in tap_entries:
+            return False
+
         entries = tap_entries[tap]
         names = entries.formulae if entry_type == "formula" else entries.casks
-        if name in names:
-            return None
-
-        detail = f"{entry_type} is not listed by declared tap {tap}"
-        logger.error("Brewfile validation failed for %s %s in %s: %s", entry_type, name, brewfile.name, detail)
-        return BrewfileValidationIssue(
-            brewfile=brewfile,
-            entry_type=entry_type,
-            name=name,
-            detail=detail,
-        )
+        return bool(_entry_name_variants(name) & names)
 
     def _run_check(
         self,
@@ -274,3 +260,7 @@ def _tap_name_from_entry(name: str) -> str | None:
     if len(parts) < 3:
         return None
     return "/".join(parts[:2])
+
+
+def _entry_name_variants(name: str) -> set[str]:
+    return {name, name.rsplit("/", 1)[-1]}
