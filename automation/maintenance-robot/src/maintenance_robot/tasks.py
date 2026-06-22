@@ -266,7 +266,7 @@ def _run_precommit_autofixes() -> None:
         if prettier_result.returncode == 0:
             logging.info("Prettier formatting completed")
         else:
-            logging.warning("Prettier had issues: %s", prettier_result.stderr)
+            raise RuntimeError(f"Prettier had issues: {prettier_result.stderr}")
 
         _refresh_precommit_configuration()
 
@@ -280,8 +280,7 @@ def _run_precommit_autofixes() -> None:
             text=True,
         )
         if install_result.returncode != 0:
-            logging.warning("Failed to install pre-commit hook environments")
-            return
+            raise RuntimeError("Failed to install pre-commit hook environments")
 
         # Run pre-commit with output visible
         logging.info("Running pre-commit on all files...")
@@ -295,8 +294,18 @@ def _run_precommit_autofixes() -> None:
         if result.returncode == 0:
             logging.info("All pre-commit hooks passed")
         else:
-            logging.info("Pre-commit completed (some hooks may have made fixes)")
+            logging.info("Pre-commit made changes or reported failures; rerunning once")
+            rerun_result = subprocess.run(
+                ["pre-commit", "run", "--all-files"],
+                cwd=str(REPO_ROOT),
+                capture_output=False,
+                text=True,
+            )
+            if rerun_result.returncode == 0:
+                logging.info("All pre-commit hooks passed after rerun")
+            else:
+                raise RuntimeError("Pre-commit failed after rerun")
     except FileNotFoundError as e:
-        logging.warning("Tool not found: %s", e)
+        raise RuntimeError(f"Required maintenance tool not found: {e}") from e
     except Exception as e:
-        logging.warning("Pre-commit failed: %s", e)
+        raise RuntimeError(f"Pre-commit failed: {e}") from e
