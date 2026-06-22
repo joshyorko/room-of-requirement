@@ -1,5 +1,0 @@
-[features]
-
-# --- Headroom init features ---
-hooks = true
-# --- end Headroom init features ---
