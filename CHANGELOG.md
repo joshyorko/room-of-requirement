@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.18.1](https://github.com/joshyorko/room-of-requirement/compare/v1.18.0...v1.18.1) (2026-07-03)
+
+
+### 🐛 Bug Fixes
+
+* harden github actions publishing ([558e6fc](https://github.com/joshyorko/room-of-requirement/commit/558e6fc4827a1b9ca1a1b12d7380838618b21169))
+* use workflow token for rcc maintenance ([aa0c8d2](https://github.com/joshyorko/room-of-requirement/commit/aa0c8d22edf17758e051f74268ffaaf8838cfc39))
+* validate sparse tap brewfile entries ([0ed8844](https://github.com/joshyorko/room-of-requirement/commit/0ed8844a287fb5efb4e8dac7b917c795fba62d11))
+
 ## [1.18.0](https://github.com/joshyorko/room-of-requirement/compare/v1.17.4...v1.18.0) (2026-06-10)
 
 
