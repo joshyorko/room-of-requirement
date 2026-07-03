@@ -7,6 +7,7 @@ from functools import lru_cache
 from typing import Optional
 
 import requests
+from dotenv import find_dotenv, load_dotenv
 from packaging.version import InvalidVersion, Version
 from tenacity import retry, retry_if_exception_type, stop_after_attempt, wait_exponential
 
@@ -26,8 +27,14 @@ class ReleaseInfo:
     sha: Optional[str] = None  # Commit SHA for pinning
 
 
+@lru_cache(maxsize=1)
+def _github_token() -> Optional[str]:
+    load_dotenv(find_dotenv(usecwd=True), override=False)
+    return os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
+
+
 def _headers() -> dict[str, str]:
-    token = os.getenv("GITHUB_TOKEN") or os.getenv("GH_TOKEN")
+    token = _github_token()
     headers = {
         "Accept": "application/vnd.github+json",
         "User-Agent": "room-of-requirement-maintenance-robot",

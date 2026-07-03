@@ -4,3 +4,7 @@
 .tools
 .vscode/
 .fizzy-symphony/
+.tokensave/
+.codex/
+.serena/
+env.json
