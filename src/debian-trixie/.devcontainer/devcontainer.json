@@ -20,7 +20,7 @@
     "source=ror-docker-data,target=/var/lib/docker,type=volume"
   ],
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:3": {
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
       "version": "latest",
       "moby": false,
       "dockerDashComposeVersion": "none"

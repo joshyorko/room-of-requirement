@@ -198,5 +198,16 @@ jobs:
           for tag in "${tags[@]}"; do
             target="${REGISTRY}/${IMAGE_NAME}:${tag}"
             docker tag "${BUILT_IMAGE}" "${target}"
-            docker push "${target}"
+
+            # Retry push to mitigate transient GHCR "unknown blob" errors.
+            for attempt in 1 2 3; do
+              if docker push "${target}"; then
+                break
+              fi
+              if [ "${attempt}" -eq 3 ]; then
+                echo "::error::Failed to push ${target} after ${attempt} attempts"
+                exit 1
+              fi
+              sleep $((attempt * 5))
+            done
           done
