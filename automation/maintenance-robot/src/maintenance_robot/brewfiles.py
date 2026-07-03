@@ -219,7 +219,11 @@ class BrewfileValidator:
 
         entries = tap_entries[tap]
         names = entries.formulae if entry_type == "formula" else entries.casks
-        return bool(_entry_name_variants(name) & names)
+        if _entry_name_variants(name) & names:
+            return True
+
+        # Untapped Homebrew metadata can omit entry lists even when the tap exists.
+        return not names
 
     def _run_check(
         self,
