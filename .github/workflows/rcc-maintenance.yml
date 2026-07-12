@@ -22,7 +22,7 @@ jobs:
       committed: ${{ steps.commit.outputs.committed }}
       files_changed: ${{ steps.check_files.outputs.devcontainer_affected }}
     env:
-      RCC_VERSION: v18.17.6
+      RCC_VERSION: 18.17.7
       MAINTENANCE_PUSH: true
       MAINTENANCE_TARGET_BRANCH: main
     steps:
