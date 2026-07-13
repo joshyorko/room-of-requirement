@@ -36,7 +36,7 @@ jobs:
           if [ ! -x ".tools/rcc/${RCC_VERSION}/rcc" ]; then
             mkdir -p ".tools/rcc/${RCC_VERSION}"
             echo "Downloading RCC ${RCC_VERSION} to .tools/rcc/${RCC_VERSION}/rcc"
-            curl --fail --show-error --location --silent --output ".tools/rcc/${RCC_VERSION}/rcc" "https://github.com/joshyorko/rcc/releases/download/${RCC_VERSION}/rcc-linux64" || {
+            curl --fail --show-error --location --silent --output ".tools/rcc/${RCC_VERSION}/rcc" "https://github.com/joshyorko/rcc/releases/download/v${RCC_VERSION}/rcc-linux64" || {
               echo "ERROR: failed to download RCC ${RCC_VERSION}"
               exit 1
             }
