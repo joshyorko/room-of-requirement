@@ -3,6 +3,7 @@ set -euo pipefail
 
 ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 STARTER="${ROOT_DIR}/src/common/scripts/ror-docker-start.sh"
+WOLFI_DOCKERFILE="${ROOT_DIR}/src/wolfi/.devcontainer/Dockerfile"
 
 fail() {
     echo "FAIL: $*" >&2
@@ -59,6 +60,11 @@ assert_not_contains() {
 
     [[ "${haystack}" != *"${needle}"* ]] || fail "${label}: did not expect ${needle} in: ${haystack}"
 }
+
+for package in iptables-wrappers iptables-nft nftables; do
+    grep -Eq "^[[:space:]]*${package}[[:space:]\\]*$" "${WOLFI_DOCKERFILE}" || \
+        fail "Wolfi Dockerfile must install ${package} for nftables-compatible Docker networking"
+done
 
 plan="$(run_plan overlay 1 1)"
 assert_contains "${plan}" "--storage-driver=fuse-overlayfs" "overlay data root with usable fuse"
