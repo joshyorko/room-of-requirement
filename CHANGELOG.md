@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.18.3](https://github.com/joshyorko/room-of-requirement/compare/v1.18.2...v1.18.3) (2026-07-22)
+
+
+### 🐛 Bug Fixes
+
+* use nftables for Wolfi Docker networking ([#309](https://github.com/joshyorko/room-of-requirement/issues/309)) ([cc5735d](https://github.com/joshyorko/room-of-requirement/commit/cc5735d90d697ba273b8b955bac93788b24bfb24))
+
 ## [1.18.2](https://github.com/joshyorko/room-of-requirement/compare/v1.18.1...v1.18.2) (2026-07-13)
 
 
