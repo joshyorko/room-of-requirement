@@ -76,6 +76,9 @@ RUN apk add --no-cache \
     docker-dind-compat \
     dockerd-oci-entrypoint \
     fuse-overlayfs \
+    iptables-nft \
+    iptables-wrappers \
+    nftables \
     # Playwright and browser dependencies (headless Chromium support)
     # Playwright installed via Wolfi package for proper system integration
     # Based on wolfi-dev/os chromium.yaml runtime dependencies
