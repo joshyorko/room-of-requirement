@@ -3,7 +3,7 @@
 FROM mcr.microsoft.com/devcontainers/base:trixie@sha256:025b74bb5f7ac53edd77e01aa7188c359aab100e23a2f6220bde50bbb9fd31dd
 
 ARG TARGETARCH
-ARG DOCKER_COMPOSE_VERSION=v5.3.1
+ARG DOCKER_COMPOSE_VERSION=v5.4.0
 
 LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement Debian Trixie"
