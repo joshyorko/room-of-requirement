@@ -22,7 +22,7 @@ ENV LANG=C.UTF-8 \
     HOMEBREW_NO_INSTALL_CLEANUP=1 \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
 
-USER root
+USER 0
 
 RUN apt-get update && \
     export DEBIAN_FRONTEND=noninteractive && \
@@ -120,7 +120,7 @@ RUN chmod +x \
     printf '#!/bin/bash\nexec just --justfile /usr/share/ror/justfile --working-directory /usr/share/ror "$@"\n' > /usr/local/bin/ujust && \
     chmod +x /usr/local/bin/ujust
 
-USER vscode
+USER 1000
 
 ENV HOME=/home/vscode \
     SHELL=/bin/zsh \
@@ -129,7 +129,7 @@ ENV HOME=/home/vscode \
 WORKDIR /workspaces
 
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD echo "OK" || exit 1
+    CMD ["CMD-SHELL", "echo \"OK\" || exit 1"]
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]

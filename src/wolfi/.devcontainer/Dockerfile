@@ -241,7 +241,7 @@ RUN mkdir -p \
 FROM homebrew AS final
 
 # Switch to root for system operations
-USER root
+USER 0
 
 # Security: Update packages after multi-stage build and address CVEs
 # CVE-2023-39327, CVE-2023-39328, CVE-2023-39329: openjpeg vulnerabilities
@@ -344,7 +344,7 @@ RUN mkdir -p \
 
 # Switch to vscode user (satisfies Hadolint DL3002)
 # Docker-in-Docker is handled by entrypoint.sh which uses sudo to start dockerd
-USER vscode
+USER 1000
 
 # Environment
 ENV HOME=/home/vscode \
@@ -358,7 +358,7 @@ WORKDIR /workspaces
 
 # Health check
 HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD echo "OK" || exit 1
+    CMD ["CMD-SHELL", "echo \"OK\" || exit 1"]
 
 # Entrypoint wrapper starts dockerd via sudo, then runs CMD as vscode user
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
