@@ -189,6 +189,18 @@ jobs:
             command -v buildah
             command -v skopeo
             runtime_dir="/run/user/$(id -u)"
+            runtime_ready=0
+            for _ in $(seq 1 30); do
+              if [ -d "${runtime_dir}" ] && [ "$(stat -c %a "${runtime_dir}")" = 700 ]; then
+                runtime_ready=1
+                break
+              fi
+              sleep 1
+            done
+            if [ "${runtime_ready}" -ne 1 ]; then
+              echo "Podman runtime directory was not ready after 30 attempts: ${runtime_dir}" >&2
+              exit 1
+            fi
             test "$(stat -c %a "${runtime_dir}")" = 700
             export XDG_RUNTIME_DIR="${runtime_dir}"
             podman_info="$(podman info --format "{{.Host.Security.Rootless}} {{.Store.GraphDriverName}} {{.Host.NetworkBackend}} {{.Host.CgroupManager}}")"
