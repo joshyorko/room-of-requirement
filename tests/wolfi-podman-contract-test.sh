@@ -5,6 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOCKERFILE="${ROOT_DIR}/src/wolfi/.devcontainer/Dockerfile"
 ENTRYPOINT="${ROOT_DIR}/src/common/entrypoint.sh"
 DEVCONTAINER="${ROOT_DIR}/src/wolfi/.devcontainer/devcontainer.json"
+WORKFLOW="${ROOT_DIR}/.github/workflows/build-devcontainers.yml"
 
 fail() {
     echo "FAIL: $*" >&2
@@ -38,6 +39,10 @@ assert_contains "${DOCKERFILE}" 'echo[[:space:]]+"vscode:[^" ]+:[^" ]+"[[:space:
     "subordinate UID range"
 assert_contains "${DOCKERFILE}" 'echo[[:space:]]+"vscode:[^" ]+:[^" ]+"[[:space:]]*>>[[:space:]]*/etc/subgid' \
     "subordinate GID range"
+assert_contains "${DOCKERFILE}" "grep[[:space:]]+-q[[:space:]]+'\\^vscode:'[[:space:]]+/etc/subuid" \
+    "subordinate UID range is duplicate-safe"
+assert_contains "${DOCKERFILE}" "grep[[:space:]]+-q[[:space:]]+'\\^vscode:'[[:space:]]+/etc/subgid" \
+    "subordinate GID range is duplicate-safe"
 assert_contains "${DOCKERFILE}" 'chmod[[:space:]]+u\+s[[:space:]]+/usr/bin/newuidmap[[:space:]]+/usr/bin/newgidmap' \
     "setuid mapping helpers"
 assert_contains "${DOCKERFILE}" 'rootless_storage_path[[:space:]]*=[[:space:]]*"\$HOME/.local/share/containers/storage"' \
@@ -53,5 +58,13 @@ assert_not_contains "${DOCKERFILE}" 'alias[[:space:]]+docker[[:space:]]*=' \
     "Docker command replacement"
 assert_not_contains "${ENTRYPOINT}" 'podman system service' \
     "Podman API service"
+assert_contains "${WORKFLOW}" 'container="\$\(docker run -d --privileged "\$\{BUILT_IMAGE\}" sleep infinity\)"' \
+    "Podman smoke owns its container lifecycle"
+assert_contains "${WORKFLOW}" 'docker rm -f "\$\{container\}"' \
+    "Podman smoke cleans up its container"
+assert_not_contains "${WORKFLOW}" 'docker ps --filter "ancestor=' \
+    "Podman smoke does not reuse a prior step container"
+assert_contains "${WORKFLOW}" 'docker.io/library/alpine:3\.22' \
+    "Podman smoke uses fully qualified Alpine image"
 
 echo "Wolfi Podman contract tests passed"

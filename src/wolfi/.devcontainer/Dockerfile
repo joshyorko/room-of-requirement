@@ -138,8 +138,8 @@ FROM base AS users
 RUN groupadd -g 999 docker && \
     groupadd -g 1000 vscode && \
     useradd -m -u 1000 -g vscode -G docker -s /bin/zsh vscode && \
-    echo "vscode:100000:65536" >> /etc/subuid && \
-    echo "vscode:100000:65536" >> /etc/subgid && \
+    if ! grep -q '^vscode:' /etc/subuid; then echo "vscode:100000:65536" >> /etc/subuid; fi && \
+    if ! grep -q '^vscode:' /etc/subgid; then echo "vscode:100000:65536" >> /etc/subgid; fi && \
     chmod u+s /usr/bin/newuidmap /usr/bin/newgidmap && \
     echo "vscode ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/vscode && \
     chmod 0440 /etc/sudoers.d/vscode

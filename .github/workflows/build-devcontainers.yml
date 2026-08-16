@@ -177,8 +177,12 @@ jobs:
         run: |
           set -euo pipefail
 
-          container="$(docker ps --filter "ancestor=${BUILT_IMAGE}" --format '{{.ID}}' | head -n 1)"
-          test -n "${container}"
+          container="$(docker run -d --privileged "${BUILT_IMAGE}" sleep infinity)"
+          cleanup() {
+            docker rm -f "${container}" >/dev/null 2>&1 || true
+          }
+          trap cleanup EXIT
+
           docker exec --user vscode "${container}" bash --noprofile --norc -c '
             set -euo pipefail
             command -v podman
@@ -187,12 +191,12 @@ jobs:
             test "$(stat -c %a "${XDG_RUNTIME_DIR}")" = 700
             podman_info="$(podman info --format "{{.Host.Security.Rootless}} {{.Store.GraphDriverName}} {{.Host.NetworkBackend}} {{.Host.CgroupManager}}")"
             test "${podman_info}" = "true overlay netavark cgroupfs"
-            podman run --rm alpine:3.22 sh -c "wget -q -O- https://example.com >/dev/null"
-            podman run --rm --cpus 0.25 alpine:3.22 true
+            podman run --rm docker.io/library/alpine:3.22 sh -c "wget -q -O- https://example.com >/dev/null"
+            podman run --rm --cpus 0.25 docker.io/library/alpine:3.22 true
             bind_dir="$(mktemp -d)"
             trap "rm -rf \"${bind_dir}\"" EXIT
             printf "wolfi-podman\n" > "${bind_dir}/marker"
-            test "$(podman run --rm -v "${bind_dir}:/mnt:ro" alpine:3.22 cat /mnt/marker)" = "wolfi-podman"
+            test "$(podman run --rm -v "${bind_dir}:/mnt:ro" docker.io/library/alpine:3.22 cat /mnt/marker)" = "wolfi-podman"
             buildah info >/dev/null
             skopeo inspect docker://docker.io/library/alpine:3.22 >/dev/null
           '
