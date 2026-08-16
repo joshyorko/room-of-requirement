@@ -21,7 +21,8 @@
     "source=ror-mise-cache,target=/home/vscode/.local/share/mise,type=volume",
     "source=ror-npm-cache,target=/home/vscode/.npm,type=volume",
     "source=ror-zsh-history,target=/home/vscode/.zsh_history_dir,type=volume",
-    "source=ror-docker-data,target=/var/lib/docker,type=volume"
+    "source=ror-docker-data,target=/var/lib/docker,type=volume",
+    "source=ror-wolfi-podman-storage,target=/home/vscode/.local/share/containers/storage,type=volume"
   ],
   "customizations": {
     "vscode": {

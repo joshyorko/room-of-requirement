@@ -76,6 +76,11 @@ RUN apk add --no-cache \
     docker-dind-compat \
     dockerd-oci-entrypoint \
     fuse-overlayfs \
+    podman-6.0 \
+    buildah \
+    skopeo \
+    shadow-subids \
+    mount \
     iptables-nft \
     iptables-wrappers \
     nftables \
@@ -133,6 +138,9 @@ FROM base AS users
 RUN groupadd -g 999 docker && \
     groupadd -g 1000 vscode && \
     useradd -m -u 1000 -g vscode -G docker -s /bin/zsh vscode && \
+    echo "vscode:100000:65536" >> /etc/subuid && \
+    echo "vscode:100000:65536" >> /etc/subgid && \
+    chmod u+s /usr/bin/newuidmap /usr/bin/newgidmap && \
     echo "vscode ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/vscode && \
     chmod 0440 /etc/sudoers.d/vscode
 
@@ -211,7 +219,7 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
 
 # Install the always-on shell foundation directly in the image.
 # Heavier curated tool bundles, including bbrew, stay opt-in through ujust recipes.
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide"
+RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide passt"
 
 # Configure Homebrew permissions for vscode user
 # vscode user needs full write access to Homebrew repo for `brew update`
@@ -335,7 +343,15 @@ RUN mkdir -p \
     /home/vscode/.cache \
     /home/vscode/.local/share \
     /home/vscode/.config/mise \
+    /home/vscode/.config/containers \
     /workspaces && \
+    printf '%s\n' \
+        '[storage]' \
+        'driver = "overlay"' \
+        'rootless_storage_path = "$HOME/.local/share/containers/storage"' \
+        '[storage.options.overlay]' \
+        'mount_program = "/usr/bin/fuse-overlayfs"' \
+        > /home/vscode/.config/containers/storage.conf && \
     chown -R vscode:vscode /home/vscode /workspaces && \
     chmod 755 /workspaces
     # NOTE: Keeping build-base/gcc and all *-dev packages for Ruby compilation via mise

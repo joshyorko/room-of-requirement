@@ -170,6 +170,33 @@ jobs:
             exit 1
           '
 
+      - name: Verify Wolfi rootless Podman contract
+        if: matrix.variant == 'wolfi'
+        env:
+          BUILT_IMAGE: ${{ steps.build.outputs.image }}
+        run: |
+          set -euo pipefail
+
+          container="$(docker ps --filter "ancestor=${BUILT_IMAGE}" --format '{{.ID}}' | head -n 1)"
+          test -n "${container}"
+          docker exec --user vscode "${container}" bash --noprofile --norc -c '
+            set -euo pipefail
+            command -v podman
+            command -v buildah
+            command -v skopeo
+            test "$(stat -c %a "${XDG_RUNTIME_DIR}")" = 700
+            podman_info="$(podman info --format "{{.Host.Security.Rootless}} {{.Store.GraphDriverName}} {{.Host.NetworkBackend}} {{.Host.CgroupManager}}")"
+            test "${podman_info}" = "true overlay netavark cgroupfs"
+            podman run --rm alpine:3.22 sh -c "wget -q -O- https://example.com >/dev/null"
+            podman run --rm --cpus 0.25 alpine:3.22 true
+            bind_dir="$(mktemp -d)"
+            trap "rm -rf \"${bind_dir}\"" EXIT
+            printf "wolfi-podman\n" > "${bind_dir}/marker"
+            test "$(podman run --rm -v "${bind_dir}:/mnt:ro" alpine:3.22 cat /mnt/marker)" = "wolfi-podman"
+            buildah info >/dev/null
+            skopeo inspect docker://docker.io/library/alpine:3.22 >/dev/null
+          '
+
       - name: Tag and push variant aliases
         env:
           REGISTRY: ${{ env.REGISTRY }}
