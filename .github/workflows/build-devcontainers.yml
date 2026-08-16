@@ -188,7 +188,9 @@ jobs:
             command -v podman
             command -v buildah
             command -v skopeo
-            test "$(stat -c %a "${XDG_RUNTIME_DIR}")" = 700
+            runtime_dir="/run/user/$(id -u)"
+            test "$(stat -c %a "${runtime_dir}")" = 700
+            export XDG_RUNTIME_DIR="${runtime_dir}"
             podman_info="$(podman info --format "{{.Host.Security.Rootless}} {{.Store.GraphDriverName}} {{.Host.NetworkBackend}} {{.Host.CgroupManager}}")"
             test "${podman_info}" = "true overlay netavark cgroupfs"
             podman run --rm docker.io/library/alpine:3.22 sh -c "wget -q -O- https://example.com >/dev/null"

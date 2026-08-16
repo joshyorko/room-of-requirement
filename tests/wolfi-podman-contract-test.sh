@@ -66,5 +66,9 @@ assert_not_contains "${WORKFLOW}" 'docker ps --filter "ancestor=' \
     "Podman smoke does not reuse a prior step container"
 assert_contains "${WORKFLOW}" 'docker.io/library/alpine:3\.22' \
     "Podman smoke uses fully qualified Alpine image"
+assert_contains "${WORKFLOW}" 'runtime_dir="/run/user/\$\(id -u\)"' \
+    "Podman smoke derives runtime directory"
+assert_contains "${WORKFLOW}" 'export XDG_RUNTIME_DIR="\$\{runtime_dir\}"' \
+    "Podman smoke exports derived runtime directory"
 
 echo "Wolfi Podman contract tests passed"
