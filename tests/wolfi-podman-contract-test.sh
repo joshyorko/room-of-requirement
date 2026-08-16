@@ -70,5 +70,11 @@ assert_contains "${WORKFLOW}" 'runtime_dir="/run/user/\$\(id -u\)"' \
     "Podman smoke derives runtime directory"
 assert_contains "${WORKFLOW}" 'export XDG_RUNTIME_DIR="\$\{runtime_dir\}"' \
     "Podman smoke exports derived runtime directory"
+assert_contains "${WORKFLOW}" 'for _ in \$\(seq 1 [0-9]+\); do' \
+    "Podman smoke bounds runtime directory wait"
+assert_contains "${WORKFLOW}" 'if \[ -d "\$\{runtime_dir\}" \] && \[ "\$\(stat -c %a "\$\{runtime_dir\}"\)" = 700 \]; then' \
+    "Podman smoke waits for secure runtime directory"
+assert_contains "${WORKFLOW}" 'Podman runtime directory was not ready after' \
+    "Podman smoke reports runtime directory timeout"
 
 echo "Wolfi Podman contract tests passed"
