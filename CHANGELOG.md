@@ -1,5 +1,25 @@
 # Changelog
 
+## [1.19.0](https://github.com/joshyorko/room-of-requirement/compare/v1.18.3...v1.19.0) (2026-08-16)
+
+
+### ✨ Features
+
+* add rootless podman to wolfi devcontainer ([0ea75ab](https://github.com/joshyorko/room-of-requirement/commit/0ea75abe8753cbaac662b7ddb8887ad7ebcf67bd))
+* add rootless Podman to Wolfi devcontainer ([6d61c77](https://github.com/joshyorko/room-of-requirement/commit/6d61c77302a2f21c0f012476d19bbd10d83fa00b))
+
+
+### 🐛 Bug Fixes
+
+* derive wolfi podman runtime directory ([eb1efcf](https://github.com/joshyorko/room-of-requirement/commit/eb1efcf614c59d39bb2b52dae23a22ae6bdfbc93))
+* derive Wolfi Podman runtime directory in CI ([75b18db](https://github.com/joshyorko/room-of-requirement/commit/75b18db1ed2694369739293ade49e015d77ecaff))
+* harden Wolfi Podman verification ([060ee2e](https://github.com/joshyorko/room-of-requirement/commit/060ee2ed9960ba784fa64fb6482d0941f4e3ad80))
+
+
+### 📚 Documentation
+
+* design Wolfi Podman support ([02a4cf9](https://github.com/joshyorko/room-of-requirement/commit/02a4cf99302387ca95ddfcaf1fc5cc6d622f90fb))
+
 ## [1.18.3](https://github.com/joshyorko/room-of-requirement/compare/v1.18.2...v1.18.3) (2026-07-22)
 
 
