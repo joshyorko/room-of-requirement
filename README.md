@@ -356,6 +356,12 @@ container runs work under project-container hosts such as DevPod and
 Codespaces. `docker info` and `docker run --rm hello-world` should work without
 a manual `ujust` repair step.
 
+The Wolfi stream also provides rootless `podman`, `buildah`, and `skopeo` for
+the `vscode` user. Podman uses a separate named storage volume and the
+Homebrew-provided `pasta` network helper; it does not replace the Docker CLI,
+daemon, socket, or storage. Use `podman info` and `podman run --rm alpine:3.22
+true` to verify the additional runtime.
+
 ---
 
 ## 📄 License
