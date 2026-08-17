@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.1](https://github.com/joshyorko/room-of-requirement/compare/v1.19.0...v1.19.1) (2026-08-16)
+
+
+### 🐛 Bug Fixes
+
+* wait for wolfi podman runtime ([48ee82c](https://github.com/joshyorko/room-of-requirement/commit/48ee82c0b39e15c9612c98067e63b06dab276b4c))
+* wait for Wolfi Podman runtime readiness ([a90b6b4](https://github.com/joshyorko/room-of-requirement/commit/a90b6b4137c5c3df26481a420166a7420a8901b5))
+
 ## [1.19.0](https://github.com/joshyorko/room-of-requirement/compare/v1.18.3...v1.19.0) (2026-08-16)
 
 
