@@ -14,7 +14,7 @@ dependencies:
       - requests==2.34.2
       - ruamel.yaml==0.19.1
       - click==8.4.2
-      - robocorp==3.1.1
+      - robocorp==3.1.2
       - robocorp-truststore==0.9.1
       - pre-commit==4.6.2
       - yamllint==1.38.0
