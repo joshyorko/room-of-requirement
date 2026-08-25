@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.26@sha256:ecfaec9ed6d810b56388c508f4121597bfbba70d41a6dfeee4d8cad5f295fc32
 
-FROM mcr.microsoft.com/devcontainers/base:trixie@sha256:025b74bb5f7ac53edd77e01aa7188c359aab100e23a2f6220bde50bbb9fd31dd
+FROM mcr.microsoft.com/devcontainers/base:trixie@sha256:38fd33602d3eba0070282a54c2f5179dd1aa3ef02ddaf711ca77adcd698edf8e
 
 ARG TARGETARCH
 ARG DOCKER_COMPOSE_VERSION=v5.5.0
