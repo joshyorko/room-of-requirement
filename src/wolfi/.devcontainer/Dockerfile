@@ -309,6 +309,7 @@ COPY --chown=vscode:vscode src/common/config/starship.toml /home/vscode/.config/
 COPY --chown=vscode:vscode src/common/config/mise.toml /usr/share/ror/config/mise.toml
 COPY --chown=vscode:vscode src/common/config/mise.toml /home/vscode/.config/mise/config.toml
 COPY src/common/config/docker-daemon.json /etc/docker/daemon.json
+COPY --chown=vscode:vscode src/common/scripts/seed-vscode-home.sh /usr/local/bin/seed-vscode-home.sh
 
 # Copy post-create script for pre-built image usage
 COPY --chown=vscode:vscode src/common/post-create.sh /usr/local/bin/devcontainer-post-create.sh
@@ -317,6 +318,9 @@ RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 # Copy mise cache seeding script (instant startup for runtimes)
 COPY --chown=vscode:vscode src/common/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
 RUN chmod +x /usr/local/bin/mise-seed-cache.sh
+
+# Seed image defaults into a mounted standard user home without overwriting it.
+RUN chmod +x /usr/local/bin/seed-vscode-home.sh
 
 # Copy shared Docker daemon starter with DevPod overlay-backed storage detection
 COPY --chown=vscode:vscode src/common/scripts/ror-docker-start.sh /usr/local/bin/ror-docker-start.sh

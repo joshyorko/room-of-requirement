@@ -305,6 +305,10 @@ RUN chmod +x /usr/local/bin/devcontainer-post-create.sh
 COPY --chown=vscode:vscode .devcontainer/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
 RUN chmod +x /usr/local/bin/mise-seed-cache.sh
 
+# Copy the idempotent standard-home bootstrap used by the generic home mount.
+COPY --chown=vscode:vscode src/common/scripts/seed-vscode-home.sh /usr/local/bin/seed-vscode-home.sh
+RUN chmod +x /usr/local/bin/seed-vscode-home.sh
+
 # Copy Homebrew helper scripts
 COPY --chown=vscode:vscode .devcontainer/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh
 RUN chmod +x /usr/local/bin/ror-brew-download.sh
