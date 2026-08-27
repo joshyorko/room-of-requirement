@@ -47,6 +47,10 @@ Click the badge at the top or run:
 devpod up https://github.com/joshyorko/room-of-requirement
 ```
 
+For the Kubernetes PVC-backed `/home/vscode` contract, safe checksum
+validation, migration notes, and rollback instructions, see
+[DevPod Home Persistence](docs/DEVPOD-HOME-PERSISTENCE.md).
+
 ---
 
 ## 📦 Architecture Overview

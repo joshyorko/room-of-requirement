@@ -104,6 +104,7 @@ COPY --chown=vscode:vscode src/common/config/mise.toml /home/vscode/.config/mise
 COPY src/common/config/docker-daemon.json /etc/docker/daemon.json
 COPY --chown=vscode:vscode src/common/post-create.sh /usr/local/bin/devcontainer-post-create.sh
 COPY --chown=vscode:vscode src/common/scripts/mise-seed-cache.sh /usr/local/bin/mise-seed-cache.sh
+COPY --chown=vscode:vscode src/common/scripts/seed-vscode-home.sh /usr/local/bin/seed-vscode-home.sh
 COPY --chown=vscode:vscode src/common/scripts/ror-docker-start.sh /usr/local/bin/ror-docker-start.sh
 COPY --chown=vscode:vscode src/common/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh
 COPY src/common/entrypoint.sh /usr/local/bin/entrypoint.sh
@@ -113,6 +114,7 @@ COPY --chown=vscode:vscode src/common/justfile /usr/share/ror/justfile
 RUN chmod +x \
         /usr/local/bin/devcontainer-post-create.sh \
         /usr/local/bin/mise-seed-cache.sh \
+        /usr/local/bin/seed-vscode-home.sh \
         /usr/local/bin/ror-docker-start.sh \
         /usr/local/bin/ror-brew-download.sh \
         /usr/local/bin/entrypoint.sh && \

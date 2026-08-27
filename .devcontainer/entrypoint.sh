@@ -24,6 +24,13 @@ if id vscode >/dev/null 2>&1 && getent group docker >/dev/null 2>&1; then
     run_as_root usermod -aG docker vscode 2>/dev/null || true
 fi
 
+# A home volume hides image-layer dotfiles. Restore only missing defaults before
+# shells or lifecycle hooks run; the helper never overwrites user state.
+if [ -x /usr/local/bin/seed-vscode-home.sh ]; then
+    /usr/local/bin/seed-vscode-home.sh 2>/dev/null || \
+        log "Warning: Failed to prepare the standard vscode home"
+fi
+
 # Ensure user-owned writable directories for volume mounts/caches
 # Named volumes may be created as root-owned (especially in Codespaces),
 # which can break shell history, mise, npm, etc.
