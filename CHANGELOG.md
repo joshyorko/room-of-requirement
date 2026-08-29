@@ -1,5 +1,13 @@
 # Changelog
 
+## [1.19.2](https://github.com/joshyorko/room-of-requirement/compare/v1.19.1...v1.19.2) (2026-08-28)
+
+
+### 🐛 Bug Fixes
+
+* persist vscode home across DevPod recreation ([1ed4588](https://github.com/joshyorko/room-of-requirement/commit/1ed45881a42b320808dcf9cbda5db133d89edc97))
+* persist vscode home across DevPod recreation ([b0404a8](https://github.com/joshyorko/room-of-requirement/commit/b0404a85ee245ba8879b688acf91a9586dc53ccf))
+
 ## [1.19.1](https://github.com/joshyorko/room-of-requirement/compare/v1.19.0...v1.19.1) (2026-08-16)
 
 
