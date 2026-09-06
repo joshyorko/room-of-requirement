@@ -7,5 +7,5 @@ id vscode >/dev/null
 sudo -n true
 sudo -n -u vscode true
 source_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
-export ROR_REQUIRE_PRIVILEGED_TESTS=1
 bash "$source_root/tests/vscode-home-contract-test.sh"
+ROR_REQUIRE_PRIVILEGED_OWNERSHIP_TEST=1 bash "$source_root/tests/runtime-home-ownership-test.sh"
