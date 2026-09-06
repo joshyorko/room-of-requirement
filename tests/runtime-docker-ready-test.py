@@ -58,7 +58,7 @@ args = dict(arg[2:].split("=", 1) for arg in sys.argv[1:])
 root = Path(os.environ["ROR_READY_FIXTURE"])
 assert args["host"] == "unix://" + str(root / "custom/docker.sock")
 config = json.loads(Path(args["config-file"]).read_text())
-assert config["data-root"] == str(root / "data")
+assert config["data-root"] == str(root / 'data "quoted"')
 (root / "daemon-args.json").write_text(json.dumps(sys.argv[1:]))
 server = socket.socket(socket.AF_UNIX)
 server.bind(args["host"].removeprefix("unix://"))
@@ -100,8 +100,8 @@ assert json.loads(response.split(b"\\r\\n\\r\\n", 1)[1])["ServerVersion"] == "fi
                 "TMPDIR": str(fixture),
                 "ROR_READY_FIXTURE": str(fixture),
                 "ROR_DOCKER_DAEMON_CONFIG": str(source_config),
-                "ROR_DOCKER_EFFECTIVE_CONFIG": str(fixture / "effective.json"),
-                "ROR_DOCKER_DATA_ROOT": str(fixture / "data"),
+                "ROR_DOCKER_EFFECTIVE_CONFIG": str(fixture / 'effective "quoted".json'),
+                "ROR_DOCKER_DATA_ROOT": str(fixture / 'data "quoted"'),
                 "ROR_DOCKER_TEST_DATA_ROOT_FSTYPE": "ext4",
                 "ROR_DOCKER_TEST_HAS_DOCKERD_ENTRYPOINT": "0",
                 "ROR_DOCKER_TEST_DOCKERD_BIN": daemon,
@@ -131,7 +131,7 @@ assert json.loads(response.split(b"\\r\\n\\r\\n", 1)[1])["ServerVersion"] == "fi
             self.assertEqual(
                 json.loads((fixture / "daemon-args.json").read_text()),
                 [f"--host=unix://{fixture}/custom/docker.sock",
-                 f"--config-file={fixture}/effective.json"],
+                 f'--config-file={fixture}/effective "quoted".json'],
             )
             self.assertEqual((fixture / "custom/docker.sock").stat().st_mode & 0o777, 0o660)
             profile = fixture / "profile.d/ror-docker-host.sh"

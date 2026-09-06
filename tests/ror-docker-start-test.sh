@@ -20,6 +20,18 @@ trap 'rm -rf "${temp_root}"' EXIT
 empty_config="${temp_root}/empty.json"
 printf '{}\n' > "${empty_config}"
 
+# Store diagnostic JSON only in this test's private fixture. The starter must
+# not write the configured effective path during planning.
+capture_plan() {
+    local output
+    output="$("${STARTER}" "$@")" || return "$?"
+    printf '%s\n' "${output}" | sed -n 's/^# effective config: //p' > "${ROR_DOCKER_EFFECTIVE_CONFIG}"
+    jq -e 'type == "object"' "${ROR_DOCKER_EFFECTIVE_CONFIG}" >/dev/null || return 1
+    printf '%s\n' "${output}"
+}
+export STARTER
+export -f capture_plan
+
 run_plan() {
     local fstype="$1"
     local has_fuse_overlayfs="$2"
@@ -33,7 +45,7 @@ run_plan() {
         ROR_DOCKER_TEST_HAS_FUSE_OVERLAYFS="${has_fuse_overlayfs}" \
         ROR_DOCKER_TEST_HAS_DEV_FUSE="${has_dev_fuse}" \
         ROR_DOCKER_STORAGE_DRIVER="${driver}" \
-        "${STARTER}" --socket /tmp/ror-test-docker.sock 2>/dev/null
+        bash -c 'capture_plan "$@"' -- --socket /tmp/ror-test-docker.sock 2>/dev/null
 }
 
 run_plan_with_dockerd_only() {
@@ -45,7 +57,7 @@ run_plan_with_dockerd_only() {
         ROR_DOCKER_TEST_HAS_DEV_FUSE="1" \
         ROR_DOCKER_TEST_HAS_DOCKERD_ENTRYPOINT="0" \
         ROR_DOCKER_TEST_DOCKERD_BIN="/usr/bin/dockerd" \
-        "${STARTER}" --socket /tmp/ror-test-docker.sock 2>/dev/null
+        bash -c 'capture_plan "$@"' -- --socket /tmp/ror-test-docker.sock 2>/dev/null
 }
 
 run_plan_without_findmnt() {
@@ -58,7 +70,7 @@ run_plan_without_findmnt() {
         ROR_DOCKER_TEST_PROC_MOUNTS="${mounts_file}" \
         ROR_DOCKER_TEST_HAS_FUSE_OVERLAYFS="1" \
         ROR_DOCKER_TEST_HAS_DEV_FUSE="1" \
-        "${STARTER}" --socket /tmp/ror-test-docker.sock 2>/dev/null
+        bash -c 'capture_plan "$@"' -- --socket /tmp/ror-test-docker.sock 2>/dev/null
 }
 
 run_plan_with_config() {
@@ -74,7 +86,7 @@ run_plan_with_config() {
         ROR_DOCKER_TEST_HAS_FUSE_OVERLAYFS="1" \
         ROR_DOCKER_TEST_HAS_DEV_FUSE="1" \
         "$@" \
-        "${STARTER}" --socket "${temp_root}/docker.sock" 2>/dev/null
+        bash -c 'capture_plan "$@"' -- --socket "${temp_root}/docker.sock" 2>/dev/null
 }
 
 assert_contains() {
@@ -242,7 +254,7 @@ ROR_DOCKER_START_DRY_RUN=1 \
     ROR_DOCKER_TEST_DATA_ROOT_FSTYPE=overlay \
     ROR_DOCKER_TEST_HAS_FUSE_OVERLAYFS=1 \
     ROR_DOCKER_TEST_HAS_DEV_FUSE=0 \
-    "${STARTER}" --socket "${temp_root}/shipped.sock" >/dev/null
+    bash -c 'capture_plan "$@"' -- --socket "${temp_root}/shipped.sock" >/dev/null
 jq -e '."storage-driver" == "vfs"' "${shipped_effective}" >/dev/null || \
     fail "shipped auto configuration must fall back when FUSE is unavailable"
 

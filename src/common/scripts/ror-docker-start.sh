@@ -143,15 +143,12 @@ selected_storage_driver() {
     esac
 }
 
-write_effective_config() {
+render_effective_config() {
     local source_path="$1"
-    local target_path="$2"
-    local temporary_path
 
     # Docker 29 otherwise defaults to containerd's overlayfs image store even
     # when this helper needs a classic FUSE/vfs graph driver for nested storage.
     # Reject an explicit conflicting store choice instead of overwriting it.
-    temporary_path="$(mktemp)"
     if [ -f "${source_path}" ]; then
         jq \
             --arg storage_driver "${STORAGE_DRIVER}" \
@@ -171,7 +168,7 @@ write_effective_config() {
                         .features["containerd-snapshotter"] = false
                     end
                   else . end
-            ' "${source_path}" > "${temporary_path}"
+            ' "${source_path}"
     else
         jq -n \
             --arg storage_driver "${STORAGE_DRIVER}" \
@@ -182,9 +179,20 @@ write_effective_config() {
                 | if $storage_driver == "fuse-overlayfs" or $storage_driver == "vfs" or $storage_driver == "overlay2" then
                     .features["containerd-snapshotter"] = false
                   else . end
-            ' > "${temporary_path}"
+            '
     fi
+}
 
+write_effective_config() {
+    local source_path="$1"
+    local target_path="$2"
+    local temporary_path
+
+    temporary_path="$(mktemp)"
+    if ! render_effective_config "${source_path}" > "${temporary_path}"; then
+        rm -f "${temporary_path}"
+        return 1
+    fi
     run_as_root mkdir -p "$(dirname "${target_path}")"
     run_as_root install -m 0644 "${temporary_path}" "${target_path}"
     rm -f "${temporary_path}"
@@ -284,9 +292,11 @@ CONFIGURED_STORAGE_DRIVER="$(daemon_config_value "${SOURCE_CONFIG}" "storage-dri
 CONFIGURED_DATA_ROOT="$(daemon_config_value "${SOURCE_CONFIG}" "data-root")"
 DOCKER_DATA_ROOT="${ROR_DOCKER_DATA_ROOT:-${CONFIGURED_DATA_ROOT:-/var/lib/docker}}"
 STORAGE_DRIVER="$(selected_storage_driver)"
-write_effective_config "${SOURCE_CONFIG}" "${EFFECTIVE_CONFIG}"
-
-if [ -z "${DRY_RUN}" ]; then
+if [ -n "${DRY_RUN}" ]; then
+    # Validate/render in memory; diagnostics never install a live config.
+    PLAN_CONFIG="$(render_effective_config "${SOURCE_CONFIG}")"
+else
+    write_effective_config "${SOURCE_CONFIG}" "${EFFECTIVE_CONFIG}"
     run_as_root mkdir -p "${DOCKER_DATA_ROOT}" "$(dirname "${DOCKER_SOCKET}")"
 fi
 
@@ -305,6 +315,7 @@ else
 fi
 
 if [ -n "${DRY_RUN}" ]; then
+    printf '# effective config: %s\n' "$(jq -c . <<< "${PLAN_CONFIG}")"
     printf '%q ' "${DOCKERD_COMMAND[@]}"
     printf '\n'
     exit 0
