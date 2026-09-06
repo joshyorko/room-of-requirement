@@ -77,6 +77,10 @@ if [ -n "${mise_config}" ]; then
     command -v mise >/dev/null 2>&1 || error "Project mise config found but mise is unavailable"
     export MISE_RUBY_COMPILE=0
     mise install
+    # Installation does not change this noninteractive shell's PATH. Capture
+    # separately so an environment-resolution failure cannot be hidden by eval.
+    project_env="$(mise env --shell bash)"
+    eval "${project_env}"
     log "✓ mise dependencies installed successfully"
 else
     log "No project mise config found - skipping tool installation"

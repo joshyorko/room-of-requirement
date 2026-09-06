@@ -51,6 +51,12 @@ mise() {
         "install")
             return "${ROR_TEST_MISE_STATUS:-0}"
             ;;
+        "env --shell bash")
+            if [ "${ROR_TEST_MISE_ENV_STATUS:-0}" != "0" ]; then
+                echo 'fixture: project environment failed' >&2
+                return "${ROR_TEST_MISE_ENV_STATUS}"
+            fi
+            ;;
     esac
 }
 
@@ -102,6 +108,17 @@ assert_no_call_matching '^brew update([[:space:]]|$)'
 assert_no_call_matching '^mise install node@'
 assert_no_call_matching '^npm install -g '
 assert_no_call_matching '^npm cache clean'
+
+: > "${ROR_TEST_CALL_LOG}"
+set +e
+ROR_TEST_MISE_ENV_STATUS=39 bash "${HYDRATOR}" "${all_project}" \
+    > "${temp_root}/environment-failure.log" 2>&1
+environment_status=$?
+set -e
+[[ "${environment_status}" -eq 39 ]] || fail "project environment failure must propagate exit 39"
+assert_no_call_matching '^npm ci$'
+grep -Fq 'fixture: project environment failed' "${temp_root}/environment-failure.log" || \
+    fail "project environment failure diagnostic was hidden"
 
 npm_failure="${temp_root}/npm-failure"
 mkdir -p "${npm_failure}"
