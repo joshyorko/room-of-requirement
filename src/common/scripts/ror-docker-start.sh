@@ -66,12 +66,30 @@ has_dev_fuse() {
     [ -c /dev/fuse ]
 }
 
-daemon_config_storage_driver() {
-    local config_path="${ROR_DOCKER_DAEMON_CONFIG:-/etc/docker/daemon.json}"
+validate_daemon_config() {
+    local config_path="$1"
 
-    [ -f "${config_path}" ] || return 1
+    [ -f "${config_path}" ] || return 0
+    command -v jq >/dev/null 2>&1 || {
+        log "jq is required to parse Docker daemon configuration"
+        return 1
+    }
+    jq -e '
+        type == "object" and
+        ((.["storage-driver"] == null) or (.["storage-driver"] | type == "string")) and
+        ((.["data-root"] == null) or (.["data-root"] | type == "string"))
+    ' "${config_path}" >/dev/null || {
+        log "Invalid Docker daemon configuration: ${config_path}"
+        return 1
+    }
+}
 
-    sed -nE 's/^[[:space:]]*"storage-driver"[[:space:]]*:[[:space:]]*"([^"]+)".*/\1/p' "${config_path}" | head -n 1
+daemon_config_value() {
+    local config_path="$1"
+    local key="$2"
+
+    [ -f "${config_path}" ] || return 0
+    jq -r --arg key "${key}" '.[$key] // empty' "${config_path}"
 }
 
 auto_storage_driver() {
@@ -94,17 +112,14 @@ auto_storage_driver() {
 
 selected_storage_driver() {
     local requested="${ROR_DOCKER_STORAGE_DRIVER:-auto}"
-    local configured
-
-    configured="$(daemon_config_storage_driver || true)"
-    if [ -n "${configured}" ]; then
-        echo ""
-        return
-    fi
 
     case "${requested}" in
         "" | auto)
-            auto_storage_driver
+            if [ -n "${CONFIGURED_STORAGE_DRIVER}" ]; then
+                echo "${CONFIGURED_STORAGE_DRIVER}"
+            else
+                auto_storage_driver
+            fi
             ;;
         fuse-overlayfs | overlay2 | vfs)
             echo "${requested}"
@@ -114,9 +129,47 @@ selected_storage_driver() {
             ;;
         *)
             log "Warning: unsupported ROR_DOCKER_STORAGE_DRIVER=${requested}; falling back to auto"
-            auto_storage_driver
+            if [ -n "${CONFIGURED_STORAGE_DRIVER}" ]; then
+                echo "${CONFIGURED_STORAGE_DRIVER}"
+            else
+                auto_storage_driver
+            fi
             ;;
     esac
+}
+
+write_effective_config() {
+    local source_path="$1"
+    local target_path="$2"
+    local temporary_path
+
+    temporary_path="$(mktemp)"
+    if [ -f "${source_path}" ]; then
+        jq \
+            --arg storage_driver "${STORAGE_DRIVER}" \
+            --arg data_root "${DOCKER_DATA_ROOT}" \
+            '
+                del(.hosts)
+                | if $storage_driver == "" then
+                    del(.["storage-driver"])
+                else
+                    .["storage-driver"] = $storage_driver
+                end
+                | .["data-root"] = $data_root
+            ' "${source_path}" > "${temporary_path}"
+    else
+        jq -n \
+            --arg storage_driver "${STORAGE_DRIVER}" \
+            --arg data_root "${DOCKER_DATA_ROOT}" \
+            '
+                {"data-root": $data_root}
+                | if $storage_driver == "" then . else .["storage-driver"] = $storage_driver end
+            ' > "${temporary_path}"
+    fi
+
+    run_as_root mkdir -p "$(dirname "${target_path}")"
+    run_as_root install -m 0644 "${temporary_path}" "${target_path}"
+    rm -f "${temporary_path}"
 }
 
 dockerd_entrypoint() {
@@ -136,6 +189,21 @@ dockerd_bin() {
     command -v dockerd 2>/dev/null || true
 }
 
+docker_bin() {
+    if [ -n "${ROR_DOCKER_TEST_DOCKER_BIN:-}" ]; then
+        echo "${ROR_DOCKER_TEST_DOCKER_BIN}"
+        return
+    fi
+
+    command -v docker 2>/dev/null || true
+}
+
+docker_api_ready() {
+    local client_bin="$1"
+
+    "${client_bin}" --host "${DOCKER_HOST_VALUE}" info >/dev/null 2>&1
+}
+
 prepare_dind_runtime() {
     run_as_root find /run /var/run -iname 'docker*.pid' -delete 2>/dev/null || true
     run_as_root find /run /var/run -iname 'container*.pid' -delete 2>/dev/null || true
@@ -152,13 +220,16 @@ Usage: ror-docker-start.sh [--socket PATH] [--link-default true|false] [--dry-ru
 
 Environment:
   ROR_DOCKER_STORAGE_DRIVER=auto|fuse-overlayfs|vfs|overlay2|default
+  ROR_DOCKER_DATA_ROOT=/path/to/docker-data
+  ROR_DOCKER_DAEMON_CONFIG=/path/to/daemon.json
 USAGE
 }
 
 DOCKER_SOCKET="/var/run/docker.sock"
 LINK_DEFAULT="true"
 DRY_RUN="${ROR_DOCKER_START_DRY_RUN:-}"
-DOCKER_DATA_ROOT="${ROR_DOCKER_DATA_ROOT:-/var/lib/docker}"
+SOURCE_CONFIG="${ROR_DOCKER_DAEMON_CONFIG:-/etc/docker/daemon.json}"
+EFFECTIVE_CONFIG="${ROR_DOCKER_EFFECTIVE_CONFIG:-/run/ror/docker-daemon.json}"
 
 while [ "$#" -gt 0 ]; do
     case "$1" in
@@ -188,17 +259,18 @@ done
 
 DOCKER_HOST_VALUE="unix://${DOCKER_SOCKET}"
 
+validate_daemon_config "${SOURCE_CONFIG}"
+CONFIGURED_STORAGE_DRIVER="$(daemon_config_value "${SOURCE_CONFIG}" "storage-driver")"
+CONFIGURED_DATA_ROOT="$(daemon_config_value "${SOURCE_CONFIG}" "data-root")"
+DOCKER_DATA_ROOT="${ROR_DOCKER_DATA_ROOT:-${CONFIGURED_DATA_ROOT:-/var/lib/docker}}"
+STORAGE_DRIVER="$(selected_storage_driver)"
+write_effective_config "${SOURCE_CONFIG}" "${EFFECTIVE_CONFIG}"
+
 if [ -z "${DRY_RUN}" ]; then
     run_as_root mkdir -p "${DOCKER_DATA_ROOT}" "$(dirname "${DOCKER_SOCKET}")"
 fi
 
-CONFIGURED_STORAGE_DRIVER="$(daemon_config_storage_driver || true)"
-STORAGE_DRIVER="$(selected_storage_driver)"
-DOCKERD_ARGS=(dockerd "--host=${DOCKER_HOST_VALUE}")
-
-if [ -n "${STORAGE_DRIVER}" ]; then
-    DOCKERD_ARGS+=("--storage-driver=${STORAGE_DRIVER}")
-fi
+DOCKERD_ARGS=(dockerd "--host=${DOCKER_HOST_VALUE}" "--config-file=${EFFECTIVE_CONFIG}")
 
 DOCKERD_COMMAND=()
 if dockerd_entrypoint; then
@@ -238,15 +310,45 @@ if [ "$(id -u)" -eq 0 ]; then
 else
     sudo "${DOCKERD_COMMAND[@]}" &
 fi
+DOCKERD_PID=$!
 
-for i in $(seq 1 30); do
-    if [ -S "${DOCKER_SOCKET}" ]; then
-        log "Docker daemon socket is ready"
+DOCKER_BIN="$(docker_bin)"
+if [ -z "${DOCKER_BIN}" ]; then
+    log "Docker CLI not found; cannot verify daemon API readiness"
+    kill "${DOCKERD_PID}" 2>/dev/null || true
+    wait "${DOCKERD_PID}" 2>/dev/null || true
+    exit 1
+fi
+
+START_TIMEOUT="${ROR_DOCKER_START_TIMEOUT_SECONDS:-30}"
+if ! [[ "${START_TIMEOUT}" =~ ^[1-9][0-9]*$ ]]; then
+    log "Invalid ROR_DOCKER_START_TIMEOUT_SECONDS=${START_TIMEOUT}"
+    kill "${DOCKERD_PID}" 2>/dev/null || true
+    wait "${DOCKERD_PID}" 2>/dev/null || true
+    exit 2
+fi
+
+for ((i = 1; i <= START_TIMEOUT; i++)); do
+    if docker_api_ready "${DOCKER_BIN}"; then
+        log "Docker daemon API is ready"
         break
     fi
 
-    if [ "$i" -eq 30 ]; then
-        log "Warning: Docker daemon did not create ${DOCKER_SOCKET} within 30s"
+    if ! kill -0 "${DOCKERD_PID}" 2>/dev/null; then
+        if wait "${DOCKERD_PID}"; then
+            daemon_status=1
+        else
+            daemon_status=$?
+        fi
+        log "Docker daemon exited before API readiness (status ${daemon_status})"
+        exit "${daemon_status}"
+    fi
+
+    if [ "${i}" -eq "${START_TIMEOUT}" ]; then
+        log "Docker daemon API did not become ready at ${DOCKER_HOST_VALUE} within ${START_TIMEOUT}s"
+        kill "${DOCKERD_PID}" 2>/dev/null || true
+        wait "${DOCKERD_PID}" 2>/dev/null || true
+        exit 1
     fi
 
     sleep 1

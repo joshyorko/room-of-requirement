@@ -37,6 +37,7 @@ RUN apt-get update && \
         git \
         gnupg \
         just \
+        jq \
         locales \
         openssh-client \
         procps \

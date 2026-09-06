@@ -57,6 +57,7 @@ RUN apk add --no-cache \
     glibc \
     glibc-locales \
     just \
+    jq \
     libstdc++ \
     openssh-client \
     posix-libc-utils \
