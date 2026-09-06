@@ -17,6 +17,9 @@ CONFIG_DIGEST = "sha256:" + "b" * 64
 MANIFEST = json.dumps({"schemaVersion": 2, "mediaType": "application/vnd.oci.image.manifest.v1+json",
                        "config": {"digest": CONFIG_DIGEST}, "layers": []})
 DIGEST = "sha256:" + hashlib.sha256(MANIFEST.encode()).hexdigest()
+LABELS = {"io.ror.publication": "verified-v1", "io.ror.run-id": "123", "io.ror.run-attempt": "1",
+          "org.opencontainers.image.source": "https://github.com/owner/repo",
+          "org.opencontainers.image.revision": SHA}
 
 # Docker/devcontainer are external side effects. The tested helpers and shell
 # contracts run unchanged; this fixture records exact command boundaries.
@@ -37,11 +40,15 @@ elif name == 'docker':
         if '--raw' in args:
             sys.stdout.write(os.environ['MANIFEST'])
         elif '{{json .Image}}' in args:
-            print(json.dumps({'config': {'Labels': json.loads(os.environ.get('IMAGE_LABELS', '{}'))}}))
+            key = 'CANDIDATE_LABELS' if '@' in args[3] else 'IMAGE_LABELS'
+            print(json.dumps({'config': {'Labels': json.loads(os.environ[key])}}))
         else:
             print(os.environ['INSPECT_DIGEST'])
     elif args[:2] == ['image', 'inspect']:
-        print(os.environ.get('LOCAL_ID', 'sha256:' + 'b' * 64))
+        if '{{json .Config.Labels}}' in args:
+            print(os.environ['CANDIDATE_LABELS'])
+        else:
+            print(os.environ.get('LOCAL_ID', 'sha256:' + 'b' * 64))
     elif args[:1] == ['run']:
         print('ci-owned-container')
 elif name == 'git':
@@ -64,7 +71,8 @@ class ExecutionTests(unittest.TestCase):
                         CALLS=str(self.work / "calls"), RUNNER_TEMP=str(self.work),
                         GITHUB_OUTPUT=str(self.work / "output"), PYTHONDONTWRITEBYTECODE="1",
                         GITHUB_STEP_SUMMARY=str(self.work / "summary"),
-                        MANIFEST=MANIFEST, INSPECT_DIGEST=DIGEST)
+                        MANIFEST=MANIFEST, INSPECT_DIGEST=DIGEST,
+                        CANDIDATE_LABELS=json.dumps(LABELS), IMAGE_LABELS=json.dumps(LABELS))
 
     def run_script(self, name, *args, **env):
         return subprocess.run([str(SCRIPTS / name), *args], cwd=ROOT, env=self.env | env,
@@ -109,6 +117,13 @@ class ExecutionTests(unittest.TestCase):
                 result = self.run_script("build_image.py", REQUEST=self.request(
                     event="push", ref="refs/heads/main"), **env)
                 self.assertNotEqual(result.returncode, 0)
+
+    def test_missing_or_wrong_pulled_candidate_metadata_is_rejected(self):
+        for labels in ({}, LABELS | {"io.ror.run-id": "124"},
+                       LABELS | {"org.opencontainers.image.revision": "c" * 40}):
+            result = self.run_script("build_image.py", REQUEST=self.request(
+                event="push", ref="refs/heads/main"), CANDIDATE_LABELS=json.dumps(labels))
+            self.assertNotEqual(result.returncode, 0)
 
     def test_branch_candidate_never_writes_shared_cache(self):
         result = self.run_script("build_image.py", REQUEST=self.request(
@@ -168,7 +183,10 @@ class ExecutionTests(unittest.TestCase):
                  for k in ("verify", "attest", "provenance")}
         cases = [dict(SOURCE_SHA="c" * 40), dict(FAIL_COMMAND="git fetch"),
                  dict(FAIL_COMMAND="docker buildx imagetools inspect"),
-                 dict(IMAGE_LABELS=json.dumps({"io.ror.run-id": "124", "io.ror.run-attempt": "1"})),
+                 dict(IMAGE_LABELS=json.dumps(LABELS | {"io.ror.run-id": "124"})),
+                 dict(IMAGE_LABELS=json.dumps(LABELS | {"io.ror.run-attempt": "2"})),
+                 dict(CANDIDATE_LABELS="{}"),
+                 dict(IMAGE_LABELS=json.dumps({"io.ror.publication": "verified-v1"})),
                  dict(NEEDS=json.dumps(needs | {"attest": {"result": "failure"}}))]
         cases.append(dict(NEEDS=json.dumps(needs | {"provenance": {
             "result": "success", "outputs": {"subject_digest": "sha256:" + "d" * 64}}})))

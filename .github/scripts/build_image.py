@@ -9,6 +9,7 @@ import subprocess
 import sys
 
 from ci_policy import context, require
+from build_metadata import validate_labels
 from image_identity import digest, registry_identity
 
 
@@ -25,13 +26,8 @@ def main():
     command = ["devcontainer", "build", "--workspace-folder", ".", "--config",
                f'src/{plan["variant"]}/.devcontainer/devcontainer.json',
                "--image-name", plan["candidate"], "--platform", "linux/amd64",
-               "--frozen-lockfile", "--cache-from", f"type=registry,ref={cache}"]
-    for key, value in {"org.opencontainers.image.source":
-                       "https://github.com/" + plan["repository"],
-                       "org.opencontainers.image.revision": plan["source"],
-                       "io.ror.run-id": plan["run_id"],
-                       "io.ror.run-attempt": plan["run_attempt"]}.items():
-        command.extend(["--label", f"{key}={value}"])
+               "--frozen-lockfile", "--cache-from", f"type=registry,ref={cache}",
+               "--docker-path", str(Path(__file__).resolve().with_name("build_metadata.py"))]
     if plan["refresh"]:
         # CLI 0.89.0 forwards --no-cache AND --pull for Dockerfile builds,
         # refreshing mutable apt/apk/Brew/feature installations on the monthly run.
@@ -45,7 +41,8 @@ def main():
         # Default Buildx attestations create an OCI index even for one platform.
         # We attach our required attestations later and deliberately publish one manifest.
         subprocess.run(command, check=True, stdout=output,
-                       env=dict(os.environ, BUILDX_NO_DEFAULT_ATTESTATIONS="1"))
+                       env=dict(os.environ, BUILDX_NO_DEFAULT_ATTESTATIONS="1",
+                                ROR_BUILD_CONTEXT=json.dumps(plan)))
     plan["digest"] = ""
     plan["test_image"] = plan["candidate"]
     if plan["publish"]:
@@ -66,6 +63,10 @@ def main():
         identity = {"mode": "local", "config_digest": local_id}
         plan["test_image"] = local_id
         plan["scan_image"] = "docker:" + local_id
+    labels = json.loads(capture("docker", "image", "inspect", plan["test_image"],
+                                 "--format", "{{json .Config.Labels}}"))
+    validate_labels(labels, plan)
+    (evidence / "metadata.json").write_text(json.dumps(labels, indent=2) + "\n")
     (evidence / "identity.json").write_text(json.dumps(identity, indent=2) + "\n")
     (evidence / "context.json").write_text(json.dumps(plan, indent=2) + "\n")
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:

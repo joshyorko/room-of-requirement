@@ -77,6 +77,11 @@ jobs:
       - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6  # v4.1.2
         with:
           cosign-release: v3.0.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: '24'
+      - name: Install pinned CLI for command-generation regressions
+        run: npm install -g @devcontainers/cli@0.89.0
       - name: CI policy and execution regressions
         run: |
           for suite in tests/ci-*-test.py; do

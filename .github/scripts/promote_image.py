@@ -9,6 +9,7 @@ import subprocess
 import sys
 
 from ci_policy import context, promotion, require
+from build_metadata import previous_order, validate_labels
 
 
 def capture(*args):
@@ -55,14 +56,17 @@ def promote(plan, gates):
     plan = context(plan) | {"digest": plan["digest"], "gates": gates}
     # Validate policy before any registry access. Source facts are fresh inside the lock.
     aliases = promotion(plan | source_facts(plan))
+    candidate = existing_image(plan["image"] + "@" + plan["digest"])
+    require(candidate is not None, "candidate no longer exists")
+    validate_labels(candidate["config"].get("Labels"), plan)
     for alias in aliases:
         ref = plan["image"] + ":" + alias
         image = existing_image(ref)
         if image is None:
             continue
         labels = image["config"].get("Labels") or {}
-        if "io.ror.run-id" in labels:
-            previous = (int(labels["io.ror.run-id"]), int(labels["io.ror.run-attempt"]))
+        previous = previous_order(labels, plan["repository"])
+        if previous is not None:
             current = (int(plan["run_id"]), int(plan["run_attempt"]))
             require(previous <= current, "newer run already promoted this alias")
         if plan["release_version"] and alias == aliases[0]:
