@@ -123,9 +123,6 @@ class ScanTests(unittest.TestCase):
         self.addCleanup(self.temp.cleanup)
         self.path = Path(self.temp.name)
         self.fixture = json.loads((ROOT / "tests/ci-fixtures/grype-image.json").read_text())
-        # Upstream's presenter-only second match has a zero-value fix state.
-        # Use the actual scanner's unknown state for valid-report tests.
-        self.fixture["matches"][1]["vulnerability"]["fix"]["state"] = "unknown"
         self.identity = dict(mode="registry", manifest_digest=self.fixture["source"]["target"]["manifestDigest"],
                              config_digest=self.fixture["source"]["target"]["imageID"])
 
@@ -145,6 +142,9 @@ class ScanTests(unittest.TestCase):
         summary = json.loads((self.path / "summary.json").read_text())
         self.assertEqual(summary["counts"]["low"], 1)
         self.assertEqual(summary["counts"]["critical"], 1)
+        self.assertEqual(summary["critical_fixed"], 0)
+        sarif = json.loads((self.path / "scan.sarif").read_text())
+        self.assertEqual(sarif["runs"][0]["results"], [])
 
     def test_fixed_critical_blocks_by_default_and_report_survives(self):
         match = self.fixture["matches"][0]
@@ -169,9 +169,35 @@ class ScanTests(unittest.TestCase):
         self.fixture["matches"] = []
         self.assertEqual(self.scan(self.fixture).returncode, 0)
 
-    def test_presenter_zero_value_fix_state_is_rejected(self):
-        raw = json.loads((ROOT / "tests/ci-fixtures/grype-image.json").read_text())
-        self.assertNotEqual(self.scan(raw, policy="false").returncode, 0)
+    def test_actual_grype_go_zero_value_fixes_keep_severity_without_becoming_actionable(self):
+        observed = json.loads((ROOT / "tests/ci-fixtures/grype-zero-fix.json").read_text())
+        self.fixture.update(observed)
+        result = self.scan(self.fixture)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        summary = json.loads((self.path / "summary.json").read_text())
+        self.assertEqual(summary["counts"], dict(critical=0, high=1, medium=0, low=0,
+                                               negligible=0, unknown=1))
+        self.assertEqual(summary["critical_fixed"], 0)
+        sarif = json.loads((self.path / "scan.sarif").read_text())
+        self.assertEqual(sarif["runs"][0]["results"], [])
+
+    def test_only_explicit_empty_state_with_empty_versions_is_normalized(self):
+        invalid = [None, [], {}, {"versions": []}, {"state": ""},
+                   {"state": "", "versions": ["1.2.3"]},
+                   {"state": "fixed", "versions": []}]
+        invalid.extend({"state": state, "versions": []}
+                       for state in (None, False, 0, [], {}, " ", "future-state"))
+        invalid.extend({"state": "", "versions": versions}
+                       for versions in (None, "", {}, [None], [1], [""]))
+        invalid.extend({"state": state, "versions": ["1.2.3"]}
+                       for state in ("unknown", "not-fixed", "wont-fix"))
+        for fix in invalid:
+            with self.subTest(fix=fix):
+                report = copy.deepcopy(self.fixture)
+                report["matches"] = report["matches"][:1]
+                report["matches"][0]["vulnerability"]["fix"] = fix
+                result = self.scan(report, policy="false")
+                self.assertNotEqual(result.returncode, 0, result.stdout)
 
     def test_missing_stale_or_cross_digest_image_target_never_passes(self):
         for target in (None, {}, {"imageID": self.identity["config_digest"]},

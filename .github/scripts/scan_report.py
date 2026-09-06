@@ -27,13 +27,18 @@ def summarize(report, expected):
         require(isinstance(vuln["id"], str) and vuln["id"], "vulnerability ID missing")
         require(isinstance(artifact["name"], str) and artifact["name"], "package missing")
         fix = vuln["fix"]
-        require(fix["state"] in ("fixed", "not-fixed", "wont-fix", "unknown"),
-                "unknown fix state")
+        state = fix["state"]
+        require(isinstance(state, str), "invalid fix state")
         require(isinstance(fix["versions"], list), "fix versions missing")
         require(all(isinstance(v, str) and v for v in fix["versions"]), "invalid fix version")
-        require(fix["state"] != "fixed" or fix["versions"], "fixed vulnerability lacks versions")
+        # Grype 0.118 emits this explicit zero value for some Go advisories.
+        if state == "" and not fix["versions"]:
+            state = "unknown"
+        require(state in ("fixed", "not-fixed", "wont-fix", "unknown"), "unknown fix state")
+        require(state != "fixed" or fix["versions"], "fixed vulnerability lacks versions")
+        require(state == "fixed" or not fix["versions"], "unfixed vulnerability has versions")
         counts[severity].add(vuln["id"])
-        if severity == "critical" and fix["state"] == "fixed":
+        if severity == "critical" and state == "fixed":
             actionable.setdefault(vuln["id"], set()).add(
                 f'{artifact["name"]}@{artifact["version"]} -> {", ".join(fix["versions"])}')
     summary = {"counts": {k: len(v) for k, v in counts.items()},
