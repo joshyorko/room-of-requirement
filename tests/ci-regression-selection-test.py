@@ -5,6 +5,7 @@ import os
 from pathlib import Path
 import shutil
 import subprocess
+import sys
 import tempfile
 import unittest
 
@@ -16,6 +17,29 @@ IMAGE_SUITES = {"runtime-home-ownership-test.sh", "vscode-home-contract-test.sh"
 
 
 class RegressionSelectionTests(unittest.TestCase):
+    def test_missing_just_is_reported_before_running_suites(self):
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / ".github/scripts").mkdir(parents=True)
+            (root / "tests").mkdir()
+            binary_dir = root / "bin"
+            binary_dir.mkdir()
+            script = root / ".github/scripts/regressions.sh"
+            shutil.copyfile(ROOT / ".github/scripts/regressions.sh", script)
+            (root / "tests/ci-sentinel-test.py").write_text("raise SystemExit(37)\n")
+            for name, target in (("python3", sys.executable), ("bash", "/bin/bash"),
+                                 ("dirname", shutil.which("dirname"))):
+                (binary_dir / name).symlink_to(target)
+            for name in ("mise", "jq", "git", "sudo", "devcontainer", "cosign"):
+                tool = binary_dir / name
+                tool.write_text("#!/bin/sh\nexit 0\n")
+                tool.chmod(0o755)
+            result = subprocess.run(["/bin/bash", str(script)],
+                                    env=dict(os.environ, PATH=str(binary_dir)),
+                                    capture_output=True, text=True)
+            self.assertEqual(result.returncode, 1, result.stderr)
+            self.assertIn("Required regression tool missing: just", result.stderr)
+
     def test_every_host_suite_executes_and_failure_stops_the_gate(self):
         workflow = yaml.safe_load((ROOT / ".github/workflows/build-image.yml").read_text())
         step = next(step for step in workflow["jobs"]["lint"]["steps"]

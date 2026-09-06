@@ -85,7 +85,7 @@ jobs:
       - name: Install runtime regression prerequisites
         run: |
           sudo apt-get update
-          sudo apt-get install -y jq python3-venv git sudo
+          sudo apt-get install -y jq python3-venv git sudo just
           python3 -m venv "$RUNNER_TEMP/regression-python"
           "$RUNNER_TEMP/regression-python/bin/pip" install PyYAML==6.0.3
           echo "$RUNNER_TEMP/regression-python/bin" >> "$GITHUB_PATH"

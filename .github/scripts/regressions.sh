@@ -3,7 +3,7 @@
 set -euo pipefail
 cd "$(dirname "${BASH_SOURCE[0]}")/../.."
 
-for tool in python3 mise jq git sudo devcontainer cosign; do
+for tool in python3 mise jq git sudo just devcontainer cosign; do
     command -v "$tool" >/dev/null || { echo "Required regression tool missing: $tool" >&2; exit 1; }
 done
 python3 -c 'import yaml'
