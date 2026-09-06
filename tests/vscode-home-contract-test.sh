@@ -51,11 +51,13 @@ done
 
 jq -e '
     .image == "ghcr.io/joshyorko/room-of-requirement:latest" and
-    (.features["ghcr.io/devcontainers/features/docker-in-docker:4"] != null) and
+    ((.features // {}) | length == 0) and
+    .privileged == true and
+    .overrideCommand == false and
     ((.containerEnv // {}) | has("DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL") | not) and
     ((.remoteEnv // {}) | has("DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL") | not)
 ' "${ROOT_DIR}/templates/ror-starter/.devcontainer/devcontainer.json" >/dev/null || \
-    fail "starter template must use the supported image and feature contract"
+    fail "starter must reuse the supported image's DinD with privilege and no feature reinstall"
 
 jq -e \
     '(.mounts // []) | index("source=ror-wolfi-podman-storage-${devcontainerId},target=/home/vscode/.local/share/containers/storage,type=volume") != null' \

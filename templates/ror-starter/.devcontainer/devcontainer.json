@@ -13,13 +13,6 @@
     "source=ror-npm-cache,target=/home/vscode/.npm,type=volume",
     "source=ror-docker-data-${devcontainerId},target=/var/lib/docker,type=volume"
   ],
-  "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:4": {
-      "version": "latest",
-      "moby": true,
-      "dockerDashComposeVersion": "none"
-    }
-  },
   "privileged": true,
   "runArgs": ["--privileged"],
   "overrideCommand": false,
