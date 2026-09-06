@@ -140,6 +140,24 @@ class ExecutionTests(unittest.TestCase):
         self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], self.calls())
         self.assertFalse(any("prune" in c or "ps" in c for c in self.calls()))
 
+    def test_runtime_uses_anonymous_volumes_for_both_feature_graph_stores(self):
+        for variant in ("ubuntu-noble", "debian-trixie", "wolfi"):
+            with self.subTest(variant=variant):
+                result = self.run_script("runtime-smoke.sh", "local:candidate", variant)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                run = [c for c in self.calls() if c[:2] == ["docker", "run"]][-1]
+                mounts = []
+                for i, arg in enumerate(run[:-1]):
+                    if arg != "--mount":
+                        continue
+                    mount = {}
+                    for field in run[i + 1].split(","):
+                        key, separator, value = field.partition("=")
+                        mount[key] = value if separator else True
+                    mounts.append(mount)
+                for target in ("/var/lib/docker", "/var/lib/containerd"):
+                    self.assertIn({"type": "volume", "target": target}, mounts)
+
     def test_wolfi_runs_docker_and_unprivileged_podman_contracts(self):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi")
         self.assertEqual(result.returncode, 0, result.stderr)

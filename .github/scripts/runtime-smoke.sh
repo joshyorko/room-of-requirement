@@ -12,6 +12,8 @@ case "$variant" in
 esac
 
 container="$(docker run -d --privileged \
+    --mount type=volume,target=/var/lib/docker \
+    --mount type=volume,target=/var/lib/containerd \
     --mount "type=bind,source=$source_root,target=/ror-source,readonly" \
     "$image" sleep infinity)"
 cleanup() {

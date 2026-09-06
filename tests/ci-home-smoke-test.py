@@ -22,12 +22,20 @@ class HomeSmokeTests(unittest.TestCase):
             shutil.copyfile(ROOT / ".github/scripts/home-smoke.sh", wrapper)
             for name, source in {
                 "id": '#!/bin/sh\nprintf "0\\n"\n',
-                "sudo": '#!/bin/sh\nexit "${FAIL_SUDO:-0}"\n',
+                "sudo": ('#!/bin/sh\n'
+                         '[ "${FAIL_SUDO:-0}" = 0 ] || exit "$FAIL_SUDO"\n'
+                         '[ "$1" != -n ] || shift\n'
+                         'if [ "$1" = -u ]; then\n'
+                         '  test "$2" = vscode || exit 24\n'
+                         '  export TEST_AS_VSCODE=1\n'
+                         '  shift 2\n'
+                         'fi\nexec "$@"\n'),
             }.items():
                 path = root / "bin" / name
                 path.write_text(source)
                 path.chmod(0o755)
             (root / "tests/vscode-home-contract-test.sh").write_text(
+                'test "${TEST_AS_VSCODE:-}" = 1 || exit 26\n'
                 'echo portable >> "$CALLS"\nexit "${FAIL_PORTABLE:-0}"\n')
             (root / "tests/runtime-home-ownership-test.sh").write_text(
                 'test "$ROR_REQUIRE_PRIVILEGED_OWNERSHIP_TEST" = 1 || exit 25\n'
