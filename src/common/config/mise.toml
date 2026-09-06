@@ -1,29 +1,14 @@
 # mise Configuration for Room of Requirement
-# Global config for default tool versions
-
-# ============================================================================
-# TOOL VERSIONS
-# ============================================================================
-# These define the default versions available in this environment
-# Users can override with project-specific .mise.toml files
-
-[tools]
-node = "lts"
-python = "latest"
-go = "latest"
-ruby = "latest"
-# Rust remains disabled by default to reduce initial startup time.
-# All build dependencies required for Ruby are available in the image.
-# Optional helper: ujust rails-enable <ruby_version> <rails_version>
-# To enable Rust as well: mise use -g rust@latest
-# rust = "latest"
+# Shared settings; language profiles are installed explicitly with
+# `ujust runtime-defaults` or declared by each project.
 
 # ============================================================================
 # MISE SETTINGS
 # ============================================================================
 [settings]
-# Automatically install tools when entering directory
-auto_install = true
+# Project hydration installs declared tools. Shell startup does not download
+# undeclared global runtimes.
+auto_install = false
 
 # Show status messages
 quiet = false

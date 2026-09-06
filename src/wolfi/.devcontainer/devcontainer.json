@@ -69,7 +69,5 @@
   "runArgs": [
     "--privileged"
   ],
-  "onCreateCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true; sudo apk cache clean 2>/dev/null || true",
-  "updateContentCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true; sudo apk cache clean 2>/dev/null || true",
-  "postCreateCommand": "/bin/bash /usr/local/bin/seed-vscode-home.sh || true; /bin/bash /usr/local/bin/devcontainer-post-create.sh || /bin/bash .devcontainer/post-create.sh 2>/dev/null || true"
+  "postCreateCommand": "/bin/bash /usr/local/bin/devcontainer-post-create.sh"
 }

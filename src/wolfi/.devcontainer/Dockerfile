@@ -145,12 +145,6 @@ RUN groupadd -g 999 docker && \
     echo "vscode ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/vscode && \
     chmod 0440 /etc/sudoers.d/vscode
 
-# Create linuxbrew user for Homebrew ownership
-RUN groupadd -g 2000 linuxbrew && \
-    useradd -m -u 2000 -g linuxbrew linuxbrew && \
-    echo "linuxbrew ALL=(ALL) NOPASSWD: ALL" >> /etc/sudoers.d/linuxbrew && \
-    chmod 0440 /etc/sudoers.d/linuxbrew
-
 # ============================================================================
 # STAGE 3: Homebrew Foundation (required for ror-cli-tools feature)
 # ============================================================================
@@ -191,20 +185,6 @@ RUN apk add --no-cache \
         fi; \
     fi
 
-# Install Homebrew using the OFFICIAL installer (same as Universal Blue)
-# This ensures proper git remote setup and works correctly with brew update
-RUN mkdir -p /home/linuxbrew && \
-    chown -R linuxbrew:linuxbrew /home/linuxbrew && \
-    # Create .dockerenv to skip some interactive checks in the installer
-    touch /.dockerenv && \
-    # Run official Homebrew installer as linuxbrew user
-    # Note: Using double quotes with escaped inner quotes to satisfy Hadolint SC2016
-    su - linuxbrew -c "NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" && \
-    # Run initial update to populate formulae
-    su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew update --force" && \
-    # Configure git safe directory for all users
-    git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
-
 # Homebrew environment and PATH
 # NOTE: PATH must include Homebrew bin directories early so all subsequent commands
 # (including mise, brew, and any shims created by mise) can find required tools
@@ -218,21 +198,22 @@ ENV HOMEBREW_PREFIX=/home/linuxbrew/.linuxbrew \
     RUBY_CFLAGS="-O1" \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
-# Install the always-on shell foundation directly in the image.
+# Install Homebrew and the always-on shell foundation as their final owner.
 # Heavier curated tool bundles, including bbrew, stay opt-in through ujust recipes.
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide passt"
-
-# Configure Homebrew permissions for vscode user
-# vscode user needs full write access to Homebrew repo for `brew update`
-RUN mkdir -p \
-    /home/linuxbrew/.linuxbrew/var/homebrew/linked \
-    /home/linuxbrew/.linuxbrew/var/homebrew/locks \
-    /home/linuxbrew/.linuxbrew/Cellar \
-    /home/linuxbrew/.linuxbrew/Caskroom && \
-    # Change ownership to vscode so brew update works (git fetch needs write access)
-    chown -R vscode:vscode /home/linuxbrew/.linuxbrew && \
-    chmod -R u+rwX /home/linuxbrew/.linuxbrew && \
-    chmod 775 /home/linuxbrew/.linuxbrew
+RUN mkdir -p /home/linuxbrew && \
+    chown vscode:vscode /home/linuxbrew && \
+    touch /.dockerenv && \
+    su - vscode -c "NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" && \
+    su - vscode -c "/home/linuxbrew/.linuxbrew/bin/brew update --force" && \
+    su - vscode -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide passt" && \
+    su - vscode -c "mkdir -p \
+        /home/linuxbrew/.linuxbrew/var/homebrew/linked \
+        /home/linuxbrew/.linuxbrew/var/homebrew/locks \
+        /home/linuxbrew/.linuxbrew/Cellar \
+        /home/linuxbrew/.linuxbrew/Caskroom" && \
+    chmod 755 /home/linuxbrew && \
+    chmod 775 /home/linuxbrew/.linuxbrew && \
+    git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
 
 # ============================================================================
 # Prepare mise cache directories for post-create runtime hydration
@@ -252,44 +233,15 @@ FROM homebrew AS final
 # Switch to root for system operations
 USER 0
 
-# Security: Update packages after multi-stage build and address CVEs
-# CVE-2023-39327, CVE-2023-39328, CVE-2023-39329: openjpeg vulnerabilities
-# CVE-2025-60876: busybox wget vulnerability
-RUN apk update && \
-    apk add --no-cache --upgrade \
-    ca-certificates \
-    openssl \
-    # Upgrade packages with known CVEs to latest available versions
-    openjpeg \
-    busybox && \
-    apk cache clean && \
-    # Remove gcompat from world file if present (VS Code may try to add it)
-    # Wolfi uses native glibc, not musl - gcompat is not needed and not available
-    # Use broader pattern to catch gcompat with or without version constraints
-    sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true
+# Security updates remain build-fatal; only stale world-file cleanup is optional.
+COPY --chmod=0755 src/wolfi/scripts/security-update.sh /usr/local/bin/ror-security-update.sh
+RUN /usr/local/bin/ror-security-update.sh
 
 # Create apk wrapper that filters out gcompat requests
 # VS Code/DevPod keeps trying to install gcompat even with DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true
 # This wrapper intercepts those requests and silently ignores gcompat
-RUN mv /sbin/apk /sbin/apk.real && \
-    { \
-        echo "#!/bin/bash"; \
-        echo "# apk wrapper to filter out gcompat (not available in Wolfi, not needed with native glibc)"; \
-        echo "args=()"; \
-        echo "for arg in \"\$@\"; do"; \
-        echo "    if [[ \"\$arg\" != \"gcompat\" && \"\$arg\" != *\"gcompat\"* ]]; then"; \
-        echo "        args+=(\"\$arg\")"; \
-        echo "    fi"; \
-        echo "done"; \
-        echo "# Also remove gcompat from world file if somehow added"; \
-        echo "sed -i \"/gcompat/d\" /etc/apk/world 2>/dev/null || true"; \
-        echo "# If only command remains (e.g., \"add\" with no packages), skip"; \
-        echo "if [[ \${#args[@]} -le 1 ]]; then"; \
-        echo "    exit 0"; \
-        echo "fi"; \
-        echo "exec /sbin/apk.real \"\${args[@]}\""; \
-    } > /sbin/apk && \
-    chmod +x /sbin/apk
+RUN mv /sbin/apk /sbin/apk.real
+COPY --chmod=0755 src/wolfi/scripts/apk-wrapper.sh /sbin/apk
 
 # Copy first run notice for VS Code to display
 RUN mkdir -p /usr/local/etc/vscode-dev-containers
@@ -352,7 +304,14 @@ RUN mkdir -p \
     /home/vscode/.local/share \
     /home/vscode/.config/mise \
     /workspaces && \
-    chown -R vscode:vscode /home/vscode /workspaces && \
+    chown vscode:vscode \
+        /home/vscode \
+        /home/vscode/.cache \
+        /home/vscode/.local \
+        /home/vscode/.local/share \
+        /home/vscode/.config \
+        /home/vscode/.config/mise \
+        /workspaces && \
     chmod 755 /workspaces
     # NOTE: Keeping build-base/gcc and all *-dev packages for Ruby compilation via mise
     # Ruby 3.4.7 requires: libffi-dev, ncurses-dev, openssl-dev, readline-dev, yaml-dev, zlib-dev
@@ -371,10 +330,6 @@ ENV HOME=/home/vscode \
 # Run: ujust bbrew (TUI selector) or ujust brew-install-all (install everything)
 
 WORKDIR /workspaces
-
-# Health check
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["CMD-SHELL", "echo \"OK\" || exit 1"]
 
 # Entrypoint wrapper starts dockerd via sudo, then runs CMD as vscode user
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]

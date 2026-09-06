@@ -31,7 +31,7 @@
   "runArgs": [
     "--privileged"
   ],
-  "postCreateCommand": "/bin/bash /usr/local/bin/seed-vscode-home.sh || true; /bin/bash /usr/local/bin/devcontainer-post-create.sh || true",
+  "postCreateCommand": "/bin/bash /usr/local/bin/devcontainer-post-create.sh",
   "customizations": {
     "vscode": {
       "extensions": [

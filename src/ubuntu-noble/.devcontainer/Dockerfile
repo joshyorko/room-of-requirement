@@ -59,27 +59,20 @@ RUN chmod +x /usr/local/bin/install-docker-compose.sh && \
 RUN groupadd -f docker && \
     usermod -aG docker vscode
 
-RUN groupadd -f -g 2000 linuxbrew && \
-    id -u linuxbrew >/dev/null 2>&1 || useradd -m -u 2000 -g linuxbrew -s /bin/bash linuxbrew && \
-    echo "linuxbrew ALL=(ALL) NOPASSWD: ALL" > /etc/sudoers.d/linuxbrew && \
-    chmod 0440 /etc/sudoers.d/linuxbrew && \
-    mkdir -p /home/linuxbrew && \
-    chown -R linuxbrew:linuxbrew /home/linuxbrew && \
+RUN mkdir -p /home/linuxbrew && \
+    chown vscode:vscode /home/linuxbrew && \
     touch /.dockerenv && \
-    su - linuxbrew -c "NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" && \
-    su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew update --force" && \
-    git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
-
-RUN su - linuxbrew -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide" && \
-    mkdir -p \
+    su - vscode -c "NONINTERACTIVE=1 /bin/bash -c \"\$(curl -fsSL https://raw.githubusercontent.com/Homebrew/install/HEAD/install.sh)\"" && \
+    su - vscode -c "/home/linuxbrew/.linuxbrew/bin/brew update --force" && \
+    su - vscode -c "/home/linuxbrew/.linuxbrew/bin/brew install starship mise zoxide" && \
+    su - vscode -c "mkdir -p \
         /home/linuxbrew/.linuxbrew/var/homebrew/linked \
         /home/linuxbrew/.linuxbrew/var/homebrew/locks \
         /home/linuxbrew/.linuxbrew/Cellar \
-        /home/linuxbrew/.linuxbrew/Caskroom && \
-    chown -R vscode:vscode /home/linuxbrew/.linuxbrew && \
-    chmod -R u+rwX /home/linuxbrew/.linuxbrew && \
+        /home/linuxbrew/.linuxbrew/Caskroom" && \
     chmod 755 /home/linuxbrew && \
-    chmod 775 /home/linuxbrew/.linuxbrew
+    chmod 775 /home/linuxbrew/.linuxbrew && \
+    git config --system --add safe.directory /home/linuxbrew/.linuxbrew/Homebrew
 
 RUN mkdir -p \
         /usr/local/share/mise \
@@ -130,9 +123,6 @@ ENV HOME=/home/vscode \
     PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:/usr/local/bin:${PATH}"
 
 WORKDIR /workspaces
-
-HEALTHCHECK --interval=30s --timeout=3s --start-period=5s --retries=3 \
-    CMD ["CMD-SHELL", "echo \"OK\" || exit 1"]
 
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]

@@ -19,6 +19,7 @@ CONFIGS=(
 
 expected_mount="source=ror-vscode-home-\${devcontainerId},target=/home/vscode,type=volume"
 expected_docker_mount="source=ror-docker-data-\${devcontainerId},target=/var/lib/docker,type=volume"
+expected_post_create="/bin/bash /usr/local/bin/devcontainer-post-create.sh"
 
 for config in "${CONFIGS[@]}"; do
     jq -e --arg expected "${expected_mount}" \
@@ -39,16 +40,22 @@ for config in "${CONFIGS[@]}"; do
         "${config}" >/dev/null || \
         fail "${config} must not mount the cache path for the wrong Homebrew user"
 
-    jq -e '.postCreateCommand | contains("seed-vscode-home.sh")' "${config}" >/dev/null || \
-        fail "${config} must use the idempotent home seeder"
+    jq -e --arg expected "${expected_post_create}" \
+        '.postCreateCommand == $expected' "${config}" >/dev/null || \
+        fail "${config} must use only the shared absolute project hydrator"
 
-    jq -e '.postCreateCommand | contains("/bin/bash /usr/local/bin/seed-vscode-home.sh")' "${config}" >/dev/null || \
-        fail "${config} must invoke the home seeder with an absolute bash path"
-
-    jq -e '.postCreateCommand | contains("cp /usr/share/ror/config/.zshrc ~/.zshrc") | not' \
+    jq -e '((has("onCreateCommand") | not) and (has("updateContentCommand") | not))' \
         "${config}" >/dev/null || \
-        fail "${config} must not overwrite the persistent zsh configuration"
+        fail "${config} must not define competing lifecycle hydration hooks"
 done
+
+jq -e '
+    .image == "ghcr.io/joshyorko/room-of-requirement:latest" and
+    (.features["ghcr.io/devcontainers/features/docker-in-docker:4"] != null) and
+    ((.containerEnv // {}) | has("DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL") | not) and
+    ((.remoteEnv // {}) | has("DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL") | not)
+' "${ROOT_DIR}/templates/ror-starter/.devcontainer/devcontainer.json" >/dev/null || \
+    fail "starter template must use the supported image and feature contract"
 
 jq -e \
     '(.mounts // []) | index("source=ror-wolfi-podman-storage-${devcontainerId},target=/home/vscode/.local/share/containers/storage,type=volume") != null' \

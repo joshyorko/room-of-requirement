@@ -1,15 +1,11 @@
 {
-  "image": "ghcr.io/joshyorko/ror:latest",
+  "image": "ghcr.io/joshyorko/room-of-requirement:latest",
   "remoteUser": "vscode",
-  "containerEnv": {
-    "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
-  },
   "remoteEnv": {
     "SHELL": "/bin/zsh",
     "HOMEBREW_NO_ANALYTICS": "1",
     "HOMEBREW_NO_AUTO_UPDATE": "1",
-    "DOCKER_BUILDKIT": "1",
-    "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
+    "DOCKER_BUILDKIT": "1"
   },
   "mounts": [
     "source=ror-vscode-home-${devcontainerId},target=/home/vscode,type=volume",
@@ -18,7 +14,11 @@
     "source=ror-docker-data-${devcontainerId},target=/var/lib/docker,type=volume"
   ],
   "features": {
-    "ghcr.io/devcontainers/features/docker-in-docker:2.13.0": {}
+    "ghcr.io/devcontainers/features/docker-in-docker:4": {
+      "version": "latest",
+      "moby": true,
+      "dockerDashComposeVersion": "none"
+    }
   },
   "privileged": true,
   "runArgs": ["--privileged"],
@@ -32,7 +32,5 @@
       ]
     }
   },
-  "onCreateCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true; sudo apk cache clean 2>/dev/null || true",
-  "updateContentCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true; sudo apk cache clean 2>/dev/null || true",
-  "postCreateCommand": "/bin/bash /usr/local/bin/seed-vscode-home.sh || true; /bin/bash /usr/local/bin/devcontainer-post-create.sh || /bin/bash .devcontainer/post-create.sh 2>/dev/null || true"
+  "postCreateCommand": "/bin/bash /usr/local/bin/devcontainer-post-create.sh"
 }
