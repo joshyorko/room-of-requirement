@@ -27,5 +27,5 @@ fi
 docker exec --user root "$container" bash /ror-source/.github/scripts/home-smoke.sh
 if [[ "$variant" == wolfi ]]; then
     docker exec --user root "$container" bash /ror-source/tests/runtime-native-smoke.sh --in-container
-    docker exec --user root "$container" bash /ror-source/tests/runtime-docker-image-smoke.sh --in-container
+    bash "$source_root/tests/runtime-docker-image-smoke.sh" "$image"
 fi

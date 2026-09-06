@@ -145,7 +145,7 @@ class ExecutionTests(unittest.TestCase):
             with self.subTest(variant=variant):
                 result = self.run_script("runtime-smoke.sh", "local:candidate", variant)
                 self.assertEqual(result.returncode, 0, result.stderr)
-                run = [c for c in self.calls() if c[:2] == ["docker", "run"]][-1]
+                run = [c for c in self.calls() if c[:2] == ["docker", "run"] and "-d" in c][-1]
                 mounts = []
                 for i, arg in enumerate(run[:-1]):
                     if arg != "--mount":
@@ -162,13 +162,32 @@ class ExecutionTests(unittest.TestCase):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi")
         self.assertEqual(result.returncode, 0, result.stderr)
         executions = [c for c in self.calls() if c[:2] == ["docker", "exec"]]
-        self.assertEqual(len(executions), 5)
+        self.assertEqual(len(executions), 4)
         self.assertIn("vscode", executions[1])
         self.assertNotIn("--privileged", executions[1])
         self.assertIn("root", executions[2])
         self.assertIn("/ror-source/.github/scripts/home-smoke.sh", executions[2])
         run = next(c for c in self.calls() if c[:2] == ["docker", "run"])
         self.assertIn("type=bind,source=" + str(ROOT) + ",target=/ror-source,readonly", run)
+
+    def test_wolfi_daemon_probe_owns_a_separate_container_on_the_same_image(self):
+        image = "ghcr.io/owner/repo@" + DIGEST
+        result = self.run_script("runtime-smoke.sh", image, "wolfi")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        runs = [c for c in self.calls() if c[:2] == ["docker", "run"]]
+        self.assertEqual(len(runs), 2)
+        primary, probe = runs
+        self.assertEqual(primary[-3:], [image, "sleep", "infinity"])
+        self.assertEqual(probe[-3:], [image, "/ror-docker-image-smoke.sh", "--in-container"])
+        self.assertIn("--rm", probe)
+        self.assertIn("--privileged", probe)
+        for option, value in (("--entrypoint", "bash"), ("--pull", "never"), ("--network", "none")):
+            self.assertEqual(probe[probe.index(option) + 1], value)
+        self.assertIn("type=bind,source=" + str(ROOT / "src/common/scripts/ror-docker-start.sh")
+                      + ",target=/usr/local/bin/ror-docker-start.sh,readonly", probe)
+        self.assertFalse(any(c[:2] == ["docker", "exec"] and "runtime-docker-image-smoke.sh" in " ".join(c)
+                             for c in self.calls()))
+        self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], self.calls())
 
     def test_wolfi_image_regressions_are_required_and_fail_closed(self):
         for suite in ("runtime-native-smoke.sh", "runtime-docker-image-smoke.sh"):
