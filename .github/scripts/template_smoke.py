@@ -7,6 +7,8 @@ import json
 import os
 from pathlib import Path
 import re
+import stat
+import struct
 import subprocess
 import sys
 import tempfile
@@ -52,6 +54,34 @@ def isolate(config, image, prefix):
     return result, volumes
 
 
+def prepare_workspace(work, candidate_uid):
+    """Grant both UIDs access only to this runner-owned disposable payload.
+
+    Linux POSIX ACL xattrs avoid a host setfacl dependency. Default directory
+    ACLs keep runner cleanup access to files/directories created by the image UID.
+    """
+    require(not work.is_symlink() and work.stat().st_uid == os.getuid(),
+            "template workspace must be owned by the runner")
+    require(0 <= candidate_uid < 0xffffffff, "invalid candidate UID")
+    uids = sorted({os.getuid(), candidate_uid})
+
+    def acl(permissions):
+        # Linux posix_acl_xattr: version 2; owner, named users, group, mask, other.
+        entries = [(1, permissions, 0xffffffff)] + [(2, permissions, uid) for uid in uids]
+        entries += [(4, 0, 0xffffffff), (16, permissions, 0xffffffff), (32, 0, 0xffffffff)]
+        return struct.pack("<I", 2) + b"".join(struct.pack("<HHI", *entry) for entry in entries)
+
+    for directory, _, files in os.walk(work, followlinks=False):
+        os.setxattr(directory, "system.posix_acl_access", acl(7), follow_symlinks=False)
+        os.setxattr(directory, "system.posix_acl_default", acl(7), follow_symlinks=False)
+        for name in files:
+            path = Path(directory) / name
+            mode = path.lstat().st_mode
+            if stat.S_ISREG(mode):
+                os.setxattr(path, "system.posix_acl_access", acl(7 if mode & 0o111 else 6),
+                            follow_symlinks=False)
+
+
 def smoke(root, meta):
     require(meta["variant"] == os.environ["VARIANT"], "template/candidate variant mismatch")
     scripts = Path(__file__).resolve().parent
@@ -88,6 +118,9 @@ def smoke(root, meta):
                 subprocess.run(["docker", "volume", "create", name], check=True)
                 volumes.append(name)
             config_path.write_text(json.dumps(config, indent=2) + "\n")
+            candidate_uid = int(capture("docker", "run", "--rm", "--user", "root", "--entrypoint", "id",
+                                        os.environ["TEST_IMAGE"], "-u", str(config.get("remoteUser", "vscode"))))
+            prepare_workspace(Path(work), candidate_uid)
             # up builds template features and executes its real lifecycle commands.
             # This derived test image is never used to replace the verified candidate.
             result = capture("devcontainer", "up", "--workspace-folder", work,
