@@ -120,9 +120,19 @@ class ExecutionTests(unittest.TestCase):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi")
         self.assertEqual(result.returncode, 0, result.stderr)
         executions = [c for c in self.calls() if c[:2] == ["docker", "exec"]]
-        self.assertEqual(len(executions), 2)
+        self.assertEqual(len(executions), 3)
         self.assertIn("vscode", executions[1])
         self.assertNotIn("--privileged", executions[1])
+        self.assertIn("root", executions[2])
+        self.assertIn("/ror-source/.github/scripts/home-smoke.sh", executions[2])
+        run = next(c for c in self.calls() if c[:2] == ["docker", "run"])
+        self.assertIn("type=bind,source=" + str(ROOT) + ",target=/ror-source,readonly", run)
+
+    def test_required_privileged_home_contract_failure_fails_runtime_gate(self):
+        result = self.run_script("runtime-smoke.sh", "local:candidate", "ubuntu-noble",
+                                 FAIL_COMMAND="home-smoke.sh")
+        self.assertNotEqual(result.returncode, 0)
+        self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], self.calls())
 
     def promotion(self, **changes):
         data = json.loads(self.request(event="push", ref="refs/heads/main", enforce=True))
