@@ -162,13 +162,24 @@ class ExecutionTests(unittest.TestCase):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi")
         self.assertEqual(result.returncode, 0, result.stderr)
         executions = [c for c in self.calls() if c[:2] == ["docker", "exec"]]
-        self.assertEqual(len(executions), 3)
+        self.assertEqual(len(executions), 5)
         self.assertIn("vscode", executions[1])
         self.assertNotIn("--privileged", executions[1])
         self.assertIn("root", executions[2])
         self.assertIn("/ror-source/.github/scripts/home-smoke.sh", executions[2])
         run = next(c for c in self.calls() if c[:2] == ["docker", "run"])
         self.assertIn("type=bind,source=" + str(ROOT) + ",target=/ror-source,readonly", run)
+
+    def test_wolfi_image_regressions_are_required_and_fail_closed(self):
+        for suite in ("runtime-native-smoke.sh", "runtime-docker-image-smoke.sh"):
+            with self.subTest(suite=suite):
+                (self.work / "calls").unlink(missing_ok=True)
+                result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi",
+                                         FAIL_COMMAND=suite)
+                self.assertEqual(result.returncode, 7, result.stderr)
+                execution = next(c for c in self.calls() if suite in " ".join(c))
+                self.assertIn("--in-container", execution)
+                self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], self.calls())
 
     def test_required_privileged_home_contract_failure_fails_runtime_gate(self):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "ubuntu-noble",

@@ -9,8 +9,7 @@ on:
       - '.github/workflows/build-image.yml'
       - '.github/workflows/build-devcontainers.yml'
       - '.github/scripts/**'
-      - 'tests/ci-*'
-      - 'tests/ci-*/**'
+      - 'tests/**'
       - '.grype.yaml'
   push:
     branches: [main]
@@ -20,8 +19,7 @@ on:
       - '.github/workflows/build-image.yml'
       - '.github/workflows/build-devcontainers.yml'
       - '.github/scripts/**'
-      - 'tests/ci-*'
-      - 'tests/ci-*/**'
+      - 'tests/**'
       - '.grype.yaml'
   schedule:
     - cron: '0 3 1 * *'

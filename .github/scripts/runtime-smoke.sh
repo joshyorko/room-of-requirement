@@ -25,3 +25,7 @@ if [[ "$variant" == wolfi ]]; then
     docker exec -i --user vscode "$container" bash --noprofile --norc -s < "$scripts/podman-smoke.sh"
 fi
 docker exec --user root "$container" bash /ror-source/.github/scripts/home-smoke.sh
+if [[ "$variant" == wolfi ]]; then
+    docker exec --user root "$container" bash /ror-source/tests/runtime-native-smoke.sh --in-container
+    docker exec --user root "$container" bash /ror-source/tests/runtime-docker-image-smoke.sh --in-container
+fi

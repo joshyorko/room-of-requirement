@@ -82,11 +82,21 @@ jobs:
           node-version: '24'
       - name: Install pinned CLI for command-generation regressions
         run: npm install -g @devcontainers/cli@0.89.0
-      - name: CI policy and execution regressions
+      - name: Install runtime regression prerequisites
         run: |
-          for suite in tests/ci-*-test.py; do
-            python3 "$suite"
-          done
+          sudo apt-get update
+          sudo apt-get install -y jq python3-venv git sudo
+          python3 -m venv "$RUNNER_TEMP/regression-python"
+          "$RUNNER_TEMP/regression-python/bin/pip" install PyYAML==6.0.3
+          echo "$RUNNER_TEMP/regression-python/bin" >> "$GITHUB_PATH"
+          curl --fail --show-error --location --retry 3 \
+            https://github.com/jdx/mise/releases/download/v2026.9.1/mise-v2026.9.1-linux-x64.tar.gz \
+            --output "$RUNNER_TEMP/mise.tar.gz"
+          echo "063dda9149ab6be53da877c2d176afe0eac68e64cf8ca295bd0528720701c65d  $RUNNER_TEMP/mise.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/mise.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/mise/bin" >> "$GITHUB_PATH"
+      - name: CI policy and execution regressions
+        run: .github/scripts/regressions.sh
       - uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387  # v3.5.0
         with:
           dockerfile: src/${{ inputs.variant }}/.devcontainer/Dockerfile
