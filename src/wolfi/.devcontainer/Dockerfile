@@ -295,7 +295,8 @@ RUN mkdir -p /usr/local/etc/vscode-dev-containers
 COPY src/common/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
 
 # Copy shell configuration (backup to /usr/share/ror/config/ survives home volume mounts)
-RUN mkdir -p /usr/share/ror/config /etc/docker
+RUN mkdir -p /usr/share/ror/config /etc/docker /home/vscode/.config/containers && \
+    chown vscode:vscode /home/vscode/.config/containers
 COPY --chown=vscode:vscode src/common/config/.zshrc /usr/share/ror/config/.zshrc
 COPY --chown=vscode:vscode src/common/config/.bashrc /usr/share/ror/config/.bashrc
 COPY --chown=vscode:vscode src/common/config/.zshrc /home/vscode/.zshrc
@@ -308,6 +309,8 @@ COPY --chown=vscode:vscode src/common/config/starship.toml /home/vscode/.config/
 # Copy mise configuration (global config for default tool versions)
 COPY --chown=vscode:vscode src/common/config/mise.toml /usr/share/ror/config/mise.toml
 COPY --chown=vscode:vscode src/common/config/mise.toml /home/vscode/.config/mise/config.toml
+COPY src/wolfi/config/containers-storage.conf /usr/share/ror/config/containers-storage.conf
+COPY --chown=vscode:vscode src/wolfi/config/containers-storage.conf /home/vscode/.config/containers/storage.conf
 COPY src/common/config/docker-daemon.json /etc/docker/daemon.json
 COPY --chown=vscode:vscode src/common/scripts/seed-vscode-home.sh /usr/local/bin/seed-vscode-home.sh
 
@@ -347,15 +350,7 @@ RUN mkdir -p \
     /home/vscode/.cache \
     /home/vscode/.local/share \
     /home/vscode/.config/mise \
-    /home/vscode/.config/containers \
     /workspaces && \
-    printf '%s\n' \
-        '[storage]' \
-        'driver = "overlay"' \
-        'rootless_storage_path = "$HOME/.local/share/containers/storage"' \
-        '[storage.options.overlay]' \
-        'mount_program = "/usr/bin/fuse-overlayfs"' \
-        > /home/vscode/.config/containers/storage.conf && \
     chown -R vscode:vscode /home/vscode /workspaces && \
     chmod 755 /workspaces
     # NOTE: Keeping build-base/gcc and all *-dev packages for Ruby compilation via mise

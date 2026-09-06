@@ -13,12 +13,11 @@
     "DOCKER_BUILDKIT": "1"
   },
   "mounts": [
-    "source=ror-homebrew-cache,target=/home/linuxbrew/.cache/Homebrew,type=volume",
     "source=ror-vscode-home-${devcontainerId},target=/home/vscode,type=volume",
     "source=ror-mise-cache,target=/home/vscode/.local/share/mise,type=volume",
     "source=ror-npm-cache,target=/home/vscode/.npm,type=volume",
     "source=ror-zsh-history,target=/home/vscode/.zsh_history_dir,type=volume",
-    "source=ror-docker-data,target=/var/lib/docker,type=volume"
+    "source=ror-docker-data-${devcontainerId},target=/var/lib/docker,type=volume"
   ],
   "customizations": {
     "vscode": {

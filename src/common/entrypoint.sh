@@ -31,34 +31,10 @@ if [ -x /usr/local/bin/seed-vscode-home.sh ]; then
         log "Warning: Failed to prepare the standard vscode home"
 fi
 
-# Ensure user-owned writable directories for volume mounts/caches
-# Named volumes may be created as root-owned (especially in Codespaces),
-# which can break shell history, mise, npm, etc.
-fix_user_dir_permissions() {
-    local dir_path="$1"
-    local dir_label="$2"
-
-    if [ ! -d "$dir_path" ]; then
-        log "Creating ${dir_label} directory..."
-        run_as_root mkdir -p "$dir_path" 2>/dev/null || {
-            log "Warning: Failed to create ${dir_label} directory at $dir_path"
-            return
-        }
-    fi
-
-    log "Ensuring ${dir_label} permissions..."
-    run_as_root chown -R vscode:vscode "$dir_path" 2>/dev/null || log "Warning: Failed to chown $dir_path"
-    run_as_root chmod -R u+rwX "$dir_path" 2>/dev/null || log "Warning: Failed to chmod $dir_path"
-}
-
-# Fix common writable paths early before shells/tools initialize
-fix_user_dir_permissions "${HOME}/.local/share/mise" "mise cache"
-fix_user_dir_permissions "${HOME}/.zsh_history_dir" "zsh history"
-fix_user_dir_permissions "${HOME}/.npm" "npm cache"
-
 # Prepare rootless Podman without changing Docker's startup contract. The
 # runtime directory follows the effective vscode UID because Dev Containers
-# may remap it at launch, and persistent storage may arrive root-owned.
+# may remap it at launch. Persistent storage is initialized by the home seeder
+# without traversing rootless container ownership mappings.
 prepare_podman_runtime() {
     command -v podman >/dev/null 2>&1 || return 0
     id vscode >/dev/null 2>&1 || return 0
@@ -75,9 +51,17 @@ prepare_podman_runtime() {
         return 0
     }
     run_as_root chown vscode:vscode "${runtime_dir}" 2>/dev/null || \
-        log "Warning: Failed to chown Podman runtime or storage directories"
-    run_as_root chown -R vscode:vscode "${podman_storage}" 2>/dev/null || \
-        log "Warning: Failed to chown Podman storage contents"
+        log "Warning: Failed to chown Podman runtime directory"
+    if [ "$(stat -c '%u' "${podman_storage}")" = "0" ]; then
+        local storage_mode
+        storage_mode="$(stat -c '%a' "${podman_storage}")"
+        if run_as_root chown vscode:vscode "${podman_storage}" 2>/dev/null; then
+            run_as_root chmod "${storage_mode}" "${podman_storage}" 2>/dev/null || \
+                log "Warning: Failed to preserve Podman storage root mode"
+        else
+            log "Warning: Failed to chown Podman storage root"
+        fi
+    fi
     run_as_root chmod 700 "${runtime_dir}" 2>/dev/null || \
         log "Warning: Failed to restrict Podman runtime directory"
     export XDG_RUNTIME_DIR="${runtime_dir}"
