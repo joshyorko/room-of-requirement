@@ -61,6 +61,11 @@ class IdentityTests(unittest.TestCase):
 import os, sys
 assert sys.argv[1] == 'verify-attestation'
 assert '--check-claims' in sys.argv
+assert '--new-bundle-format=false' in sys.argv
+assert '--insecure-ignore-tlog' not in sys.argv
+assert '--insecure-ignore-tlog=true' not in sys.argv
+assert '--certificate-identity' in sys.argv
+assert '--certificate-oidc-issuer' in sys.argv
 assert sys.argv[-1] == 'ghcr.io/owner/repo@sha256:' + '1' * 64
 sys.exit(int(os.environ.get('FAIL_COSIGN', '0')))
 ''')

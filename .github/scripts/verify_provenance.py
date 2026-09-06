@@ -14,6 +14,9 @@ def main():
     subject = digest(os.environ["DIGEST"])
     subprocess.run([
         "cosign", "verify-attestation", "--check-claims", "--type", "slsaprovenance",
+        # SLSA v2.1.0 writes Cosign 2.2.3 legacy attestations. Existing v3 SPDX/context
+        # bundles suppress Cosign 3's automatic legacy fallback; select it explicitly.
+        "--new-bundle-format=false",
         "--certificate-identity",
         "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/"
         "generator_container_slsa3.yml@refs/tags/v2.1.0",
