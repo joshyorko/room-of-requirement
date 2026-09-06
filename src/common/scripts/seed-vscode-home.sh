@@ -147,7 +147,7 @@ seed_if_missing() {
     fi
     set_exact_owner "${temporary_path}"
 
-    if run_as_root ln -- "${temporary_path}" "${target_path}" 2>/dev/null; then
+    if run_as_root ln -T -- "${temporary_path}" "${target_path}" 2>/dev/null; then
         run_as_root rm -f -- "${temporary_path}"
         return 0
     fi
