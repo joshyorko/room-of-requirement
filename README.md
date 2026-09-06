@@ -114,7 +114,7 @@ ujust brew-download-ror # Download the RoR Brewfile artifacts without installing
 
 ## 🏭 Building Variants
 
-Inspect the Dockerfile-only build plan:
+Inspect the Dockerfile-only build plan. These targets use local `ror-debug:*` tags and do not process Dev Container Features:
 
 ```bash
 docker buildx bake --print

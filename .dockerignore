@@ -135,3 +135,9 @@ Thumbs.db
 ehthumbs.db
 .AppleDouble
 .LSOverride
+
+# Local agent and isolated review state
+.superpowers/
+.codex/
+.serena/
+.worktrees/

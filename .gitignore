@@ -8,3 +8,5 @@
 .codex/
 .serena/
 env.json
+__pycache__/
+*.py[cod]
