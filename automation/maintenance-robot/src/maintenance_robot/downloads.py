@@ -32,10 +32,13 @@ class DownloadsUpdater:
         self.repo_root = repo_root
         self.report = report
 
-    def update_targets(self) -> None:
+    def update_targets(self, include_manual: bool = False) -> None:
         """Process all downloads from allowlist with comprehensive pattern matching."""
         logger.info("Processing %d download targets from allowlist", len(self.allowlist))
         for identifier, config in self.allowlist.items():
+            if config.get("manual_only", False) and not include_manual:
+                logger.info("Skipping manual-only target: %s", identifier)
+                continue
             logger.info("\n=== Processing: %s ===", identifier)
             source = config.get("source", "release")
             include_prerelease = bool(config.get("include_prerelease", False))
@@ -222,6 +225,23 @@ class DownloadsUpdater:
             return
         logger.info("      Found %d match(es) in file", len(matches))
 
+        if sha256_pattern_str:
+            self._update_version_and_sha256(
+                path,
+                text,
+                matches,
+                pattern,
+                sha256_pattern_str,
+                identifier,
+                latest_version,
+                version_format,
+                download_url_template,
+                manifest_url_template,
+                platform,
+                latest_sha256,
+            )
+            return
+
         updates_made = 0
         new_text = text
         first_old_version = None
@@ -298,27 +318,129 @@ class DownloadsUpdater:
                 )
             )
 
-            # If SHA256 pattern is provided, update the checksum too
-            if sha256_pattern_str and (latest_sha256 or download_url_template or manifest_url_template):
-                logger.info("      🔐 Updating SHA256 checksum...")
-                self._update_sha256(path, sha256_pattern_str, formatted_version,
-                                    download_url_template, manifest_url_template, platform, latest_sha256)
-        elif sha256_pattern_str and (latest_sha256 or download_url_template or manifest_url_template):
-            logger.info("      🔐 Checking SHA256 checksum without version change...")
-            self._update_sha256(path, sha256_pattern_str, self._format_version(latest_version, version_format),
-                                download_url_template, manifest_url_template, platform, latest_sha256)
-
-    def _update_sha256(
+    def _update_version_and_sha256(
         self,
         path: Path,
+        text: str,
+        version_matches: list[re.Match[str]],
+        version_pattern: re.Pattern[str],
         sha256_pattern_str: str,
+        identifier: str,
+        latest_version: Version,
+        version_format: str,
+        download_url_template: Optional[str],
+        manifest_url_template: Optional[str],
+        platform: Optional[str],
+        latest_sha256: Optional[str],
+    ) -> None:
+        """Write a pinned version and digest together after validating the pair."""
+        formatted_version = self._format_version(latest_version, version_format)
+        new_sha256 = self._resolve_sha256(
+            formatted_version,
+            download_url_template,
+            manifest_url_template,
+            platform,
+            latest_sha256,
+        )
+        if not new_sha256:
+            logger.warning("      ⚠ No matching SHA256 available; leaving version and digest unchanged")
+            return
+        new_sha256 = new_sha256.removeprefix("sha256:")
+
+        sha256_pattern = re.compile(sha256_pattern_str, re.MULTILINE)
+        sha256_matches = list(sha256_pattern.finditer(text))
+        if len(sha256_matches) != len(version_matches):
+            logger.warning(
+                "      ⚠ Found %d version match(es) but %d SHA256 match(es); leaving target unchanged",
+                len(version_matches),
+                len(sha256_matches),
+            )
+            return
+
+        replacements: list[tuple[str, str]] = []
+        for match in version_matches:
+            current_version = match.group("version")
+            parsed_version = self._to_version(current_version)
+            if parsed_version is None:
+                logger.warning("      ⚠ Current version not parseable: %s; leaving target unchanged", current_version)
+                return
+            if self._version_is_newer(latest_version, parsed_version, version_format):
+                replacements.append((current_version, formatted_version))
+            elif self._version_is_current(latest_version, parsed_version, version_format):
+                replacements.append((current_version, current_version))
+            else:
+                logger.info(
+                    "      ✓ Existing version %s is newer than candidate %s; leaving target unchanged",
+                    current_version,
+                    formatted_version,
+                )
+                return
+
+        version_values = iter(replacements)
+
+        def replace_version(match: re.Match[str]) -> str:
+            current_version, replacement = next(version_values)
+            return match.group(0).replace(current_version, replacement, 1)
+
+        updated_text = version_pattern.sub(replace_version, text)
+        sha_values = iter(sha256_matches)
+
+        def replace_sha256(match: re.Match[str]) -> str:
+            old_sha256 = next(sha_values).group("sha256")
+            return match.group(0).replace(old_sha256, new_sha256, 1)
+
+        updated_text = sha256_pattern.sub(replace_sha256, updated_text)
+        if updated_text == text:
+            logger.info("      ✓ Version and SHA256 already up to date")
+            return
+
+        path.write_text(updated_text, encoding="utf-8")
+        version_changed = any(old != new for old, new in replacements)
+        if version_changed:
+            self.report.add_download_update(
+                DownloadUpdate(
+                    file=path,
+                    identifier=identifier,
+                    previous=replacements[0][0],
+                    updated=formatted_version,
+                )
+            )
+        else:
+            old_sha256 = sha256_matches[0].group("sha256")
+            self.report.add_download_update(
+                DownloadUpdate(
+                    file=path,
+                    identifier=identifier,
+                    previous=f"{formatted_version} @sha256:{old_sha256[:12]}",
+                    updated=f"{formatted_version} (digest)",
+                )
+            )
+
+    @staticmethod
+    def _version_is_newer(candidate: Version, current: Version, version_format: str) -> bool:
+        if version_format == "major_only":
+            return candidate.major > current.major
+        if version_format == "major_minor":
+            return (candidate.major, candidate.minor) > (current.major, current.minor)
+        return candidate > current
+
+    @staticmethod
+    def _version_is_current(candidate: Version, current: Version, version_format: str) -> bool:
+        if version_format == "major_only":
+            return candidate.major == current.major
+        if version_format == "major_minor":
+            return (candidate.major, candidate.minor) == (current.major, current.minor)
+        return candidate == current
+
+    def _resolve_sha256(
+        self,
         version: str,
         download_url_template: Optional[str] = None,
         manifest_url_template: Optional[str] = None,
         platform: Optional[str] = None,
         new_sha256: Optional[str] = None,
-    ) -> None:
-        """Update SHA256 checksum for a given version."""
+    ) -> Optional[str]:
+        """Resolve a checksum without writing a partial version update."""
         # Determine if we need to fetch from manifest or compute from download
         if new_sha256:
             pass
@@ -332,39 +454,13 @@ class DownloadsUpdater:
             new_sha256 = self._compute_sha256_from_url(download_url)
         else:
             logger.warning("      ⚠ No download_url_template or manifest_url_template provided")
-            return
+            return None
 
         if not new_sha256:
             logger.warning("      ⚠ Could not compute SHA256, skipping checksum update")
-            return
+            return None
         new_sha256 = new_sha256.removeprefix("sha256:")
-
-        # Update SHA256 in file
-        text = path.read_text(encoding="utf-8")
-        sha256_pattern = re.compile(sha256_pattern_str, re.MULTILINE)
-        matches = list(sha256_pattern.finditer(text))
-
-        if not matches:
-            logger.warning("      ⚠ SHA256 pattern not found in file")
-            return
-
-        if len(matches) > 1:
-            logger.warning("      ⚠ Multiple SHA256 matches found, updating first occurrence only")
-
-        match = matches[0]
-        old_sha256 = match.group("sha256")
-
-        if old_sha256 == new_sha256:
-            logger.info("      ✓ SHA256 already up to date: %s", new_sha256[:16] + "...")
-            return
-
-        # Replace the SHA256
-        start, end = match.span()
-        old_match = text[start:end]
-        new_match = old_match.replace(old_sha256, new_sha256)
-        new_text = text[:start] + new_match + text[end:]
-        path.write_text(new_text, encoding="utf-8")
-        logger.info("      ✅ Updated SHA256: %s... -> %s...", old_sha256[:16], new_sha256[:16])
+        return new_sha256
 
     @staticmethod
     def _fetch_sha256_from_manifest(manifest_url: str, platform: str) -> Optional[str]:

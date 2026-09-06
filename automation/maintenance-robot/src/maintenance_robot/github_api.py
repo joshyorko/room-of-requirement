@@ -185,6 +185,7 @@ def fetch_latest_version(
     url = f"{GITHUB_API_ROOT}/repos/{repo}/{'releases' if source == 'release' else 'tags'}"
     entries = _get(url)
 
+    candidates: list[ReleaseInfo] = []
     for entry in entries:
         tag_name = entry.get("tag_name") if source == "release" else entry.get("name")
 
@@ -212,21 +213,31 @@ def fetch_latest_version(
             )
             continue
 
-        if not include_prerelease and source == "release":
-            if entry.get("prerelease") or entry.get("draft"):
-                logger.debug("Skipping pre-release/draft: %s %s", repo, release_info.tag)
-                continue
+        if source == "release" and entry.get("draft"):
+            logger.debug("Skipping draft release: %s %s", repo, release_info.tag)
+            continue
+        if not include_prerelease and (
+            release_info.version.is_prerelease
+            or (source == "release" and entry.get("prerelease"))
+        ):
+            logger.debug("Skipping prerelease: %s %s", repo, release_info.tag)
+            continue
 
-        # Fetch SHA if not available and pinning is enabled
-        if pin_to_sha and release_info.sha is None:
-            sha = _get_tag_sha(repo, release_info.tag)
-            if sha:
-                release_info = ReleaseInfo(
-                    tag=release_info.tag,
-                    version=release_info.version,
-                    sha=sha,
-                )
+        candidates.append(release_info)
 
-        return release_info
+    if not candidates:
+        return None
 
-    return None
+    release_info = max(candidates, key=lambda candidate: candidate.version)
+
+    # Fetch SHA if not available and pinning is enabled.
+    if pin_to_sha and release_info.sha is None:
+        sha = _get_tag_sha(repo, release_info.tag)
+        if sha:
+            release_info = ReleaseInfo(
+                tag=release_info.tag,
+                version=release_info.version,
+                sha=sha,
+            )
+
+    return release_info
