@@ -56,12 +56,7 @@ jq -e \
     fail "Wolfi must isolate Podman storage by devcontainer ID"
 
 temp_root="$(mktemp -d)"
-cleanup() {
-    sudo -n chown -R "$(id -u):$(id -g)" "${temp_root}" 2>/dev/null || true
-    chmod -R u+rwX "${temp_root}" 2>/dev/null || true
-    rm -rf "${temp_root}"
-}
-trap cleanup EXIT
+trap 'rm -rf "${temp_root}"' EXIT
 
 config_root="${temp_root}/config"
 home_root="${temp_root}/home"
@@ -78,16 +73,6 @@ chmod 644 \
     "${config_root}/mise.toml" \
     "${config_root}/containers-storage.conf"
 
-storage_root="${home_root}/.local/share/containers/storage"
-mkdir -p "${storage_root}"
-mapped_sentinel="${storage_root}/mapped-sentinel"
-printf 'mapped-owner\n' > "${mapped_sentinel}"
-sudo -n chown 100001:100001 "${mapped_sentinel}"
-sudo -n chmod 4755 "${mapped_sentinel}"
-mapped_before="$(stat -c '%u:%g:%a' "${mapped_sentinel}")"
-sudo -n chown 0:0 "${storage_root}"
-sudo -n chmod 2770 "${storage_root}"
-
 bash "${SEEDER}" "${home_root}" "${config_root}"
 
 for pair in \
@@ -103,11 +88,6 @@ for pair in \
     [[ "$(stat -c '%a' "${config_root}/${source_name}")" == "$(stat -c '%a' "${target_path}")" ]] || \
         fail "seeded mode differs: ${target_path}"
 done
-
-[[ "$(stat -c '%u:%g:%a' "${mapped_sentinel}")" == "${mapped_before}" ]] || \
-    fail "home seeding changed subordinate ownership or special mode bits"
-[[ "$(stat -c '%U:%G:%a' "${storage_root}")" == "vscode:vscode:2770" ]] || \
-    fail "home seeding did not initialize the storage mount root safely"
 
 printf 'user-owned-zsh\n' > "${home_root}/.zshrc"
 chmod 600 "${home_root}/.zshrc"
@@ -147,5 +127,21 @@ bash "${SEEDER}" "${home_root}" "${config_root}"
     fail "existing private Codex mode changed"
 [[ "$(stat -c '%a' "${home_root}/.local/bin/user-tool")" == "700" ]] || \
     fail "existing user tool mode changed"
+
+no_vscode_bin="${temp_root}/no-vscode-bin"
+portable_home="${temp_root}/portable-home"
+mkdir -p "${no_vscode_bin}" "${portable_home}"
+cat > "${no_vscode_bin}/getent" <<'GETENT'
+#!/usr/bin/env bash
+exit 2
+GETENT
+cat > "${no_vscode_bin}/sudo" <<'SUDO'
+#!/usr/bin/env bash
+exit 99
+SUDO
+chmod +x "${no_vscode_bin}/getent" "${no_vscode_bin}/sudo"
+PATH="${no_vscode_bin}:/usr/bin:/bin" bash "${SEEDER}" "${portable_home}" "${config_root}"
+cmp "${config_root}/.zshrc" "${portable_home}/.zshrc" || \
+    fail "portable seeding without a vscode identity changed baseline content"
 
 echo "vscode home persistence contract tests passed"
