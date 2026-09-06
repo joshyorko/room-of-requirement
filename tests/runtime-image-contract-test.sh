@@ -136,10 +136,8 @@ for dockerfile in "${DOCKERFILES[@]}"; do
         fail "${dockerfile} must run the Homebrew installer as vscode"
 done
 
-for package in build-base ruby-dev playwright; do
-    grep -Eq "^[[:space:]]*${package}[[:space:]\\]*$" "${WOLFI_DOCKERFILE}" || \
-        fail "Wolfi must retain ${package} capability"
-done
+# Native headers/link libraries are exercised by runtime-native-smoke.sh in a
+# built image. Package-name greps cannot prove native or browser compatibility.
 
 grep -Eq 'src/wolfi/scripts/security-update.sh[[:space:]]+/usr/local/bin/ror-security-update.sh' \
     "${WOLFI_DOCKERFILE}" || fail "Wolfi image must execute the maintained security update script"

@@ -109,6 +109,29 @@ assert_contains "${plan}" "--config-file=${temp_root}/effective.json" \
 jq -e '."storage-driver" == "fuse-overlayfs"' "${temp_root}/effective.json" >/dev/null || \
     fail "overlay data root with usable fuse must select fuse-overlayfs"
 
+# Docker 29 enables containerd's overlayfs image store by default. A graph
+# driver alone must not leave that incompatible image store selected.
+for fstype in overlay overlayfs; do
+    run_plan "${fstype}" 1 1 >/dev/null
+    jq -e '."storage-driver" == "fuse-overlayfs" and .features."containerd-snapshotter" == false' \
+        "${temp_root}/effective.json" >/dev/null || \
+        fail "${fstype} must select the FUSE graph driver and classic image store"
+    run_plan "${fstype}" 1 0 >/dev/null
+    jq -e '."storage-driver" == "vfs" and .features."containerd-snapshotter" == false' \
+        "${temp_root}/effective.json" >/dev/null || \
+        fail "${fstype} without /dev/fuse must select vfs and the classic image store"
+done
+
+# Nested FUSE overlay cannot reliably host another FUSE/overlay graph store.
+for fstype in fuse.fuse-overlayfs fuse-overlayfs; do
+    for dev_fuse in 0 1; do
+        run_plan "${fstype}" 1 "${dev_fuse}" >/dev/null
+        jq -e '."storage-driver" == "vfs" and .features."containerd-snapshotter" == false' \
+            "${temp_root}/effective.json" >/dev/null || \
+            fail "${fstype} must use vfs even when FUSE is available"
+    done
+done
+
 plan="$(run_plan overlay 0 1)"
 jq -e '."storage-driver" == "vfs"' "${temp_root}/effective.json" >/dev/null || \
     fail "overlay data root without fuse-overlayfs must select vfs"
@@ -121,6 +144,8 @@ plan="$(run_plan ext4 1 1)"
 assert_not_contains "${plan}" "--storage-driver=" "normal data root auto mode"
 jq -e 'has("storage-driver") | not' "${temp_root}/effective.json" >/dev/null || \
     fail "normal data root auto mode must use Docker's default driver"
+jq -e '.features | has("containerd-snapshotter") | not' "${temp_root}/effective.json" >/dev/null || \
+    fail "normal data root must not change Docker's default image store"
 
 plan="$(run_plan ext4 1 1 vfs)"
 jq -e '."storage-driver" == "vfs"' "${temp_root}/effective.json" >/dev/null || \
@@ -138,6 +163,28 @@ MOUNTS
 plan="$(run_plan_without_findmnt "${mounts_file}")"
 jq -e '."storage-driver" == "fuse-overlayfs"' "${temp_root}/effective.json" >/dev/null || \
     fail "nested overlay data root without findmnt must select fuse-overlayfs"
+
+printf 'fuse-overlayfs / fuse.fuse-overlayfs rw,relatime 0 0\n' > "${mounts_file}"
+run_plan_without_findmnt "${mounts_file}" >/dev/null
+jq -e '."storage-driver" == "vfs" and .features."containerd-snapshotter" == false' \
+    "${temp_root}/effective.json" >/dev/null || \
+    fail "the actual FUSE mount-table type must select vfs without findmnt"
+
+snapshotter_config="${temp_root}/snapshotter.json"
+printf '{"features":{"containerd-snapshotter":true},"experimental":false}\n' > "${snapshotter_config}"
+if run_plan_with_config "${snapshotter_config}" "${temp_root}/conflict.json" >/dev/null; then
+    fail "an explicit containerd image-store choice must not be silently replaced by an automatic graph driver"
+fi
+run_plan_with_config "${snapshotter_config}" "${temp_root}/snapshotter-effective.json" \
+    ROR_DOCKER_STORAGE_DRIVER=default >/dev/null
+jq -e '.features."containerd-snapshotter" == true and .experimental == false and (has("storage-driver") | not)' \
+    "${temp_root}/snapshotter-effective.json" >/dev/null || \
+    fail "default mode must honor the explicit containerd image store and unrelated options"
+
+run_plan_with_config "${temp_root}/absent-config.json" "${temp_root}/no-source-effective.json" >/dev/null
+jq -e '."storage-driver" == "fuse-overlayfs" and .features."containerd-snapshotter" == false' \
+    "${temp_root}/no-source-effective.json" >/dev/null || \
+    fail "missing daemon config must still select the classic store for graph drivers"
 
 pretty_config="${temp_root}/pretty.json"
 compact_config="${temp_root}/compact.json"

@@ -97,6 +97,11 @@ auto_storage_driver() {
     fstype="$(data_root_fstype)"
 
     case "${fstype}" in
+        fuse.fuse-overlayfs | fuse-overlayfs)
+            # A FUSE-backed outer graph store cannot reliably host another
+            # overlay mount, including fuse-overlayfs. Keep nested writes plain.
+            echo "vfs"
+            ;;
         overlay | overlayfs)
             if has_fuse_overlayfs && has_dev_fuse; then
                 echo "fuse-overlayfs"
@@ -143,6 +148,9 @@ write_effective_config() {
     local target_path="$2"
     local temporary_path
 
+    # Docker 29 otherwise defaults to containerd's overlayfs image store even
+    # when this helper needs a classic FUSE/vfs graph driver for nested storage.
+    # Reject an explicit conflicting store choice instead of overwriting it.
     temporary_path="$(mktemp)"
     if [ -f "${source_path}" ]; then
         jq \
@@ -156,6 +164,13 @@ write_effective_config() {
                     .["storage-driver"] = $storage_driver
                 end
                 | .["data-root"] = $data_root
+                | if $storage_driver == "fuse-overlayfs" or $storage_driver == "vfs" or $storage_driver == "overlay2" then
+                    if .features["containerd-snapshotter"] == true then
+                        error("Selected graph driver requires containerd-snapshotter=false; use ROR_DOCKER_STORAGE_DRIVER=default to keep the explicit containerd image store")
+                    else
+                        .features["containerd-snapshotter"] = false
+                    end
+                  else . end
             ' "${source_path}" > "${temporary_path}"
     else
         jq -n \
@@ -164,6 +179,9 @@ write_effective_config() {
             '
                 {"data-root": $data_root}
                 | if $storage_driver == "" then . else .["storage-driver"] = $storage_driver end
+                | if $storage_driver == "fuse-overlayfs" or $storage_driver == "vfs" or $storage_driver == "overlay2" then
+                    .features["containerd-snapshotter"] = false
+                  else . end
             ' > "${temporary_path}"
     fi
 
@@ -226,6 +244,8 @@ USAGE
 }
 
 DOCKER_SOCKET="/var/run/docker.sock"
+DEFAULT_SOCKET="${ROR_DOCKER_TEST_DEFAULT_SOCKET:-/var/run/docker.sock}"
+PROFILE_DIR="${ROR_DOCKER_TEST_PROFILE_DIR:-/etc/profile.d}"
 LINK_DEFAULT="true"
 DRY_RUN="${ROR_DOCKER_START_DRY_RUN:-}"
 SOURCE_CONFIG="${ROR_DOCKER_DAEMON_CONFIG:-/etc/docker/daemon.json}"
@@ -359,16 +379,16 @@ if [ -S "${DOCKER_SOCKET}" ]; then
     run_as_root chmod 660 "${DOCKER_SOCKET}" 2>/dev/null || true
 fi
 
-if [ "${DOCKER_SOCKET}" != "/var/run/docker.sock" ] && [ -S "${DOCKER_SOCKET}" ]; then
-    run_as_root mkdir -p /var/run
-    if [ "${LINK_DEFAULT}" = "true" ] && [ ! -S /var/run/docker.sock ]; then
-        run_as_root ln -sf "${DOCKER_SOCKET}" /var/run/docker.sock
-        run_as_root chmod 755 /var/run 2>/dev/null || true
-        log "Linked /var/run/docker.sock -> ${DOCKER_SOCKET}"
+if [ "${DOCKER_SOCKET}" != "${DEFAULT_SOCKET}" ] && [ -S "${DOCKER_SOCKET}" ]; then
+    run_as_root mkdir -p "$(dirname "${DEFAULT_SOCKET}")"
+    if [ "${LINK_DEFAULT}" = "true" ] && [ ! -S "${DEFAULT_SOCKET}" ]; then
+        run_as_root ln -sf "${DOCKER_SOCKET}" "${DEFAULT_SOCKET}"
+        run_as_root chmod 755 "$(dirname "${DEFAULT_SOCKET}")" 2>/dev/null || true
+        log "Linked ${DEFAULT_SOCKET} -> ${DOCKER_SOCKET}"
     else
-        run_as_root mkdir -p /etc/profile.d
-        printf 'export DOCKER_HOST=%s\n' "${DOCKER_HOST_VALUE}" | run_as_root tee /etc/profile.d/ror-docker-host.sh >/dev/null || true
-        run_as_root chmod 644 /etc/profile.d/ror-docker-host.sh 2>/dev/null || true
+        run_as_root mkdir -p "${PROFILE_DIR}"
+        printf 'export DOCKER_HOST=%s\n' "${DOCKER_HOST_VALUE}" | run_as_root tee "${PROFILE_DIR}/ror-docker-host.sh" >/dev/null || true
+        run_as_root chmod 644 "${PROFILE_DIR}/ror-docker-host.sh" 2>/dev/null || true
         log "Persisted DOCKER_HOST for new shells (${DOCKER_HOST_VALUE})"
     fi
 fi

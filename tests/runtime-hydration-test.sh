@@ -36,9 +36,13 @@ mise() {
         "activate bash")
             return 0
             ;;
-        "tasks ls --name-only")
+        "tasks ls --local --name-only")
             if [ "${ROR_TEST_HAS_SETUP:-0}" = "1" ]; then
                 printf 'setup\n'
+            fi
+            if [ "${ROR_TEST_TASK_LIST_STATUS:-0}" != "0" ]; then
+                echo 'fixture: task discovery failed' >&2
+                return "${ROR_TEST_TASK_LIST_STATUS}"
             fi
             ;;
         "run setup")
@@ -152,6 +156,23 @@ ROR_TEST_HAS_SETUP=1 ROR_TEST_SETUP_STATUS=29 bash "${HYDRATOR}" "${mise_project
 setup_status=$?
 set -e
 [[ "${setup_status}" -ne 0 ]] || fail "mise setup task failure must fail hydration"
+
+# Discovery itself is required, even if it emits a partial task list.
+for has_setup in 0 1; do
+    : > "${ROR_TEST_CALL_LOG}"
+    set +e
+    ROR_TEST_HAS_SETUP="${has_setup}" ROR_TEST_TASK_LIST_STATUS=37 \
+        bash "${HYDRATOR}" "${mise_project}" > "${temp_root}/discovery-failure.log" 2>&1
+    discovery_status=$?
+    set -e
+    [[ "${discovery_status}" -eq 37 ]] || fail "task discovery failure must propagate exit 37"
+    assert_no_call_matching '^mise run setup$'
+    grep -Fq 'fixture: task discovery failed' "${temp_root}/discovery-failure.log" || \
+        fail "task discovery failure diagnostic was hidden"
+    if grep -q 'completed successfully' "${temp_root}/discovery-failure.log"; then
+        fail "failed task discovery must not report hydration success"
+    fi
+done
 
 : > "${ROR_TEST_CALL_LOG}"
 just --justfile "${JUSTFILE}" --working-directory "${temp_root}" runtime-defaults \

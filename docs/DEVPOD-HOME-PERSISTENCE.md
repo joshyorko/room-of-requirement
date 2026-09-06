@@ -31,6 +31,17 @@ This prevents two local Docker-provider workspaces from attaching independent
 daemons to the same graph store. The Kubernetes provider maps these names to
 separate workspace-PVC subdirectories.
 
+The fallback Docker starter uses the effective data-root filesystem to choose
+storage. Kernel overlay uses `fuse-overlayfs` when available, otherwise `vfs`.
+A `fuse.fuse-overlayfs` backing store uses `vfs`; nesting another FUSE overlay
+there is not reliable. Selected graph drivers explicitly use Docker's classic
+image store (`features.containerd-snapshotter=false`), including on Docker 29.
+An explicit conflicting containerd-store setting fails with a diagnostic;
+`ROR_DOCKER_STORAGE_DRIVER=default` leaves that explicit setting in control.
+Changing image stores can hide the other store's images and containers from
+Docker's listing. The starter does not delete or migrate either store; preserve
+the old data and configuration for operator-controlled recovery.
+
 ## First use
 
 On a new Kubernetes workspace, DevPod initializes volume subdirectories from

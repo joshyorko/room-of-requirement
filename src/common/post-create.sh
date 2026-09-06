@@ -137,8 +137,9 @@ fi
 # T029: mise Setup Task Detection & Execution
 # ============================================================================
 if [ -n "${mise_config}" ]; then
-    # Check if there's a setup task defined
-    if mise tasks ls --name-only 2>/dev/null | grep -Fxq "setup"; then
+    # Keep discovery failure fatal, and do not run an unrelated global setup.
+    project_tasks="$(mise tasks ls --local --name-only)"
+    if grep -Fxq "setup" <<< "${project_tasks}"; then
         log "Found mise setup task - executing"
         mise run setup
         log "✓ mise setup task completed successfully"
