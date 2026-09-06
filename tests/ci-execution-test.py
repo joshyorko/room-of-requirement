@@ -7,6 +7,7 @@ from pathlib import Path
 import subprocess
 import tempfile
 import unittest
+import importlib.util
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / ".github/scripts"
@@ -53,7 +54,8 @@ class ExecutionTests(unittest.TestCase):
             target.chmod(0o755)
         self.env = dict(os.environ, PATH=str(self.bin) + ":" + os.environ["PATH"],
                         CALLS=str(self.work / "calls"), RUNNER_TEMP=str(self.work),
-                        GITHUB_OUTPUT=str(self.work / "output"), PYTHONDONTWRITEBYTECODE="1")
+                        GITHUB_OUTPUT=str(self.work / "output"), PYTHONDONTWRITEBYTECODE="1",
+                        GITHUB_STEP_SUMMARY=str(self.work / "summary"))
 
     def run_script(self, name, *args, **env):
         return subprocess.run([str(SCRIPTS / name), *args], cwd=ROOT, env=self.env | env,
@@ -121,6 +123,90 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(len(executions), 2)
         self.assertIn("vscode", executions[1])
         self.assertNotIn("--privileged", executions[1])
+
+    def promotion(self, **changes):
+        data = json.loads(self.request(event="push", ref="refs/heads/main", enforce=True))
+        data.update(digest=DIGEST, **changes)
+        path = self.work / "context.json"
+        path.write_text(json.dumps(data))
+        return path
+
+    def test_promotion_copies_the_verified_digest_without_rebuilding(self):
+        path = self.promotion()
+        needs = {k: {"result": "success"} for k in ("verify", "attest", "provenance")}
+        result = self.run_script("promote_image.py", str(path), NEEDS=json.dumps(needs))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        writes = [c for c in self.calls() if "create" in c]
+        self.assertEqual(writes, [["docker", "buildx", "imagetools", "create",
+            "--prefer-index=false", "--tag", "ghcr.io/owner/repo:wolfi",
+            "--tag", "ghcr.io/owner/repo:secure", "ghcr.io/owner/repo@" + DIGEST]])
+        self.assertFalse(any(c[0] == "devcontainer" or "build" in c for c in self.calls()))
+
+    def test_promotion_failure_paths_never_write_a_registry_tag(self):
+        path = self.promotion()
+        needs = {k: {"result": "success"} for k in ("verify", "attest", "provenance")}
+        cases = [dict(SOURCE_SHA="c" * 40), dict(FAIL_COMMAND="git fetch"),
+                 dict(FAIL_COMMAND="docker buildx imagetools inspect"),
+                 dict(IMAGE_LABELS=json.dumps({"io.ror.run-id": "124", "io.ror.run-attempt": "1"})),
+                 dict(NEEDS=json.dumps(needs | {"attest": {"result": "failure"}}))]
+        for env in cases:
+            with self.subTest(env=env):
+                result = self.run_script("promote_image.py", str(path),
+                    **({"NEEDS": json.dumps(needs)} | env))
+                self.assertNotEqual(result.returncode, 0)
+        self.assertFalse(any("create" in c for c in self.calls()))
+
+
+class GitSourceTests(unittest.TestCase):
+    """Actual git commits/annotated tags, with only GitHub release metadata faked."""
+
+    def test_release_tag_peels_to_an_older_main_commit_and_detects_divergence(self):
+        import sys
+        from unittest.mock import patch
+        sys.path.insert(0, str(SCRIPTS))
+        spec = importlib.util.spec_from_file_location("promotion", SCRIPTS / "promote_image.py")
+        module = importlib.util.module_from_spec(spec)
+        spec.loader.exec_module(module)
+        with tempfile.TemporaryDirectory() as temp:
+            repo = Path(temp)
+
+            def git(*args):
+                return subprocess.check_output(["git", "-C", str(repo), *args],
+                    text=True, stderr=subprocess.DEVNULL).strip()
+
+            git("init", "-b", "main")
+            git("config", "user.email", "ci@example.invalid")
+            git("config", "user.name", "CI Fixture")
+            git("commit", "--allow-empty", "-m", "released")
+            source = git("rev-parse", "HEAD")
+            git("tag", "-a", "v1.2.3", "-m", "release")
+            git("commit", "--allow-empty", "-m", "new main")
+            git("remote", "add", "origin", str(repo))
+            real_capture = module.capture
+
+            def metadata(*args):
+                if args[:3] == ("gh", "release", "view"):
+                    return json.dumps(dict(tagName="v1.2.3", isDraft=False, isPrerelease=False))
+                if args[:2] == ("gh", "api"):
+                    return json.dumps(dict(tag_name="v1.2.3"))
+                return real_capture(*args)
+
+            previous = Path.cwd()
+            try:
+                os.chdir(repo)
+                with patch.object(module, "capture", side_effect=metadata):
+                    facts = module.source_facts(dict(release_version="1.2.3", source=source,
+                                                     repository="owner/repo"))
+                    self.assertEqual(facts["tag_sha"], source)
+                    self.assertTrue(facts["main_ancestor"])
+                    self.assertNotEqual(facts["main_sha"], source)
+                    git("checkout", "--orphan", "other")
+                    git("commit", "--allow-empty", "-m", "unrelated")
+                    facts = module.source_facts(dict(release_version="1.2.3",
+                        source=git("rev-parse", "HEAD"), repository="owner/repo"))
+                    self.assertFalse(facts["main_ancestor"])
+            finally:
+                os.chdir(previous)
 
 
 if __name__ == "__main__":
