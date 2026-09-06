@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-`latest` points at the Ubuntu Noble variant, which is the default Codespaces path. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
+`latest` points at the Ubuntu Noble variant, which is the default Codespaces path. Core tools `mise`, `starship`, and `zoxide` are included. Language runtimes are configured for each project; `bbrew` and additional bundles install on demand. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
 
 Published variant tags:
 
@@ -38,7 +38,7 @@ Published variant tags:
 
 1. Open in VS Code with Dev Containers extension
 2. Click "Reopen in Container"
-3. Start coding in under 60 seconds!
+3. Wait for project initialization to finish, then start coding.
 
 ### Option 3: DevPod
 
@@ -83,14 +83,14 @@ Room of Requirement uses **Homebrew as the first-class package manager**. Instea
 
 ### Pre-installed Tools (Baked into Image)
 
-These are baked into the image for instant availability:
+The shell foundation is baked into the image; the bundle selector installs on demand:
 
 | Tool | Purpose |
 |------|---------|
 | **mise** | Polyglot version manager (Node, Python, Go, Ruby, etc.) |
 | **starship** | Cross-shell prompt with git/tool status |
 | **zoxide** | Smart directory navigation (`z` command) |
-| **bbrew** | Bold Brew TUI baked in for browsing optional Brewfile installs |
+| **bbrew** (on demand) | Installed by `ujust bbrew` for browsing optional Brewfile installs |
 
 
 ### Curated Brewfiles
@@ -269,7 +269,7 @@ room-of-requirement/
 
 ## 🎛️ Customization Examples
 
-### Standard Setup (Core Tools Pre-baked)
+### Standard Setup (Shell Foundation Included)
 
 ```json
 {
@@ -277,14 +277,14 @@ room-of-requirement/
 }
 ```
 
-Core tools are pre-installed: mise, starship, zoxide, bbrew, plus default Node, Go, and Ruby runtimes. Use `ujust bbrew` for additional tools from the curated Brewfiles, including the `ror` bundle.
+The image includes mise, starship, and zoxide. Project configuration selects language runtimes. Use `ujust bbrew` to install its selector and additional tools from the curated Brewfiles, including the `ror` bundle.
 
 ### With Additional Kubernetes Tools
 
 ```json
 {
   "image": "ghcr.io/joshyorko/room-of-requirement:latest",
-  "postCreateCommand": "brew bundle --file=/tmp/brew/k8s.Brewfile"
+  "postCreateCommand": "brew bundle --file=.devcontainer/Brewfile"
 }
 ```
 
