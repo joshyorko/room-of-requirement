@@ -172,16 +172,18 @@ MY_VAR = "value"
 
 Tool versions automatically switch when you `cd` into the project directory.
 
+Project creation installs declared Brewfile, mise, and Node dependencies and fails if a required step fails. It does not run global setup tasks, upgrade package managers, or clear the npm cache. To opt into global Node, Python, Go, and Ruby defaults, run `ujust runtime-defaults`. Existing global mise configuration is preserved; remove unwanted global tool entries explicitly when moving an existing home to project-only configuration.
+
 ---
 
 ## 💎 Ruby and Rails
 
-Ruby is installed by default via `mise`. Use `mise` to pin a different version when needed:
+Ruby is opt-in. Declare it in the project mise configuration or install a global version explicitly:
 
 ```bash
-ruby --version
 mise use -g ruby@latest
-gem install rails
+mise exec -- ruby --version
+mise exec -- gem install rails
 ```
 
 This keeps Ruby isolated to `mise` (no `sudo gem` and no Homebrew Ruby symlink conflicts).
@@ -341,24 +343,30 @@ mise ERROR Failed to install tools: core:node@lts, core:python@latest, core:go@l
 core:node@lts: failed create_dir_all: ~/.local/share/mise/installs/node/24.13.0: Permission denied (os error 13)
 ```
 
-**Solution**: The container automatically fixes mise cache directory permissions on startup in Codespaces. If you still encounter issues after the container starts:
+Inspect the current identity and the affected path before changing ownership:
 
-1. **Restart your terminal**: Close and reopen the terminal to ensure permissions are applied
-2. **Reload the window**: Press `Ctrl+Shift+P` and run "Developer: Reload Window"
-3. **Manual fix**: Run `sudo chown -R vscode:vscode ~/.local/share/mise` to fix permissions
+```bash
+id
+stat -c '%u:%g %a %n' ~/.local/share/mise
+```
 
-**Why this happens**: GitHub Codespaces mounts named volumes with root ownership by default. The entrypoint script detects Codespaces and automatically fixes permissions for the mise cache directory during container initialization, ensuring mise commands work properly.
+Bootstrap initializes missing paths and repairs managed mount roots without recursively rewriting existing files. Old data may belong to a previous login UID. Follow [Home Persistence](docs/DEVPOD-HOME-PERSISTENCE.md) for migration and rollback; do not recursively normalize the entire home or rootless container storage.
 
 ### Docker in DevPod
 
 The published Ubuntu and Debian streams use the official Docker-in-Docker Dev
 Container Feature. The Wolfi stream uses Docker packages baked into the image.
 All published streams are expected to have `docker` on `PATH` and a daemon
-started by the container entrypoint. The image also ships
-`/etc/docker/daemon.json` with `fuse-overlayfs` as the storage driver so nested
-container runs work under project-container hosts such as DevPod and
-Codespaces. `docker info` and `docker run --rm hello-world` should work without
-a manual `ujust` repair step.
+started by the container entrypoint. Dev Container clients apply the declared
+Docker and containerd storage volumes. Raw Docker-based probes must also place
+those graph stores on suitable volumes rather than the container's writable
+layer. Wolfi's fallback selects a compatible storage driver for the backing
+filesystem and verifies API readiness. `docker info` and
+`docker run --rm hello-world` verify the configured runtime.
+
+Existing workspaces need the explicit storage-name migration described in
+[Home Persistence](docs/DEVPOD-HOME-PERSISTENCE.md) before switching to the new
+configuration. Existing volumes are retained; migration is never automatic.
 
 The Wolfi stream also provides rootless `podman`, `buildah`, and `skopeo` for
 the `vscode` user. Podman uses a separate named storage volume and the

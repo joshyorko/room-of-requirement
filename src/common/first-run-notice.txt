@@ -6,7 +6,7 @@ WELCOME TO THE ROOM OF REQUIREMENT
 
 
 Ready now:
-  Wolfi OS • Homebrew • mise • Docker
+  Linux • Homebrew • mise • Docker
   zsh • starship • zoxide
 
 Need more tools?
@@ -30,6 +30,7 @@ Kubernetes:
 Try:
   $ ujust info
   $ mise list
+  $ ujust runtime-defaults   # Optional global language runtimes
   $ docker info
 
 
