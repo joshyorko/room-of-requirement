@@ -6,11 +6,12 @@ Automated upkeep for the Room of Requirement repository leveraging `rcc` and Rob
 
 This robot keeps the repository fresh by automating version updates for:
 
-1. **GitHub Actions workflows** - Updates `uses:` references based on allowlisted actions
-2. **External download pins** - Updates pinned versions and digests from sources like PyPI, GitHub releases, and Docker Hub
-3. **Pre-commit hook repos** - Refreshes configured hook revisions in `.pre-commit-config.yaml`
-4. **Homebrew tracking** - Logs formula versions (informational only)
-5. **Curated Brewfile validation** - Catches renamed formulas or missing taps before image builds or on-demand installs break
+1. **Specialized download pins** - Updates allowlisted package pins and paired digests
+2. **Feature locks** - Refreshes every supported feature-enabled devcontainer config
+3. **Curated Brewfile validation** - Catches renamed formulas or missing taps before image builds or on-demand installs break
+
+Renovate owns standard GitHub Actions, Dockerfile, and pre-commit dependency updates. The retained
+`update-workflows`, `update-downloads`, and `update-homebrew` tasks are manual compatibility tools.
 
 ### What This Robot Does NOT Update
 
@@ -18,7 +19,7 @@ This robot keeps the repository fresh by automating version updates for:
 - Shell essentials are baked into the image; `bbrew` installs on demand via `ujust bbrew`
 - Docker Compose is baked from the pinned upstream Docker Compose release, not from the
   Docker-in-Docker feature's moving `v2` shortcut
-- On-demand tools are installed via curated Brewfiles in `.devcontainer/brew/`
+- On-demand tools are installed via curated Brewfiles in `src/common/brew/`
 - Homebrew handles versioning naturally via `brew update && brew upgrade`
 - The `homebrew.json` allowlist is informational only - it logs versions but doesn't modify files
 
@@ -77,6 +78,7 @@ The robot prefers freeze artifacts from `output/environment_*_freeze.yaml` when 
 | **update-homebrew** | `--task update-homebrew` | Log Homebrew versions (informational only) |
 | **validate-brewfiles** | `--task validate-brewfiles` | Validate curated Brewfiles resolve through Homebrew |
 | **test-devcontainer** | `--task test-devcontainer` | Test devcontainer build |
+| **unit-tests** | `--task unit-tests` | Run non-mutating maintenance-robot unit tests |
 
 To inspect the resolved environment without running the robot:
 
@@ -121,7 +123,7 @@ Constrains GitHub Actions updates by:
 
 ### homebrew.json
 
-**Informational only** - tracks versions of core tools we rely on across the image and on-demand Brewfile flow.
+**Manual informational only** - tracks versions of core tools we rely on across the image and on-demand Brewfile flow.
 No file updates are performed. This is useful for:
 - Monitoring what versions are available
 - Reporting in maintenance logs
@@ -129,7 +131,7 @@ No file updates are performed. This is useful for:
 
 ### Curated Brewfile validation
 
-The robot now validates `.devcontainer/brew/*.Brewfile` entries with Homebrew itself before
+The robot now validates `src/common/brew/*.Brewfile` entries with Homebrew itself before
 declaring a maintenance run healthy. This is intentionally validation-only:
 - It does not rewrite Brewfiles
 - It does not auto-upgrade formulas
@@ -142,4 +144,4 @@ environment variable is set.
 
 ## CI Integration
 
-The GitHub Actions workflow `.github/workflows/rcc-maintenance.yml` executes the `maintenance` task daily. When changes are detected (including pre-commit hook revision bumps), they are committed back to the repository.
+The GitHub Actions workflow `.github/workflows/rcc-maintenance.yml` runs the non-mutating unit suite before its daily specialized maintenance task. When changes are detected, they are committed on a maintenance branch for review.

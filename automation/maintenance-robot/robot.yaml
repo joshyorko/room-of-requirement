@@ -2,7 +2,7 @@
 # https://github.com/robocorp/rcc/blob/master/docs/recipes.md#what-is-in-robotyaml
 
 tasks:
-  # Full maintenance run - updates workflows, dependency pins, refreshes pre-commit, and runs hooks
+  # Full specialized maintenance; Renovate owns standard Actions, Dockerfile, and pre-commit updates.
   maintenance:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t maintenance
 
@@ -29,6 +29,10 @@ tasks:
   # Test devcontainer build
   test-devcontainer:
     shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t test_devcontainer_build
+
+  # Non-mutating unit tests for retained maintenance APIs and validation contracts.
+  unit-tests:
+    shell: python -m robocorp.tasks run src/maintenance_robot/tasks.py -t unit_tests
 
 environmentConfigs:
   - output/environment_linux_amd64_freeze.yaml

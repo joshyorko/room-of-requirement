@@ -57,13 +57,8 @@ jobs:
       - name: Disable RCC telemetry
         run: rcc config identity -t
 
-      - name: Install hadolint
-        run: |
-          HADOLINT_VERSION=2.12.0
-          curl -sSL https://github.com/hadolint/hadolint/releases/download/v${HADOLINT_VERSION}/hadolint-Linux-x86_64 -o /usr/local/bin/hadolint
-          chmod +x /usr/local/bin/hadolint
-          hadolint --version
-        shell: bash
+      - name: Run maintenance robot unit tests
+        run: rcc run -r automation/maintenance-robot/robot.yaml -t unit-tests --silent
 
       - name: Install Homebrew
         run: |
@@ -128,7 +123,6 @@ jobs:
             git commit -m "chore: automated maintenance
 
             - Updated dependencies and versions
-            - Ran pre-commit hooks and fixes
             - Generated maintenance report"
             echo "committed=true" >> "$GITHUB_OUTPUT"
             echo "branch_name=$BRANCH_NAME" >> "$GITHUB_OUTPUT"
@@ -151,9 +145,8 @@ jobs:
           This PR contains automated maintenance updates from the RCC maintenance robot.
 
           ### Changes
-          - GitHub Actions workflow version updates
-          - PyPI package updates for maintenance robot
-          - Pre-commit hook fixes
+          - Specialized dependency updates and feature-lock refreshes
+          - Canonical Brewfile validation
 
           ### Affected Files
           DevContainer affected: ${{ steps.check_files.outputs.devcontainer_affected }}
