@@ -1,0 +1,64 @@
+#!/usr/bin/env python3
+"""Build a feature-aware candidate once; hand off its immutable registry digest."""
+
+import json
+import os
+from pathlib import Path
+import re
+import subprocess
+import sys
+
+from ci_policy import context, require
+
+
+def capture(*args):
+    return subprocess.check_output(args, text=True).strip()
+
+
+def main():
+    plan = context(json.loads(os.environ["REQUEST"]))
+    require(capture("git", "rev-parse", "HEAD") == plan["source"], "checkout/source mismatch")
+    evidence = Path(os.environ["RUNNER_TEMP"]) / "image-evidence"
+    evidence.mkdir(parents=True, exist_ok=True)
+    cache = f'{plan["image"]}/buildcache:{plan["cache_scope"]}'
+    command = ["devcontainer", "build", "--workspace-folder", ".", "--config",
+               f'src/{plan["variant"]}/.devcontainer/devcontainer.json',
+               "--image-name", plan["candidate"], "--platform", "linux/amd64",
+               "--frozen-lockfile", "--cache-from", f"type=registry,ref={cache}"]
+    for key, value in {"org.opencontainers.image.source":
+                       "https://github.com/" + plan["repository"],
+                       "org.opencontainers.image.revision": plan["source"],
+                       "io.ror.run-id": plan["run_id"],
+                       "io.ror.run-attempt": plan["run_attempt"]}.items():
+        command.extend(["--label", f"{key}={value}"])
+    if plan["refresh"]:
+        # CLI 0.89.0 forwards --no-cache AND --pull for Dockerfile builds,
+        # refreshing mutable apt/apk/Brew/feature installations on the monthly run.
+        command.append("--no-cache")
+    if plan["publish"]:
+        command.append("--push")
+        # PRs/branch candidates can read trusted cache but cannot replace it.
+        if plan["ref"] == "refs/heads/main":
+            command.extend(["--cache-to", f"type=registry,ref={cache},mode=max"])
+    with (evidence / "build.json").open("w") as output:
+        subprocess.run(command, check=True, stdout=output)
+    plan["digest"] = ""
+    plan["test_image"] = plan["candidate"]
+    if plan["publish"]:
+        plan["digest"] = capture("docker", "buildx", "imagetools", "inspect",
+                                 plan["candidate"], "--format", "{{.Manifest.Digest}}")
+        require(re.fullmatch(r"sha256:[a-f0-9]{64}", plan["digest"]), "invalid registry digest")
+        plan["test_image"] = plan["image"] + "@" + plan["digest"]
+        subprocess.run(["docker", "pull", plan["test_image"]], check=True)
+    (evidence / "context.json").write_text(json.dumps(plan, indent=2) + "\n")
+    with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+        for key in ("image", "candidate", "test_image", "digest", "source", "publish", "enforce"):
+            value = plan[key]
+            output.write(f"{key}={str(value).lower() if isinstance(value, bool) else value}\n")
+
+
+if __name__ == "__main__":
+    try:
+        main()
+    except (ValueError, KeyError, OSError, subprocess.CalledProcessError) as exc:
+        sys.exit(f"Build failed: {exc}")

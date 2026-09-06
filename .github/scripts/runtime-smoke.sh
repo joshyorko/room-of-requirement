@@ -1,0 +1,21 @@
+#!/usr/bin/env bash
+# CI owns only this disposable container and its anonymous volumes.
+set -euo pipefail
+
+image="${1:?image required}"
+variant="${2:?variant required}"
+scripts="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
+case "$variant" in
+    ubuntu-noble|debian-trixie|wolfi) ;;
+    *) echo "Unsupported smoke variant: $variant" >&2; exit 1 ;;
+esac
+
+container="$(docker run -d --privileged "$image" sleep infinity)"
+cleanup() {
+    docker rm -f -v "$container" >/dev/null
+}
+trap cleanup EXIT
+docker exec -i "$container" bash --noprofile --norc -s < "$scripts/docker-smoke.sh"
+if [[ "$variant" == wolfi ]]; then
+    docker exec -i --user vscode "$container" bash --noprofile --norc -s < "$scripts/podman-smoke.sh"
+fi
