@@ -2,6 +2,7 @@
 """Run CI executables with command-boundary fixtures, never a live daemon."""
 
 import json
+import hashlib
 import os
 from pathlib import Path
 import subprocess
@@ -12,7 +13,10 @@ import importlib.util
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / ".github/scripts"
 SHA = "a" * 40
-DIGEST = "sha256:" + "b" * 64
+CONFIG_DIGEST = "sha256:" + "b" * 64
+MANIFEST = json.dumps({"schemaVersion": 2, "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                       "config": {"digest": CONFIG_DIGEST}, "layers": []})
+DIGEST = "sha256:" + hashlib.sha256(MANIFEST.encode()).hexdigest()
 
 # Docker/devcontainer are external side effects. The tested helpers and shell
 # contracts run unchanged; this fixture records exact command boundaries.
@@ -25,15 +29,19 @@ with open(os.environ['CALLS'], 'a') as out:
 if os.environ.get('FAIL_COMMAND') and os.environ['FAIL_COMMAND'] in ' '.join([name, *args]):
     sys.exit(7)
 if name == 'devcontainer':
+    if args[0] == 'build' and os.environ.get('BUILDX_NO_DEFAULT_ATTESTATIONS') != '1':
+        sys.exit('expected deliberate single-manifest export')
     print('{"outcome":"success"}')
 elif name == 'docker':
     if args[:3] == ['buildx', 'imagetools', 'inspect']:
         if '--raw' in args:
-            print('{}')
+            sys.stdout.write(os.environ['MANIFEST'])
         elif '{{json .Image}}' in args:
             print(json.dumps({'config': {'Labels': json.loads(os.environ.get('IMAGE_LABELS', '{}'))}}))
         else:
-            print(os.environ.get('INSPECT_DIGEST', 'sha256:' + 'b' * 64))
+            print(os.environ['INSPECT_DIGEST'])
+    elif args[:2] == ['image', 'inspect']:
+        print(os.environ.get('LOCAL_ID', 'sha256:' + 'b' * 64))
     elif args[:1] == ['run']:
         print('ci-owned-container')
 elif name == 'git':
@@ -55,7 +63,8 @@ class ExecutionTests(unittest.TestCase):
         self.env = dict(os.environ, PATH=str(self.bin) + ":" + os.environ["PATH"],
                         CALLS=str(self.work / "calls"), RUNNER_TEMP=str(self.work),
                         GITHUB_OUTPUT=str(self.work / "output"), PYTHONDONTWRITEBYTECODE="1",
-                        GITHUB_STEP_SUMMARY=str(self.work / "summary"))
+                        GITHUB_STEP_SUMMARY=str(self.work / "summary"),
+                        MANIFEST=MANIFEST, INSPECT_DIGEST=DIGEST)
 
     def run_script(self, name, *args, **env):
         return subprocess.run([str(SCRIPTS / name), *args], cwd=ROOT, env=self.env | env,
@@ -95,7 +104,7 @@ class ExecutionTests(unittest.TestCase):
 
     def test_wrong_checkout_failed_build_or_invalid_digest_stops(self):
         for env in (dict(SOURCE_SHA="c" * 40), dict(FAIL_COMMAND="devcontainer build"),
-                    dict(INSPECT_DIGEST="")):
+                    dict(INSPECT_DIGEST=""), dict(LOCAL_ID="sha256:" + "d" * 64)):
             with self.subTest(env=env):
                 result = self.run_script("build_image.py", REQUEST=self.request(
                     event="push", ref="refs/heads/main"), **env)
@@ -143,7 +152,8 @@ class ExecutionTests(unittest.TestCase):
 
     def test_promotion_copies_the_verified_digest_without_rebuilding(self):
         path = self.promotion()
-        needs = {k: {"result": "success"} for k in ("verify", "attest", "provenance")}
+        needs = {k: {"result": "success", "outputs": {"subject_digest": DIGEST}}
+                 for k in ("verify", "attest", "provenance")}
         result = self.run_script("promote_image.py", str(path), NEEDS=json.dumps(needs))
         self.assertEqual(result.returncode, 0, result.stderr)
         writes = [c for c in self.calls() if "create" in c]
@@ -154,11 +164,14 @@ class ExecutionTests(unittest.TestCase):
 
     def test_promotion_failure_paths_never_write_a_registry_tag(self):
         path = self.promotion()
-        needs = {k: {"result": "success"} for k in ("verify", "attest", "provenance")}
+        needs = {k: {"result": "success", "outputs": {"subject_digest": DIGEST}}
+                 for k in ("verify", "attest", "provenance")}
         cases = [dict(SOURCE_SHA="c" * 40), dict(FAIL_COMMAND="git fetch"),
                  dict(FAIL_COMMAND="docker buildx imagetools inspect"),
                  dict(IMAGE_LABELS=json.dumps({"io.ror.run-id": "124", "io.ror.run-attempt": "1"})),
                  dict(NEEDS=json.dumps(needs | {"attest": {"result": "failure"}}))]
+        cases.append(dict(NEEDS=json.dumps(needs | {"provenance": {
+            "result": "success", "outputs": {"subject_digest": "sha256:" + "d" * 64}}})))
         for env in cases:
             with self.subTest(env=env):
                 result = self.run_script("promote_image.py", str(path),

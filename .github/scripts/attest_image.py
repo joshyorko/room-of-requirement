@@ -50,9 +50,11 @@ def main():
                      "--certificate-oidc-issuer", "https://token.actions.githubusercontent.com"]
     subprocess.run(["cosign", "verify", *identity_args, ref], check=True)
     subprocess.run(["cosign", "verify-attestation", *identity_args,
-                    "--type", "spdxjson", ref], check=True)
+                    "--check-claims", "--type", "spdxjson", ref], check=True)
     subprocess.run(["cosign", "verify-attestation", *identity_args,
-                    "--type", context_type, ref], check=True)
+                    "--check-claims", "--type", context_type, ref], check=True)
+    with open(os.environ["GITHUB_OUTPUT"], "a") as output:
+        output.write(f'subject_digest={plan["digest"]}\n')
 
 
 if __name__ == "__main__":

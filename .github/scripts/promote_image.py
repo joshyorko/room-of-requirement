@@ -88,7 +88,8 @@ def main():
     parser.add_argument("context", type=Path)
     args = parser.parse_args()
     plan = context(json.loads(args.context.read_text()))
-    gates = {name: value["result"] for name, value in json.loads(os.environ["NEEDS"]).items()}
+    gates = {name: {"status": value["result"], "digest": value.get("outputs", {}).get("subject_digest")}
+             for name, value in json.loads(os.environ["NEEDS"]).items()}
     aliases = promote(plan, gates)
     with open(os.environ["GITHUB_STEP_SUMMARY"], "a") as summary:
         summary.write(f'Verified image: `{plan["image"]}@{plan["digest"]}`\n\n')

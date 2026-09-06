@@ -7,15 +7,15 @@ from pathlib import Path
 import sys
 
 from ci_policy import boolean, require
+from image_identity import scan_identity
 
 SEVERITIES = ("critical", "high", "medium", "low", "negligible", "unknown")
 
 
-def summarize(report):
+def summarize(report, expected):
     require(isinstance(report, dict), "report is not an object")
     require(isinstance(report.get("matches"), list), "matches array missing")
-    require(isinstance(report.get("source"), dict) and report["source"].get("type"),
-            "scan source missing")
+    subject = scan_identity(report.get("source"), expected)
     require(isinstance(report.get("descriptor"), dict)
             and report["descriptor"].get("name") == "grype", "Grype descriptor missing")
     counts = {severity: set() for severity in SEVERITIES}
@@ -37,7 +37,7 @@ def summarize(report):
             actionable.setdefault(vuln["id"], set()).add(
                 f'{artifact["name"]}@{artifact["version"]} -> {", ".join(fix["versions"])}')
     summary = {"counts": {k: len(v) for k, v in counts.items()},
-               "critical_fixed": len(actionable)}
+               "critical_fixed": len(actionable), "subject": subject}
     # Generate critical-with-fixes SARIF from supported JSON fields, never result.properties.severity.
     rules, results = [], []
     for ident, packages in sorted(actionable.items()):
@@ -55,13 +55,15 @@ def main():
     parser = argparse.ArgumentParser(description=__doc__)
     parser.add_argument("report", type=Path)
     parser.add_argument("--scanner-outcome", required=True)
+    parser.add_argument("--expected-identity", required=True, type=Path)
     parser.add_argument("--enforce", default="null")
     parser.add_argument("--summary", required=True, type=Path)
     parser.add_argument("--sarif", required=True, type=Path)
     args = parser.parse_args()
     require(args.scanner_outcome == "success", "scanner execution did not succeed")
     enforce = boolean(json.loads(args.enforce))
-    summary, sarif = summarize(json.loads(args.report.read_text()))
+    summary, sarif = summarize(json.loads(args.report.read_text()),
+                               json.loads(args.expected_identity.read_text()))
     summary["enforce"] = enforce
     args.summary.write_text(json.dumps(summary, indent=2) + "\n")
     args.sarif.write_text(json.dumps(sarif, indent=2) + "\n")

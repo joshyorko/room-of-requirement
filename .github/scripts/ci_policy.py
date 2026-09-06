@@ -57,7 +57,10 @@ def promotion(data):
     require(plan["publish"] and plan["enforce"], "publication requires enforced policy")
     require(re.fullmatch(r"sha256:[a-f0-9]{64}", data.get("digest", "")), "invalid digest")
     for name in ("verify", "attest", "provenance"):
-        require(data.get("gates", {}).get(name) == "success", f"gate not successful: {name}")
+        gate = data.get("gates", {}).get(name)
+        require(isinstance(gate, dict) and gate.get("status") == "success",
+                f"gate not successful: {name}")
+        require(gate.get("digest") == data["digest"], f"gate subject mismatch: {name}")
     version = plan["release_version"]
     if version:
         tag = "v" + version

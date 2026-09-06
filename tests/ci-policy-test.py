@@ -61,7 +61,7 @@ class PolicyTests(unittest.TestCase):
         data = dict(event="push", ref="refs/heads/main", source=SHA, main_sha=SHA,
                     repository="owner/repo", variant="ubuntu-noble", run_id="123",
                     run_attempt="1", publish=True, enforce=True, digest=DIGEST,
-                    release_version="", gates={name: "success" for name in
+                    release_version="", gates={name: {"status": "success", "digest": DIGEST} for name in
                     ("verify", "attest", "provenance")})
         data.update(overrides)
         return invoke("ci_policy.py", "promotion", data=data)
@@ -76,11 +76,22 @@ class PolicyTests(unittest.TestCase):
     def test_failed_skipped_cancelled_missing_gates_never_promote(self):
         for gate in ("verify", "attest", "provenance"):
             for outcome in ("failure", "skipped", "cancelled", None):
-                gates = dict(verify="success", attest="success", provenance="success")
-                gates[gate] = outcome
+                gates = {k: {"status": "success", "digest": DIGEST}
+                         for k in ("verify", "attest", "provenance")}
+                gates[gate]["status"] = outcome
                 with self.subTest(gate=gate, outcome=outcome):
                     self.assertNotEqual(self.promotion(gates=gates).returncode, 0)
         self.assertNotEqual(self.promotion(gates={}).returncode, 0)
+
+    def test_gate_subjects_cannot_be_missing_mixed_or_replayed_for_another_digest(self):
+        for gate in ("verify", "attest", "provenance"):
+            for evidence in ("success", {"status": "success"},
+                             {"status": "success", "digest": "sha256:" + "c" * 64}):
+                gates = {k: {"status": "success", "digest": DIGEST}
+                         for k in ("verify", "attest", "provenance")}
+                gates[gate] = evidence
+                self.assertNotEqual(self.promotion(gates=gates).returncode, 0)
+        self.assertNotEqual(self.promotion(digest="sha256:" + "c" * 64).returncode, 0)
 
     def test_untrusted_stale_or_policy_override_never_promotes(self):
         for changes in (dict(ref="refs/heads/topic", event="workflow_dispatch"),
@@ -115,11 +126,15 @@ class ScanTests(unittest.TestCase):
         # Upstream's presenter-only second match has a zero-value fix state.
         # Use the actual scanner's unknown state for valid-report tests.
         self.fixture["matches"][1]["vulnerability"]["fix"]["state"] = "unknown"
+        self.identity = dict(mode="registry", manifest_digest=self.fixture["source"]["target"]["manifestDigest"],
+                             config_digest=self.fixture["source"]["target"]["imageID"])
 
     def scan(self, report, policy="null", outcome="success"):
         if report is not None:
             (self.path / "scan.json").write_text(json.dumps(report))
+        (self.path / "identity.json").write_text(json.dumps(self.identity))
         return invoke("scan_report.py", str(self.path / "scan.json"),
+                      "--expected-identity", str(self.path / "identity.json"),
                       "--enforce", policy, "--scanner-outcome", outcome,
                       "--sarif", str(self.path / "scan.sarif"),
                       "--summary", str(self.path / "summary.json"))
@@ -157,6 +172,30 @@ class ScanTests(unittest.TestCase):
     def test_presenter_zero_value_fix_state_is_rejected(self):
         raw = json.loads((ROOT / "tests/ci-fixtures/grype-image.json").read_text())
         self.assertNotEqual(self.scan(raw, policy="false").returncode, 0)
+
+    def test_missing_stale_or_cross_digest_image_target_never_passes(self):
+        for target in (None, {}, {"imageID": self.identity["config_digest"]},
+                       self.fixture["source"]["target"] | {"manifestDigest": "sha256:" + "d" * 64},
+                       self.fixture["source"]["target"] | {"imageID": "sha256:" + "d" * 64}):
+            report = copy.deepcopy(self.fixture)
+            report["matches"] = []
+            report["source"]["target"] = target
+            self.assertNotEqual(self.scan(report, policy="false").returncode, 0)
+
+    def test_distinct_manifest_and_config_identities_are_supported(self):
+        self.assertNotEqual(self.identity["manifest_digest"], self.identity["config_digest"])
+        result = self.scan(self.fixture)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        summary = json.loads((self.path / "summary.json").read_text())
+        self.assertEqual(summary["subject"], self.identity)
+
+    def test_local_pr_scan_binds_config_id_without_claiming_a_registry_manifest(self):
+        self.identity = dict(mode="local", config_digest=self.identity["config_digest"])
+        self.fixture["source"]["target"]["manifestDigest"] = ""
+        result = self.scan(self.fixture)
+        self.assertEqual(result.returncode, 0, result.stderr)
+        self.fixture["source"]["target"]["imageID"] = "sha256:" + "d" * 64
+        self.assertNotEqual(self.scan(self.fixture).returncode, 0)
 
     def test_execution_error_missing_output_and_malformed_reports_fail_even_opt_out(self):
         self.assertNotEqual(self.scan(None, policy="false").returncode, 0)

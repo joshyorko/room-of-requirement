@@ -33,7 +33,8 @@ if sys.argv[1] == os.environ.get('FAIL_COSIGN'):
             calls = work / "calls"
             env = dict(os.environ, RUNNER_TEMP=temp, PATH=temp + ":" + os.environ["PATH"],
                        CALLS=str(calls), IMAGE="ghcr.io/owner/repo", DIGEST=DIGEST,
-                       GITHUB_REPOSITORY="owner/repo", GITHUB_REF="refs/heads/main")
+                       GITHUB_REPOSITORY="owner/repo", GITHUB_REF="refs/heads/main",
+                       GITHUB_OUTPUT=str(work / "output"))
 
             def run(**changes):
                 return subprocess.run(["python3", str(SCRIPT)], env=env | changes,
@@ -60,6 +61,7 @@ if sys.argv[1] == os.environ.get('FAIL_COSIGN'):
             context = json.loads((evidence / "build-context.json").read_text())
             self.assertEqual(context["source"], "a" * 40)
             self.assertEqual(context["release_version"], "1.2.3")
+            self.assertEqual((work / "output").read_text(), "subject_digest=" + DIGEST + "\n")
             for command in commands:
                 self.assertIn("ghcr.io/owner/repo@" + DIGEST, command)
                 self.assertNotIn("--tlog-upload=false", command)
