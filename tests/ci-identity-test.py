@@ -67,6 +67,8 @@ assert '--insecure-ignore-tlog=true' not in sys.argv
 assert '--certificate-identity' in sys.argv
 assert '--certificate-oidc-issuer' in sys.argv
 assert sys.argv[-1] == 'ghcr.io/owner/repo@sha256:' + '1' * 64
+print('x' * (24 * 1024 * 1024))
+print('cosign provenance diagnostic', file=sys.stderr)
 sys.exit(int(os.environ.get('FAIL_COSIGN', '0')))
 ''')
             cosign.chmod(0o755)
@@ -80,9 +82,12 @@ sys.exit(int(os.environ.get('FAIL_COSIGN', '0')))
                 result = subprocess.run(["python3", str(script)], env=env | changes,
                                         capture_output=True, check=False)
                 self.assertNotEqual(result.returncode, 0)
+                self.assertEqual(len(result.stdout), 0)
                 self.assertFalse(output.exists())
             result = subprocess.run(["python3", str(script)], env=env, capture_output=True, check=False)
             self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(len(result.stdout), 0)
+            self.assertIn(b"cosign provenance diagnostic", result.stderr)
             self.assertEqual(output.read_text(), "subject_digest=sha256:" + "1" * 64 + "\n")
 
 

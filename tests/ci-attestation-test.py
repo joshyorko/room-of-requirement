@@ -26,6 +26,9 @@ class AttestationTests(unittest.TestCase):
 import json, os, sys
 with open(os.environ['CALLS'], 'a') as output:
     output.write(json.dumps(sys.argv[1:]) + '\\n')
+if sys.argv[1].startswith('verify'):
+    print('x' * (24 * 1024 * 1024))
+print('cosign diagnostic: ' + sys.argv[1], file=sys.stderr)
 if sys.argv[1] == os.environ.get('FAIL_COSIGN'):
     sys.exit(9)
 ''')
@@ -51,10 +54,16 @@ if sys.argv[1] == os.environ.get('FAIL_COSIGN'):
             self.assertNotEqual(run(DIGEST="sha256:" + "c" * 64).returncode, 0)
             self.assertFalse(calls.exists())
             for command in ("sign", "attest", "verify", "verify-attestation"):
-                self.assertNotEqual(run(FAIL_COSIGN=command).returncode, 0)
+                failed = run(FAIL_COSIGN=command)
+                self.assertNotEqual(failed.returncode, 0)
+                self.assertEqual(len(failed.stdout), 0)
+                self.assertIn("cosign diagnostic: " + command, failed.stderr)
+                self.assertFalse((work / "output").exists())
             calls.unlink()
             result = run()
             self.assertEqual(result.returncode, 0, result.stderr)
+            self.assertEqual(len(result.stdout), 0)
+            self.assertIn("cosign diagnostic: verify-attestation", result.stderr)
             commands = [json.loads(line) for line in calls.read_text().splitlines()]
             self.assertEqual([c[0] for c in commands],
                 ["sign", "attest", "attest", "verify", "verify-attestation", "verify-attestation"])
