@@ -34,22 +34,47 @@ def update_devcontainer_lockfile(repo_root: Path, report: MaintenanceReport) -> 
         )
         return
 
-    config_dir = repo_root / ".devcontainer"
-    config_file = config_dir / "devcontainer.json"
-    if not config_file.exists():
-        logger.info("No devcontainer configuration found; skipping lockfile update.")
+    config_files = feature_config_paths(repo_root)
+    if not config_files:
+        logger.info("No feature-enabled devcontainer configuration found; skipping lockfile update.")
         return
 
-    # Check if there are any features to lock
-    try:
-        config_data = json.loads(config_file.read_text())
-        features = config_data.get("features", {})
+    for config_file in config_files:
+        _update_config_lockfile(repo_root, config_file, devcontainer_cli, report)
+
+
+def feature_config_paths(repo_root: Path) -> List[Path]:
+    """Return every supported Dev Container config that declares features."""
+    candidates = [
+        repo_root / ".devcontainer" / "devcontainer.json",
+        *sorted((repo_root / "src").glob("*/.devcontainer/devcontainer.json")),
+        *sorted((repo_root / "templates").glob("*/.devcontainer/devcontainer.json")),
+    ]
+    result: List[Path] = []
+    for config_file in candidates:
+        if not config_file.exists():
+            continue
+
+        try:
+            config_data = json.loads(config_file.read_text(encoding="utf-8"))
+            features = config_data.get("features", {})
+        except (json.JSONDecodeError, OSError) as exc:
+            logger.warning("Could not parse %s: %s", config_file, exc)
+            continue
         if not features:
-            logger.info("No features defined in devcontainer.json; skipping lockfile update.")
-            return
-    except (json.JSONDecodeError, IOError) as exc:
-        logger.warning("Could not parse devcontainer.json: %s", exc)
-        return
+            logger.info("No features defined in %s; skipping lockfile update.", config_file)
+            continue
+        result.append(config_file)
+    return result
+
+
+def _update_config_lockfile(
+    repo_root: Path,
+    config_file: Path,
+    devcontainer_cli: str,
+    report: MaintenanceReport,
+) -> None:
+    config_dir = config_file.parent
 
     lockfile_path = config_dir / "devcontainer-lock.json"
     old_lock = _read_lockfile(lockfile_path)
@@ -59,6 +84,8 @@ def update_devcontainer_lockfile(repo_root: Path, report: MaintenanceReport) -> 
         "upgrade",
         "--workspace-folder",
         str(repo_root),
+        "--config",
+        str(config_file),
         "--log-level",
         "info",
     ]

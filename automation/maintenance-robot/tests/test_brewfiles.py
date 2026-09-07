@@ -91,7 +91,7 @@ class BrewfileValidatorTests(unittest.TestCase):
             self.assertNotIn(["brew", "info", "--json=v2", "--formula", "joshyorko/tools/fizzy-symphony"], calls)
             self.assertNotIn(["brew", "info", "--json=v2", "--cask", "joshyorko/tools/rcc"], calls)
 
-    def test_accepts_declared_tap_entries_when_tap_info_lacks_entries(self) -> None:
+    def test_falls_back_to_brew_info_when_tap_membership_is_unknown(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:
             brew_dir = Path(tmpdir)
             (brew_dir / "ror.Brewfile").write_text(
@@ -120,6 +120,10 @@ class BrewfileValidatorTests(unittest.TestCase):
                         ]
                     )
                     return subprocess.CompletedProcess(args, 0, stdout=stdout, stderr="")
+                if args == ["brew", "info", "--json=v2", "--formula", "joshyorko/tools/action-server"]:
+                    return subprocess.CompletedProcess(args, 0, stdout="{}", stderr="")
+                if args == ["brew", "info", "--json=v2", "--cask", "joshyorko/tools/rcc"]:
+                    return subprocess.CompletedProcess(args, 0, stdout="{}", stderr="")
                 return subprocess.CompletedProcess(args, 1, stdout="", stderr="unexpected command")
 
             validator = BrewfileValidator(brew_executable="brew", require_brew=True)
@@ -128,8 +132,8 @@ class BrewfileValidatorTests(unittest.TestCase):
                 issues = validator.validate_directory(brew_dir)
 
             self.assertEqual([], issues)
-            self.assertNotIn(["brew", "info", "--json=v2", "--formula", "joshyorko/tools/action-server"], calls)
-            self.assertNotIn(["brew", "info", "--json=v2", "--cask", "joshyorko/tools/rcc"], calls)
+            self.assertIn(["brew", "info", "--json=v2", "--formula", "joshyorko/tools/action-server"], calls)
+            self.assertIn(["brew", "info", "--json=v2", "--cask", "joshyorko/tools/rcc"], calls)
 
     def test_falls_back_to_brew_info_for_unqualified_entries(self) -> None:
         with tempfile.TemporaryDirectory() as tmpdir:

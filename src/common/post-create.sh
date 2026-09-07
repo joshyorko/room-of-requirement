@@ -1,7 +1,7 @@
 #!/bin/bash
 # Post-create script for Room of Requirement DevContainer
-# Hydrates project with RoR defaults plus project dependencies from .mise.toml,
-# package.json, and related setup hooks.
+# Hydrates dependencies declared by project Brewfiles, mise configuration,
+# package.json, and the optional mise setup task.
 # T026-T030: Project hydration implementation
 
 set -euo pipefail
@@ -18,10 +18,6 @@ error() {
     exit 1
 }
 
-warn() {
-    log "WARNING: $*"
-}
-
 # ============================================================================
 # INITIALIZATION
 # ============================================================================
@@ -36,8 +32,9 @@ cd "$WORKSPACE_DIR" || error "Failed to change to workspace directory"
 # Seed the user mise cache if a system-level runtime seed exists.
 # On slimmer images this is a no-op, but we keep the hook so derived images can
 # still pre-populate runtimes if they choose to.
-if [ -x /usr/local/bin/mise-seed-cache.sh ]; then
-    /usr/local/bin/mise-seed-cache.sh
+MISE_CACHE_SEEDER="${ROR_MISE_CACHE_SEEDER:-/usr/local/bin/mise-seed-cache.sh}"
+if [ -x "${MISE_CACHE_SEEDER}" ]; then
+    "${MISE_CACHE_SEEDER}"
 fi
 
 # ============================================================================
@@ -46,60 +43,47 @@ fi
 # Ensure Homebrew is in PATH
 export PATH="/home/linuxbrew/.linuxbrew/bin:/home/linuxbrew/.linuxbrew/sbin:${PATH}"
 
-if ! command -v brew &> /dev/null; then
-    warn "Homebrew not found in PATH, skipping Homebrew setup"
-else
-    log "Homebrew found at $(which brew)"
-
-    # Update Homebrew to get latest formulae/tap metadata before bundle hydration
-    log "Updating Homebrew formulae index..."
-    if brew update --quiet; then
-        log "✓ Homebrew updated to $(brew --version | head -1)"
-    else
-        warn "Homebrew update had issues, continuing with existing formulae"
+project_brewfiles=()
+for brewfile in Brewfile .devcontainer/Brewfile; do
+    if [ -f "${brewfile}" ]; then
+        project_brewfiles+=("${brewfile}")
     fi
+done
 
-    log "Skipping RoR Brewfile install during post-create"
-    log "Use 'ujust bbrew' to install curated bundles or 'ujust brew-download-ror' to pre-download the RoR bundle"
-
-    # =========================================================================
-    # MISE: Install Global Runtimes (cached via volume mount)
-    # =========================================================================
-    # Install default runtimes - these are cached in the mise volume for fast restarts
-    log "Installing global language runtimes (node, python, go, ruby)..."
-    # Ensure mise is active for this session
-    export MISE_RUBY_COMPILE=0
-    eval "$(mise activate bash)"
-
-    mise install node@lts python@latest go@latest ruby@latest
-
-    # Update npm to latest to fix potential vulnerabilities
-    log "Updating npm to latest..."
-    mise exec -- npm install -g npm@latest 2>/dev/null || warn "npm update had issues"
-    mise exec -- npm cache clean --force 2>/dev/null || true
-
-    log "✓ Core runtimes installed and cached via mise"
+if [ "${#project_brewfiles[@]}" -gt 0 ]; then
+    command -v brew >/dev/null 2>&1 || error "Project Brewfile found but Homebrew is unavailable"
+    for brewfile in "${project_brewfiles[@]}"; do
+        log "Installing Homebrew dependencies from ${brewfile}"
+        brew bundle install --file="${brewfile}"
+        log "✓ Homebrew dependencies installed from ${brewfile}"
+    done
+else
+    log "No project Brewfile found - skipping Homebrew dependency installation"
 fi
 
 # ============================================================================
 # T027: .mise.toml Detection & Installation (Project-specific runtimes)
 # ============================================================================
-if [ -f ".mise.toml" ]; then
-    log "Detected .mise.toml - installing project-specific tool versions"
-
-    if ! command -v mise &> /dev/null; then
-        warn "mise not found in PATH, skipping mise install"
-    else
-        log "Installing mise dependencies from .mise.toml"
-        export MISE_RUBY_COMPILE=0
-        if mise install; then
-            log "✓ mise dependencies installed successfully"
-        else
-            warn "Some mise dependencies may have failed to install"
-        fi
+mise_config=""
+for candidate in mise.toml .mise.toml; do
+    if [ -f "${candidate}" ]; then
+        mise_config="${candidate}"
+        break
     fi
+done
+
+if [ -n "${mise_config}" ]; then
+    log "Detected ${mise_config} - installing project-specific tool versions"
+    command -v mise >/dev/null 2>&1 || error "Project mise config found but mise is unavailable"
+    export MISE_RUBY_COMPILE=0
+    mise install
+    # Installation does not change this noninteractive shell's PATH. Capture
+    # separately so an environment-resolution failure cannot be hidden by eval.
+    project_env="$(mise env --shell bash)"
+    eval "${project_env}"
+    log "✓ mise dependencies installed successfully"
 else
-    log "No .mise.toml found - using default mise runtimes"
+    log "No project mise config found - skipping tool installation"
 fi
 
 # ============================================================================
@@ -112,41 +96,42 @@ if [ -f "package.json" ]; then
     if [ -f "pnpm-lock.yaml" ]; then
         if command -v pnpm &> /dev/null; then
             log "Installing with pnpm"
-            pnpm install --frozen-lockfile || warn "pnpm install had issues"
+            pnpm install --frozen-lockfile
             log "✓ pnpm dependencies installed"
         else
-            warn "pnpm lockfile detected but pnpm not found"
+            error "pnpm lockfile detected but pnpm is unavailable"
         fi
     elif [ -f "yarn.lock" ]; then
         if command -v yarn &> /dev/null; then
             log "Installing with yarn"
-            yarn install --frozen-lockfile || warn "yarn install had issues"
+            yarn install --frozen-lockfile
             log "✓ yarn dependencies installed"
         else
-            warn "yarn lockfile detected but yarn not found"
+            error "yarn lockfile detected but yarn is unavailable"
         fi
     elif [ -f "package-lock.json" ]; then
         if command -v npm &> /dev/null; then
             log "Installing with npm"
-            npm ci || warn "npm install had issues"
+            npm ci
             log "✓ npm dependencies installed"
         else
-            warn "npm lockfile detected but npm not found"
+            error "npm lockfile detected but npm is unavailable"
         fi
     else
         # No lockfile, use default package manager
         if command -v pnpm &> /dev/null; then
             log "Installing with pnpm"
-            pnpm install || warn "pnpm install had issues"
+            pnpm install
         elif command -v yarn &> /dev/null; then
             log "Installing with yarn"
-            yarn install || warn "yarn install had issues"
+            yarn install
         elif command -v npm &> /dev/null; then
             log "Installing with npm"
-            npm install || warn "npm install had issues"
+            npm install
         else
-            warn "No package manager found (npm, yarn, pnpm)"
+            error "package.json found but no Node.js package manager is available"
         fi
+        log "✓ Node.js dependencies installed"
     fi
 else
     log "No package.json found - skipping Node.js dependency installation"
@@ -155,15 +140,13 @@ fi
 # ============================================================================
 # T029: mise Setup Task Detection & Execution
 # ============================================================================
-if command -v mise &> /dev/null && [ -f ".mise.toml" ]; then
-    # Check if there's a setup task defined
-    if mise task ls 2>/dev/null | grep -q "setup"; then
+if [ -n "${mise_config}" ]; then
+    # Keep discovery failure fatal, and do not run an unrelated global setup.
+    project_tasks="$(mise tasks ls --local --name-only)"
+    if grep -Fxq "setup" <<< "${project_tasks}"; then
         log "Found mise setup task - executing"
-        if mise run setup; then
-            log "✓ mise setup task completed successfully"
-        else
-            warn "mise setup task had issues"
-        fi
+        mise run setup
+        log "✓ mise setup task completed successfully"
     fi
 fi
 
@@ -174,6 +157,7 @@ log "✓ Post-create hydration completed successfully"
 log ""
 log "Environment ready! You can now:"
 log "  • Run 'ujust bbrew' to install optional curated bundles"
+log "  • Run 'ujust runtime-defaults' to install global language defaults"
 log "  • Re-run 'ujust brew-install-all' if you want to hydrate every Brewfile"
 log "  • Run 'ujust' to see all available commands"
 log "  • Run 'mise --version' to verify tool management"

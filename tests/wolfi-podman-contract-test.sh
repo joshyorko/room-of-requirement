@@ -5,7 +5,7 @@ ROOT_DIR="$(cd "$(dirname "${BASH_SOURCE[0]}")/.." && pwd)"
 DOCKERFILE="${ROOT_DIR}/src/wolfi/.devcontainer/Dockerfile"
 ENTRYPOINT="${ROOT_DIR}/src/common/entrypoint.sh"
 DEVCONTAINER="${ROOT_DIR}/src/wolfi/.devcontainer/devcontainer.json"
-WORKFLOW="${ROOT_DIR}/.github/workflows/build-devcontainers.yml"
+STORAGE_CONFIG="${ROOT_DIR}/src/wolfi/config/containers-storage.conf"
 
 fail() {
     echo "FAIL: $*" >&2
@@ -45,36 +45,30 @@ assert_contains "${DOCKERFILE}" "grep[[:space:]]+-q[[:space:]]+'\\^vscode:'[[:sp
     "subordinate GID range is duplicate-safe"
 assert_contains "${DOCKERFILE}" 'chmod[[:space:]]+u\+s[[:space:]]+/usr/bin/newuidmap[[:space:]]+/usr/bin/newgidmap' \
     "setuid mapping helpers"
-assert_contains "${DOCKERFILE}" 'rootless_storage_path[[:space:]]*=[[:space:]]*"\$HOME/.local/share/containers/storage"' \
-    "rootless storage path"
-assert_contains "${DOCKERFILE}" 'mount_program[[:space:]]*=[[:space:]]*"/usr/bin/fuse-overlayfs"' \
-    "fuse-overlayfs storage"
+python3 - "${STORAGE_CONFIG}" <<'PY'
+import pathlib
+import sys
+import tomllib
+
+config = tomllib.loads(pathlib.Path(sys.argv[1]).read_text())
+assert config["storage"]["driver"] == "overlay"
+assert config["storage"]["rootless_storage_path"] == "$HOME/.local/share/containers/storage"
+assert config["storage"]["options"]["overlay"]["mount_program"] == "/usr/bin/fuse-overlayfs"
+PY
+assert_contains "${DOCKERFILE}" 'src/wolfi/config/containers-storage.conf[[:space:]]+/usr/share/ror/config/containers-storage.conf' \
+    "persistent-home Podman baseline"
 assert_contains "${ENTRYPOINT}" 'XDG_RUNTIME_DIR' "dynamic runtime directory"
 assert_contains "${ENTRYPOINT}" 'mount --make-rshared /' "shared root mount"
-assert_contains "${DEVCONTAINER}" 'ror-wolfi-podman-storage' "separate Podman storage volume"
+assert_not_contains "${ENTRYPOINT}" 'chown[[:space:]]+-R.*(HOME|podman|storage|mise|npm)' \
+    "recursive runtime ownership repair"
+assert_not_contains "${ENTRYPOINT}" 'chmod[[:space:]]+-R.*(HOME|podman|storage|mise|npm)' \
+    "recursive runtime mode repair"
+assert_contains "${DEVCONTAINER}" 'ror-wolfi-podman-storage-\$\{devcontainerId\}' \
+    "workspace-scoped Podman storage volume"
 assert_contains "${DEVCONTAINER}" 'target=/home/vscode/.local/share/containers/storage' \
     "Podman storage volume target"
 assert_not_contains "${DOCKERFILE}" 'alias[[:space:]]+docker[[:space:]]*=' \
     "Docker command replacement"
 assert_not_contains "${ENTRYPOINT}" 'podman system service' \
     "Podman API service"
-assert_contains "${WORKFLOW}" 'container="\$\(docker run -d --privileged "\$\{BUILT_IMAGE\}" sleep infinity\)"' \
-    "Podman smoke owns its container lifecycle"
-assert_contains "${WORKFLOW}" 'docker rm -f "\$\{container\}"' \
-    "Podman smoke cleans up its container"
-assert_not_contains "${WORKFLOW}" 'docker ps --filter "ancestor=' \
-    "Podman smoke does not reuse a prior step container"
-assert_contains "${WORKFLOW}" 'docker.io/library/alpine:3\.22' \
-    "Podman smoke uses fully qualified Alpine image"
-assert_contains "${WORKFLOW}" 'runtime_dir="/run/user/\$\(id -u\)"' \
-    "Podman smoke derives runtime directory"
-assert_contains "${WORKFLOW}" 'export XDG_RUNTIME_DIR="\$\{runtime_dir\}"' \
-    "Podman smoke exports derived runtime directory"
-assert_contains "${WORKFLOW}" 'for _ in \$\(seq 1 [0-9]+\); do' \
-    "Podman smoke bounds runtime directory wait"
-assert_contains "${WORKFLOW}" 'if \[ -d "\$\{runtime_dir\}" \] && \[ "\$\(stat -c %a "\$\{runtime_dir\}"\)" = 700 \]; then' \
-    "Podman smoke waits for secure runtime directory"
-assert_contains "${WORKFLOW}" 'Podman runtime directory was not ready after' \
-    "Podman smoke reports runtime directory timeout"
-
 echo "Wolfi Podman contract tests passed"

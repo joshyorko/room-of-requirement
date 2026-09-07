@@ -1,647 +1,346 @@
-# Build and publish the Room of Requirement pre-built DevContainer image
-# Implements US4 - Secure Supply Chain Verification
-# Tasks: T044-T049
-
-name: Build Image
+name: Verify Image Candidate
 
 on:
-  # Only build on merged PRs to main (not direct pushes)
-  pull_request:
-    branches: [main]
-    types: [closed]
-    paths:
-      - ".devcontainer/**"
-      - "src/**"
-      - ".github/workflows/build-image.yml"
-  workflow_run:
-    # Triggers after Build Features completes on main branch
-    # This ensures features are published before the image is built
-    workflows: ["Build Features"]
-    types: [completed]
-    branches: [main]
-  schedule:
-    # Monthly stable release - first day of month at 00:00 UTC
-    - cron: "0 0 1 * *"
   workflow_call:
     inputs:
-      push:
-        description: "Push image to registry"
-        type: boolean
-        default: true
-      platforms:
-        description: "Target platforms (comma-separated)"
-        type: string
-        default: "linux/amd64"
-      tags:
-        description: "Additional tags (comma-separated)"
-        type: string
-        default: ""
       variant:
-        description: "Devcontainer variant to build"
         type: string
-        default: "ubuntu-noble"
-      sign:
-        description: "Sign image with Cosign"
-        type: boolean
-        default: true
-      generate_sbom:
-        description: "Generate and attach SBOM"
-        type: boolean
-        default: true
-      scan_cve:
-        description: "Run CVE vulnerability scan"
-        type: boolean
-        default: true
-      fail_on_critical:
-        description: "Fail build on Critical CVEs with fixes"
-        type: boolean
-        default: true
-  workflow_dispatch:
-    inputs:
-      push:
-        description: "Push image to registry"
+        default: ubuntu-noble
+      publish:
+        description: Publish a unique candidate; production aliases require all gates
         type: boolean
         default: false
-      platforms:
-        description: "Target platforms (comma-separated)"
+      source_sha:
+        description: Exact source commit (released tag commit for release callers)
         type: string
-        default: "linux/amd64"
-      tags:
-        description: "Additional tags (comma-separated)"
+        default: ''
+      release_version:
+        description: Stable version without v; Ubuntu owns bare version aliases
         type: string
-        default: ""
-      variant:
-        description: "Devcontainer variant to build"
-        type: choice
-        default: "ubuntu-noble"
-        options:
-          - "ubuntu-noble"
-          - "debian-trixie"
-          - "wolfi"
-      sign:
-        description: "Sign image with Cosign"
+        default: ''
+      refresh:
+        description: Re-run mutable dependency installation and pull base images
         type: boolean
-        default: true
-      generate_sbom:
-        description: "Generate and attach SBOM"
-        type: boolean
-        default: true
-      scan_cve:
-        description: "Run CVE vulnerability scan"
-        type: boolean
-        default: true
+        default: false
       fail_on_critical:
-        description: "Fail build on Critical CVEs with fixes"
+        description: Enforce Critical CVEs with fixes; false forbids production promotion
         type: boolean
         default: true
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  VARIANT: ${{ inputs.variant || 'ubuntu-noble' }}
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+      validate_template:
+        type: boolean
+        default: false
+    outputs:
+      digest:
+        description: Immutable candidate digest (empty for local PR builds)
+        value: ${{ jobs.verify.outputs.digest }}
+  workflow_dispatch:
+    inputs:
+      variant:
+        type: choice
+        default: ubuntu-noble
+        options: [ubuntu-noble, debian-trixie, wolfi]
+      publish:
+        description: Publish a candidate (branch candidates never promote production aliases)
+        type: boolean
+        default: false
+      refresh:
+        description: Refresh mutable dependencies
+        type: boolean
+        default: false
+      release_version:
+        description: Existing stable release version without v; dispatch its exact tag ref
+        type: string
+        default: ''
+      fail_on_critical:
+        description: Enforce Critical CVEs with fixes; false forbids production promotion
+        type: boolean
+        default: true
 
 permissions:
   contents: read
-  packages: write
-  id-token: write # Required for keyless signing with Cosign
-  attestations: write # Required for SBOM attestations
-  security-events: write # Required for SARIF upload
+
+env:
+  PYTHONDONTWRITEBYTECODE: '1'
+  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: 'true'
 
 jobs:
   lint:
-    name: Lint Dockerfile
     runs-on: ubuntu-latest
-    # Only run if PR was merged (not just closed), or for other event types
-    if: github.event_name != 'pull_request' || github.event.pull_request.merged == true
+    permissions:
+      contents: read
+      security-events: write
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Run hadolint
-        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          dockerfile: src/${{ env.VARIANT }}/.devcontainer/Dockerfile
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6  # v4.1.2
+        with:
+          cosign-release: v3.0.5
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
+        with:
+          node-version: '24'
+      - name: Install pinned CLI for command-generation regressions
+        run: npm install -g @devcontainers/cli@0.89.0
+      - name: Install runtime regression prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y jq python3-venv git sudo just
+          python3 -m venv "$RUNNER_TEMP/regression-python"
+          "$RUNNER_TEMP/regression-python/bin/pip" install PyYAML==6.0.3
+          echo "$RUNNER_TEMP/regression-python/bin" >> "$GITHUB_PATH"
+          curl --fail --show-error --location --retry 3 \
+            https://github.com/jdx/mise/releases/download/v2026.9.1/mise-v2026.9.1-linux-x64.tar.gz \
+            --output "$RUNNER_TEMP/mise.tar.gz"
+          echo "063dda9149ab6be53da877c2d176afe0eac68e64cf8ca295bd0528720701c65d  $RUNNER_TEMP/mise.tar.gz" | sha256sum --check
+          tar -xzf "$RUNNER_TEMP/mise.tar.gz" -C "$RUNNER_TEMP"
+          echo "$RUNNER_TEMP/mise/bin" >> "$GITHUB_PATH"
+      - name: CI policy and execution regressions
+        run: .github/scripts/regressions.sh
+      - uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387  # v3.5.0
+        with:
+          dockerfile: src/${{ inputs.variant }}/.devcontainer/Dockerfile
           failure-threshold: error
           format: sarif
           output-file: hadolint.sarif
           no-fail: false
-
-      - name: Upload hadolint SARIF
+      - uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         if: always()
-        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+        with:
+          name: hadolint-${{ inputs.variant }}-${{ github.run_attempt }}
+          path: hadolint.sarif
+          if-no-files-found: error
+      - uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938  # v4.37.9
+        if: always() && github.event_name != 'pull_request' && hashFiles('hadolint.sarif') != ''
         with:
           sarif_file: hadolint.sarif
-          category: hadolint
+          category: hadolint-${{ inputs.variant }}
 
-  build:
-    name: Build and Push Image
-    runs-on: ubuntu-latest
+  verify:
+    name: Build once, runtime test, SBOM and scan
     needs: lint
+    runs-on: ubuntu-latest
+    timeout-minutes: 180
+    permissions:
+      contents: read
+      packages: write
+      security-events: write
     outputs:
       digest: ${{ steps.build.outputs.digest }}
-      tags: ${{ steps.meta.outputs.tags }}
-      version: ${{ steps.meta.outputs.version }}
-
+      image: ${{ steps.build.outputs.image }}
+      publish: ${{ steps.build.outputs.publish }}
+      enforce: ${{ steps.build.outputs.enforce }}
+      subject_digest: ${{ steps.subject.outputs.subject_digest }}
     steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
         with:
-          node-version: "24"
-
-      - name: Install devcontainer CLI
-        run: npm install -g @devcontainers/cli
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4.3.0
+      - uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020  # v7.0.0
         with:
-          registry: ${{ env.REGISTRY }}
+          node-version: '24'
+      - name: Install feature-aware builder
+        run: npm install -g @devcontainers/cli@0.89.0
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        if: inputs.publish && github.event_name != 'pull_request'
+        with:
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Resolve variant tags
-        id: variant-tags
-        run: |
-          case "${VARIANT}" in
-            ubuntu-noble)
-              {
-                echo "tags<<EOF"
-                echo "type=raw,value=ubuntu-noble"
-                echo "type=raw,value=ubuntu-noble-dind"
-                echo "type=raw,value=latest,enable={{is_default_branch}}"
-                echo "type=raw,value=codespaces,enable={{is_default_branch}}"
-                echo "EOF"
-              } >> "$GITHUB_OUTPUT"
-              ;;
-            debian-trixie)
-              {
-                echo "tags<<EOF"
-                echo "type=raw,value=debian-trixie"
-                echo "EOF"
-              } >> "$GITHUB_OUTPUT"
-              ;;
-            wolfi)
-              {
-                echo "tags<<EOF"
-                echo "type=raw,value=wolfi"
-                echo "type=raw,value=secure,enable={{is_default_branch}}"
-                echo "EOF"
-              } >> "$GITHUB_OUTPUT"
-              ;;
-            *)
-              echo "::error::Unsupported variant: ${VARIANT}"
-              exit 1
-              ;;
-          esac
-
-      - name: Extract metadata for Docker
-        id: meta
-        uses: docker/metadata-action@dc802804100637a589fabce1cb79ff13a1411302 # v6.2.0
-        with:
-          images: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}
-          tags: |
-            # Variant and alias tags
-            ${{ steps.variant-tags.outputs.tags }}
-            # Set stable tag for scheduled builds (monthly)
-            type=raw,value=stable,enable=${{ github.event_name == 'schedule' }}
-            # Semantic version tags (v1.0.0)
-            type=semver,pattern=v{{version}}
-            type=semver,pattern=v{{major}}.{{minor}}
-            type=semver,pattern=v{{major}}
-            # Git SHA tag
-            type=sha,prefix=sha-,format=short
-            # Branch name for non-main branches
-            type=ref,event=branch
-            # PR number
-            type=ref,event=pr
-            # Custom tags from workflow dispatch
-            type=raw,value=${{ inputs.tags }},enable=${{ inputs.tags != '' }}
-
-      - name: Build image with devcontainer CLI
-        id: devcontainer-build
-        if: github.event_name != 'pull_request'
-        run: |
-          # Build with devcontainer CLI to properly process features
-          # Skipped on PRs because features aren't published yet
-          IMAGE_NAME="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:build-${{ github.run_id }}"
-          VARIANT="${{ env.VARIANT }}"
-
-          devcontainer build \
-            --workspace-folder . \
-            --config "src/${VARIANT}/.devcontainer/devcontainer.json" \
-            --image-name "$IMAGE_NAME" \
-            --platform "${{ inputs.platforms || 'linux/amd64' }}"
-
-          echo "built_image=${IMAGE_NAME}" >> $GITHUB_OUTPUT
-
-          # Get the digest
-          DIGEST=$(docker inspect --format='{{index .RepoDigests 0}}' "$IMAGE_NAME" 2>/dev/null | cut -d'@' -f2 || echo "")
-          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
-
-      - name: Skip build on PR
-        if: github.event_name == 'pull_request'
-        run: |
-          echo "### Image Build Skipped" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Image build skipped on PRs - features must be published first." >> $GITHUB_STEP_SUMMARY
-          echo "Image will be built after merge when features are available." >> $GITHUB_STEP_SUMMARY
-
-      - name: Tag and push image
+      - name: Build local image or unique registry candidate
         id: build
-        if: github.event_name != 'pull_request' && (inputs.push != false || github.event_name == 'push' || github.event_name == 'schedule' || github.event_name == 'workflow_run')
-        run: |
-          BUILT_IMAGE="${{ steps.devcontainer-build.outputs.built_image }}"
-          TAGS="${{ steps.meta.outputs.tags }}"
-
-          # Tag with all metadata tags
-          for tag in $TAGS; do
-            echo "Tagging: $tag"
-            docker tag "$BUILT_IMAGE" "$tag"
-          done
-
-          # Push all tags and capture digest from first push
-          DIGEST=""
-          for tag in $TAGS; do
-            echo "Pushing: $tag"
-            PUSH_OUTPUT=$(docker push "$tag" 2>&1)
-            echo "$PUSH_OUTPUT"
-            # Capture digest from first push (all tags have same digest)
-            if [ -z "$DIGEST" ]; then
-              DIGEST=$(echo "$PUSH_OUTPUT" | grep -oP 'digest: \Ksha256:[a-f0-9]+' | head -1)
-            fi
-          done
-
-          echo "Captured digest: $DIGEST"
-          echo "digest=${DIGEST}" >> $GITHUB_OUTPUT
-
-      - name: Output image info
-        run: |
-          echo "### Image Build Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Digest:** \`${{ steps.build.outputs.digest }}\`" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Tags:**" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-          echo "${{ steps.meta.outputs.tags }}" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
-
-  sign:
-    name: Sign Image with Cosign
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
-
-    steps:
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-      - name: Log in to Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Sign image with Cosign (keyless)
         env:
-          DIGEST: ${{ needs.build.outputs.digest }}
-          TAGS: ${{ needs.build.outputs.tags }}
-        run: |
-          # Sign by digest to ensure immutability
-          images=""
-          for tag in ${TAGS}; do
-            images+="${tag}@${DIGEST} "
-          done
-
-          echo "Signing images: ${images}"
-          cosign sign --yes ${images}
-
-          echo "### Cosign Signing Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Image signed with keyless OIDC identity:" >> $GITHUB_STEP_SUMMARY
-          echo "- **Issuer:** https://token.actions.githubusercontent.com" >> $GITHUB_STEP_SUMMARY
-          echo "- **Identity:** https://github.com/${{ github.repository }}/*" >> $GITHUB_STEP_SUMMARY
-
-  sbom:
-    name: Generate SBOM
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
-    outputs:
-      sbom_digest: ${{ steps.attach.outputs.sbom_digest }}
-      tlog_mode: ${{ steps.attach.outputs.tlog_mode }}
-
-    steps:
-      - name: Install Cosign
-        uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6 # v4.1.2
-      - name: Log in to Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+          REQUEST: >-
+            {"event":${{ toJSON(github.event_name) }},"ref":${{ toJSON(github.ref) }},
+            "source":${{ toJSON(inputs.source_sha || github.sha) }},"repository":${{ toJSON(github.repository) }},
+            "variant":${{ toJSON(inputs.variant) }},"run_id":"${{ github.run_id }}","run_attempt":"${{ github.run_attempt }}",
+            "publish":${{ toJSON(inputs.publish) }},"enforce":${{ toJSON(inputs.fail_on_critical) }},
+            "refresh":${{ toJSON(inputs.refresh) }},"release_version":${{ toJSON(inputs.release_version || '') }}}
+        run: .github/scripts/build_image.py
+      - name: Docker and Wolfi rootless Podman runtime contracts
+        env:
+          TEST_IMAGE: ${{ steps.build.outputs.test_image }}
+          VARIANT: ${{ inputs.variant }}
+        run: .github/scripts/runtime-smoke.sh "$TEST_IMAGE" "$VARIANT"
+      - name: Apply and start the starter template with the candidate
+        if: inputs.validate_template
+        env:
+          TEST_IMAGE: ${{ steps.build.outputs.test_image }}
+          VARIANT: ${{ inputs.variant }}
+        run: .github/scripts/template_smoke.py
+      - name: Generate SPDX SBOM from the tested image
+        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26  # v0.24.2
         with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Generate SBOM with Syft
-        uses: anchore/sbom-action@3ad7283483fc7af8ff2b4ea19663c2d5ca935e26 # v0.24.2
-        id: sbom
-        with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
+          image: ${{ steps.build.outputs.scan_image }}
+          syft-version: v1.51.1
           format: spdx-json
-          output-file: sbom.spdx.json
-          upload-artifact: true
-          artifact-name: sbom-spdx
-
-      - name: Attach SBOM attestation
-        id: attach
-        env:
-          DIGEST: ${{ needs.build.outputs.digest }}
-        run: |
-          IMAGE_REF="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${DIGEST}"
-          MAX_ATTEMPTS=4
-          ATTEMPT=1
-          TLOG_MODE="uploaded"
-
-          # Retry Rekor-backed attest first, then fall back to no tlog upload if Rekor is unavailable.
-          while true; do
-            if cosign attest --yes \
-              --predicate sbom.spdx.json \
-              --type spdxjson \
-              "${IMAGE_REF}"; then
-              break
-            fi
-
-            if [[ ${ATTEMPT} -ge ${MAX_ATTEMPTS} ]]; then
-              echo "::warning::Rekor upload failed after ${MAX_ATTEMPTS} attempts; attaching SBOM without transparency log."
-              cosign attest --yes --tlog-upload=false \
-                --predicate sbom.spdx.json \
-                --type spdxjson \
-                "${IMAGE_REF}"
-              TLOG_MODE="skipped"
-              break
-            fi
-
-            SLEEP_SECONDS=$((ATTEMPT * 15))
-            echo "::warning::cosign attest attempt ${ATTEMPT}/${MAX_ATTEMPTS} failed; retrying in ${SLEEP_SECONDS}s."
-            sleep "${SLEEP_SECONDS}"
-            ATTEMPT=$((ATTEMPT + 1))
-          done
-
-          # Calculate SBOM digest for reference
-          SBOM_DIGEST=$(sha256sum sbom.spdx.json | cut -d' ' -f1)
-          echo "sbom_digest=${SBOM_DIGEST}" >> $GITHUB_OUTPUT
-          echo "tlog_mode=${TLOG_MODE}" >> $GITHUB_OUTPUT
-
-          echo "### SBOM Generated" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Format:** SPDX JSON" >> $GITHUB_STEP_SUMMARY
-          echo "**SBOM Digest:** \`${SBOM_DIGEST}\`" >> $GITHUB_STEP_SUMMARY
-          if [[ "${TLOG_MODE}" == "skipped" ]]; then
-            echo "**Transparency Log:** Rekor upload skipped (fallback mode)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "**Transparency Log:** Uploaded to Rekor" >> $GITHUB_STEP_SUMMARY
-          fi
-
-  scan:
-    name: CVE Vulnerability Scan
-    runs-on: ubuntu-latest
-    needs: build
-    if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
-    outputs:
-      critical: ${{ steps.scan.outputs.critical }}
-      high: ${{ steps.scan.outputs.high }}
-      medium: ${{ steps.scan.outputs.medium }}
-      low: ${{ steps.scan.outputs.low }}
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-      - name: Scan for vulnerabilities with Grype
-        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439 # v7.4.2
+          output-file: ${{ runner.temp }}/image-evidence/sbom.spdx.json
+          upload-artifact: false
+          upload-release-assets: false
+      - name: Validate SPDX output, including on PRs
+        run: .github/scripts/attest_image.py --validate-only
+      - name: Scan tested image with Grype
         id: grype
+        uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439  # v7.4.2
         with:
-          image: ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}@${{ needs.build.outputs.digest }}
-          fail-build: ${{ inputs.fail_on_critical != false }}
-          severity-cutoff: critical
-          only-fixed: true
-          # Note: .grype.yaml is automatically read from the working directory
-          output-format: sarif
-        continue-on-error: true
-
-      - name: Filter SARIF report for critical findings
-        id: sarif
-        if: always() && steps.grype.outputs.sarif != ''
+          image: ${{ steps.build.outputs.scan_image }}
+          grype-version: v0.118.0
+          config: .grype.yaml
+          # Severity is enforced by the JSON gate below. Scanner errors remain fatal.
+          fail-build: false
+          only-fixed: false
+          output-format: json
+          output-file: ${{ runner.temp }}/image-evidence/grype.json
+      - name: Validate scan output and enforce Critical with fixes
+        if: always() && steps.build.outcome == 'success'
+        env:
+          SCANNER_OUTCOME: ${{ steps.grype.outcome }}
+          ENFORCE: ${{ toJSON(inputs.fail_on_critical) }}
         run: |
-          SARIF_FILE="${{ steps.grype.outputs.sarif }}"
-          FILTERED_SARIF="${RUNNER_TEMP}/grype-critical.sarif"
-
-          jq '
-            .runs |= map(
-              [
-                .results[]?
-                | select((.properties.severity // "" | ascii_downcase) == "critical")
-              ] as $critical_results
-              | .results = $critical_results
-              | .tool.driver.rules = [
-                .tool.driver.rules[]?
-                | . as $rule
-                | select(any($critical_results[]?; .ruleId == $rule.id))
-              ]
-            )
-          ' "${SARIF_FILE}" > "${FILTERED_SARIF}"
-
-          echo "sarif_file=${FILTERED_SARIF}" >> "$GITHUB_OUTPUT"
-
-      - name: Upload critical SARIF report
-        if: always() && steps.sarif.outputs.sarif_file != ''
-        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938 # v4.37.9
+          python3 .github/scripts/scan_report.py "$RUNNER_TEMP/image-evidence/grype.json" \
+            --scanner-outcome "$SCANNER_OUTCOME" --enforce "$ENFORCE" \
+            --expected-identity "$RUNNER_TEMP/image-evidence/identity.json" \
+            --summary "$RUNNER_TEMP/image-evidence/scan-summary.json" \
+            --sarif "$RUNNER_TEMP/image-evidence/grype-critical.sarif"
+      - name: Upload critical findings
+        if: always() && github.event_name != 'pull_request' && steps.grype.outcome == 'success'
+        uses: github/codeql-action/upload-sarif@cdf488f595d80d6e07e03d4674febd5ab45fa938  # v4.37.9
         with:
-          sarif_file: ${{ steps.sarif.outputs.sarif_file }}
-
-      - name: Parse scan results
-        id: scan
-        run: |
-          # Parse Grype SARIF output for severity counts and actionable details.
-          SARIF_FILE="${{ steps.grype.outputs.sarif }}"
-          if [ -n "${SARIF_FILE}" ] && [ -f "${SARIF_FILE}" ]; then
-            CRITICAL=$(jq '[.runs[].results[]? | select((.properties.severity // "" | ascii_downcase) == "critical") | .ruleId] | unique | length' "${SARIF_FILE}" 2>/dev/null || echo "0")
-            HIGH=$(jq '[.runs[].results[]? | select((.properties.severity // "" | ascii_downcase) == "high") | .ruleId] | unique | length' "${SARIF_FILE}" 2>/dev/null || echo "0")
-            MEDIUM=$(jq '[.runs[].results[]? | select((.properties.severity // "" | ascii_downcase) == "medium") | .ruleId] | unique | length' "${SARIF_FILE}" 2>/dev/null || echo "0")
-            LOW=$(jq '[.runs[].results[]? | select((.properties.severity // "" | ascii_downcase) == "low") | .ruleId] | unique | length' "${SARIF_FILE}" 2>/dev/null || echo "0")
-          else
-            CRITICAL=0
-            HIGH=0
-            MEDIUM=0
-            LOW=0
-          fi
-
-          echo "critical=${CRITICAL}" >> $GITHUB_OUTPUT
-          echo "high=${HIGH}" >> $GITHUB_OUTPUT
-          echo "medium=${MEDIUM}" >> $GITHUB_OUTPUT
-          echo "low=${LOW}" >> $GITHUB_OUTPUT
-
-          echo "### Vulnerability Scan Results" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "Unique vulnerability IDs from Grype SARIF output." >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Severity | Count |" >> $GITHUB_STEP_SUMMARY
-          echo "|----------|-------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Critical | ${CRITICAL} |" >> $GITHUB_STEP_SUMMARY
-          echo "| High | ${HIGH} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Medium | ${MEDIUM} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Low | ${LOW} |" >> $GITHUB_STEP_SUMMARY
-
-          if [ "${CRITICAL}" -gt 0 ] && [ -n "${SARIF_FILE}" ] && [ -f "${SARIF_FILE}" ]; then
-            echo "" >> $GITHUB_STEP_SUMMARY
-            echo "#### Critical Findings (Top 20)" >> $GITHUB_STEP_SUMMARY
-            jq -r '
-              [.runs[].results[]?
-              | select((.properties.severity // "" | ascii_downcase) == "critical")
-              | {id: .ruleId, path: (.locations[0].physicalLocation.artifactLocation.uri // "unknown")}
-              ]
-              | unique_by(.id + ":" + .path)
-              | .[:20]
-              | .[]
-              | "- \(.id) @ \(.path)"
-            ' "${SARIF_FILE}" >> $GITHUB_STEP_SUMMARY || true
-          fi
-
-      - name: Check for critical vulnerabilities
-        if: inputs.fail_on_critical != false && steps.grype.outcome == 'failure'
-        run: |
-          echo "::error::Critical vulnerabilities found with available fixes. Build failed."
-          echo "::error::See the 'Vulnerability Scan Results' section in this run summary for CVE IDs and affected paths."
-          exit 1
-
-      - name: Output scan summary
+          sarif_file: ${{ runner.temp }}/image-evidence/grype-critical.sarif
+          category: grype-${{ inputs.variant }}
+      - name: Preserve build, SBOM and scan evidence even when the gate fails
         if: always()
-        run: |
-          echo "### Grype Vulnerability Scan Complete" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "**Status:** ${{ steps.grype.outcome }}" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "If critical vulnerabilities were found, update the base image or dependencies to fix them." >> $GITHUB_STEP_SUMMARY
-
-  validate-digest:
-    name: Validate Image Digest
-    runs-on: ubuntu-latest
-    needs: [build, scan]
-    if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
-
-    steps:
-      - name: Verify digest format
-        run: |
-          DIGEST="${{ needs.build.outputs.digest }}"
-          echo "Validating digest: ${DIGEST}"
-
-          # Digest should be in format: sha256:hexhexhex...
-          if [[ ${DIGEST} =~ ^sha256:[a-f0-9]{64}$ ]]; then
-            echo "✓ Digest format valid"
-          else
-            echo "::error::Invalid digest format: ${DIGEST}"
-            echo "Expected format: sha256:hexhexhex... (64 hex chars)"
-            exit 1
-          fi
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
         with:
-          registry: ${{ env.REGISTRY }}
+          name: image-evidence-${{ inputs.variant }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/image-evidence/
+          if-no-files-found: error
+      - name: Bind successful runtime, SBOM and scan verification to the candidate
+        id: subject
+        run: python3 .github/scripts/image_identity.py
+
+  attest:
+    name: Sign digest and attest its SBOM
+    needs: verify
+    if: needs.verify.outputs.publish == 'true'
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+      id-token: write
+    outputs:
+      subject_digest: ${{ steps.attest.outputs.subject_digest }}
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
+        with:
+          name: image-evidence-${{ inputs.variant }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/image-evidence
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6  # v4.1.2
+        with:
+          cosign-release: v3.0.5
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        with:
+          registry: ghcr.io
           username: ${{ github.actor }}
           password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Sign once and attest the SPDX predicate on the same digest
+        id: attest
+        env:
+          IMAGE: ${{ needs.verify.outputs.image }}
+          DIGEST: ${{ needs.verify.outputs.digest }}
+        run: .github/scripts/attest_image.py
+      - name: Preserve the signed checkout and release source context
+        uses: actions/upload-artifact@043fb46d1a93c77aae656e7c1c64a875d1fc6a0a  # v7.0.1
+        with:
+          name: build-context-${{ inputs.variant }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/image-evidence/build-context.json
+          if-no-files-found: error
 
-      - name: Verify image exists in registry
-        run: |
-          DIGEST="${{ needs.build.outputs.digest }}"
-          IMAGE="${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}"
-
-          echo "Checking if image exists: ${IMAGE}@${DIGEST}"
-
-          # Use skopeo to verify image exists
-          if skopeo inspect "docker://${IMAGE}@${DIGEST}" > /dev/null 2>&1; then
-            echo "✓ Image verified in registry"
-          else
-            echo "::warning::Could not immediately verify image, it may still be processing"
-          fi
-
-  provenance:
-    name: Generate SLSA Provenance
-    needs: [build, sign, sbom, scan, validate-digest]
-    if: github.event_name != 'pull_request' && needs.build.outputs.digest != ''
+  generate-provenance:
+    name: SLSA provenance for the verified digest
+    needs: [verify, attest]
+    if: needs.verify.outputs.publish == 'true'
     permissions:
       actions: read
       id-token: write
       packages: write
-    # IMPORTANT: SLSA generator MUST be referenced by semantic version tag, not SHA hash
-    # See: https://github.com/slsa-framework/slsa-github-generator/blob/main/README.md#referencing-slsa-builders-and-generators
+    # SLSA's verifier requires the generator's semantic version ref.
     uses: slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@v2.1.0
     with:
-      # Note: env context not available in reusable workflow inputs, using literal values
-      image: ghcr.io/${{ github.repository }}
-      digest: ${{ needs.build.outputs.digest }}
+      image: ${{ needs.verify.outputs.image }}
+      digest: ${{ needs.verify.outputs.digest }}
       registry-username: ${{ github.actor }}
     secrets:
       registry-password: ${{ secrets.GITHUB_TOKEN }}
 
-  summary:
-    name: Build Summary
+  provenance:
+    name: Verify provenance claims for the candidate digest
+    needs: [verify, generate-provenance]
+    if: needs.verify.outputs.publish == 'true'
     runs-on: ubuntu-latest
-    needs: [build, sign, sbom, scan, validate-digest, provenance]
-    if: always()
-
+    permissions:
+      contents: read
+      packages: read
+    outputs:
+      subject_digest: ${{ steps.subject.outputs.subject_digest }}
     steps:
-      - name: Generate summary
-        run: |
-          echo "# Room of Requirement Image Build" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Status" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "| Job | Status |" >> $GITHUB_STEP_SUMMARY
-          echo "|-----|--------|" >> $GITHUB_STEP_SUMMARY
-          echo "| Build | ${{ needs.build.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Sign | ${{ needs.sign.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| SBOM | ${{ needs.sbom.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| CVE Scan | ${{ needs.scan.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Digest Validation | ${{ needs.validate-digest.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "| Provenance | ${{ needs.provenance.result }} |" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Supply Chain Security Summary" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "This build implements SLSA v3.1 supply chain security:" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "- ✓ Signed with Cosign (keyless OIDC)" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ needs.sbom.outputs.tlog_mode }}" == "skipped" ]]; then
-            echo "- [fallback] SBOM attached as attestation (Rekor transparency log skipped)" >> $GITHUB_STEP_SUMMARY
-          else
-            echo "- ✓ SBOM attached as attestation" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "- ✓ CVE vulnerabilities scanned and reported" >> $GITHUB_STEP_SUMMARY
-          echo "- ✓ SLSA provenance generated" >> $GITHUB_STEP_SUMMARY
-          echo "- ✓ Image digest validated" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "## Verification Commands" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`bash" >> $GITHUB_STEP_SUMMARY
-          echo "# Verify image signature" >> $GITHUB_STEP_SUMMARY
-          echo "cosign verify ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \\" >> $GITHUB_STEP_SUMMARY
-          echo "  --certificate-identity-regexp=\"https://github.com/${{ github.repository }}/*\" \\" >> $GITHUB_STEP_SUMMARY
-          echo "  --certificate-oidc-issuer=\"https://token.actions.githubusercontent.com\"" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Verify SBOM attestation" >> $GITHUB_STEP_SUMMARY
-          echo "cosign verify-attestation ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \\" >> $GITHUB_STEP_SUMMARY
-          echo "  --type spdxjson \\" >> $GITHUB_STEP_SUMMARY
-          if [[ "${{ needs.sbom.outputs.tlog_mode }}" == "skipped" ]]; then
-            echo "  --insecure-ignore-tlog=true \\" >> $GITHUB_STEP_SUMMARY
-          fi
-          echo "  --certificate-identity-regexp=\"https://github.com/${{ github.repository }}/*\" \\" >> $GITHUB_STEP_SUMMARY
-          echo "  --certificate-oidc-issuer=\"https://token.actions.githubusercontent.com\"" >> $GITHUB_STEP_SUMMARY
-          echo "" >> $GITHUB_STEP_SUMMARY
-          echo "# Verify SLSA provenance" >> $GITHUB_STEP_SUMMARY
-          echo "cosign verify-attestation ${{ env.REGISTRY }}/${{ env.IMAGE_NAME }}:latest \\" >> $GITHUB_STEP_SUMMARY
-          echo "  --type slsaprovenance \\" >> $GITHUB_STEP_SUMMARY
-          echo "  --certificate-identity-regexp=\"https://github.com/${{ github.repository }}/*\" \\" >> $GITHUB_STEP_SUMMARY
-          echo "  --certificate-oidc-issuer=\"https://token.actions.githubusercontent.com\"" >> $GITHUB_STEP_SUMMARY
-          echo "\`\`\`" >> $GITHUB_STEP_SUMMARY
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          persist-credentials: false
+      - uses: sigstore/cosign-installer@6f9f17788090df1f26f669e9d70d6ae9567deba6  # v4.1.2
+        with:
+          cosign-release: v3.0.5
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Verify signed subject claims before recording the gate
+        id: subject
+        env:
+          GENERATOR_RESULT: ${{ needs.generate-provenance.result }}
+          IMAGE: ${{ needs.verify.outputs.image }}
+          DIGEST: ${{ needs.verify.outputs.digest }}
+        run: python3 .github/scripts/verify_provenance.py
+
+  promote:
+    name: Promote verified digest
+    needs: [verify, attest, provenance]
+    if: >-
+      needs.verify.outputs.publish == 'true' && needs.verify.outputs.enforce == 'true' &&
+      (github.ref == 'refs/heads/main' || startsWith(github.ref, 'refs/tags/v'))
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    permissions:
+      contents: read
+      packages: write
+    # Shared across every caller. Variants own disjoint aliases, including version tags.
+    concurrency:
+      group: ror-image-promotion-${{ inputs.variant }}
+      cancel-in-progress: false
+    steps:
+      - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1  # v7.0.1
+        with:
+          ref: ${{ inputs.source_sha || github.sha }}
+          fetch-depth: 0
+      - uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e  # v4.3.0
+      - uses: actions/download-artifact@3e5f45b2cfb9172054b4087a40e8e0b5a5461e7c  # v8
+        with:
+          name: image-evidence-${{ inputs.variant }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/image-evidence
+      - uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f  # v4.6.0
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+      - name: Validate all gates and fresh source, then copy the digest without rebuilding
+        env:
+          NEEDS: ${{ toJSON(needs) }}
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: .github/scripts/promote_image.py "$RUNNER_TEMP/image-evidence/context.json"

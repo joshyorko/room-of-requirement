@@ -4,255 +4,49 @@ on:
   pull_request:
     branches: [main]
     paths:
-      - "src/**"
-      - ".devcontainer/**"
-      - ".github/workflows/build-devcontainers.yml"
+      - 'src/**'
+      - '.devcontainer/**'
+      - '.github/workflows/build-image.yml'
+      - '.github/workflows/build-devcontainers.yml'
+      - '.github/scripts/**'
+      - 'tests/**'
+      - '.grype.yaml'
   push:
     branches: [main]
     paths:
-      - "src/**"
-      - ".devcontainer/**"
-      - ".github/workflows/build-devcontainers.yml"
+      - 'src/**'
+      - '.devcontainer/**'
+      - '.github/workflows/build-image.yml'
+      - '.github/workflows/build-devcontainers.yml'
+      - '.github/scripts/**'
+      - 'tests/**'
+      - '.grype.yaml'
   schedule:
-    - cron: "0 3 1 * *"
+    - cron: '0 3 1 * *'
   workflow_dispatch:
     inputs:
-      push:
-        description: "Push images to GHCR"
+      publish:
+        description: Publish candidates (production promotion requires current main)
         type: boolean
         default: false
 
 permissions:
   contents: read
   packages: write
-
-env:
-  REGISTRY: ghcr.io
-  IMAGE_NAME: ${{ github.repository }}
-  FORCE_JAVASCRIPT_ACTIONS_TO_NODE24: "true"
+  security-events: write
+  id-token: write
+  actions: read
 
 jobs:
-  lint:
-    name: Lint Dockerfiles
-    runs-on: ubuntu-latest
+  images:
     strategy:
       fail-fast: false
       matrix:
-        variant:
-          - ubuntu-noble
-          - debian-trixie
-          - wolfi
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Run hadolint
-        uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387 # v3.5.0
-        with:
-          dockerfile: src/${{ matrix.variant }}/.devcontainer/Dockerfile
-          failure-threshold: error
-          no-fail: false
-
-  devcontainer-plan:
-    name: Validate Devcontainer Configs
-    runs-on: ubuntu-latest
-    needs: lint
-    strategy:
-      fail-fast: false
-      matrix:
-        variant:
-          - ubuntu-noble
-          - debian-trixie
-          - wolfi
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "24"
-
-      - name: Install devcontainer CLI
-        run: npm install -g @devcontainers/cli
-
-      - name: Read merged devcontainer configuration
-        run: |
-          devcontainer read-configuration \
-            --workspace-folder . \
-            --config "src/${{ matrix.variant }}/.devcontainer/devcontainer.json" \
-            --include-features-configuration \
-            --include-merged-configuration
-
-  publish:
-    name: Publish Variant Images
-    runs-on: ubuntu-latest
-    needs: devcontainer-plan
-    if: github.event_name == 'push' || github.event_name == 'schedule' || inputs.push == true
-    strategy:
-      fail-fast: false
-      matrix:
-        variant:
-          - ubuntu-noble
-          - debian-trixie
-          - wolfi
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
-
-      - name: Set up QEMU
-        uses: docker/setup-qemu-action@1f40c72289eff860ee54a304f1438e3cff362e0a # v4.3.0
-
-      - name: Set up Docker Buildx
-        uses: docker/setup-buildx-action@37fe631027851001ddb9b187196cc803df7f5f0e # v4.3.0
-
-      - name: Set up Node.js
-        uses: actions/setup-node@820762786026740c76f36085b0efc47a31fe5020 # v7.0.0
-        with:
-          node-version: "24"
-
-      - name: Install devcontainer CLI
-        run: npm install -g @devcontainers/cli
-
-      - name: Log in to Container Registry
-        uses: docker/login-action@dbcb813823bdd20940b903addbd779551569679f # v4.6.0
-        with:
-          registry: ${{ env.REGISTRY }}
-          username: ${{ github.actor }}
-          password: ${{ secrets.GITHUB_TOKEN }}
-
-      - name: Build image with devcontainer CLI
-        id: build
-        env:
-          REGISTRY: ${{ env.REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          VARIANT: ${{ matrix.variant }}
-        run: |
-          set -euo pipefail
-
-          image="${REGISTRY}/${IMAGE_NAME}:build-${VARIANT}-${GITHUB_RUN_ID}-${GITHUB_RUN_ATTEMPT}"
-
-          devcontainer build \
-            --workspace-folder . \
-            --config "src/${VARIANT}/.devcontainer/devcontainer.json" \
-            --image-name "${image}" \
-            --platform linux/amd64
-
-          echo "image=${image}" >> "$GITHUB_OUTPUT"
-
-      - name: Verify Docker contract
-        env:
-          BUILT_IMAGE: ${{ steps.build.outputs.image }}
-        run: |
-          set -euo pipefail
-
-          container="$(docker run -d --privileged "${BUILT_IMAGE}" sleep infinity)"
-          cleanup() {
-            docker rm -f "${container}" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
-
-          docker exec "${container}" bash --noprofile --norc -c '
-            set -euo pipefail
-            command -v docker
-            command -v dockerd
-            for _ in $(seq 1 30); do
-              if docker info >/dev/null 2>&1; then
-                docker info --format "driver={{.Driver}} root={{.DockerRootDir}}"
-                docker version
-                docker run --rm hello-world
-                exit 0
-              fi
-              sleep 1
-            done
-            docker version || true
-            test -f /tmp/dockerd.log && tail -200 /tmp/dockerd.log || true
-            exit 1
-          '
-
-      - name: Verify Wolfi rootless Podman contract
-        if: matrix.variant == 'wolfi'
-        env:
-          BUILT_IMAGE: ${{ steps.build.outputs.image }}
-        run: |
-          set -euo pipefail
-
-          container="$(docker run -d --privileged "${BUILT_IMAGE}" sleep infinity)"
-          cleanup() {
-            docker rm -f "${container}" >/dev/null 2>&1 || true
-          }
-          trap cleanup EXIT
-
-          docker exec --user vscode "${container}" bash --noprofile --norc -c '
-            set -euo pipefail
-            command -v podman
-            command -v buildah
-            command -v skopeo
-            runtime_dir="/run/user/$(id -u)"
-            runtime_ready=0
-            for _ in $(seq 1 30); do
-              if [ -d "${runtime_dir}" ] && [ "$(stat -c %a "${runtime_dir}")" = 700 ]; then
-                runtime_ready=1
-                break
-              fi
-              sleep 1
-            done
-            if [ "${runtime_ready}" -ne 1 ]; then
-              echo "Podman runtime directory was not ready after 30 attempts: ${runtime_dir}" >&2
-              exit 1
-            fi
-            test "$(stat -c %a "${runtime_dir}")" = 700
-            export XDG_RUNTIME_DIR="${runtime_dir}"
-            podman_info="$(podman info --format "{{.Host.Security.Rootless}} {{.Store.GraphDriverName}} {{.Host.NetworkBackend}} {{.Host.CgroupManager}}")"
-            test "${podman_info}" = "true overlay netavark cgroupfs"
-            podman run --rm docker.io/library/alpine:3.22 sh -c "wget -q -O- https://example.com >/dev/null"
-            podman run --rm --cpus 0.25 docker.io/library/alpine:3.22 true
-            bind_dir="$(mktemp -d)"
-            trap "rm -rf \"${bind_dir}\"" EXIT
-            printf "wolfi-podman\n" > "${bind_dir}/marker"
-            test "$(podman run --rm -v "${bind_dir}:/mnt:ro" docker.io/library/alpine:3.22 cat /mnt/marker)" = "wolfi-podman"
-            buildah info >/dev/null
-            skopeo inspect docker://docker.io/library/alpine:3.22 >/dev/null
-          '
-
-      - name: Tag and push variant aliases
-        env:
-          REGISTRY: ${{ env.REGISTRY }}
-          IMAGE_NAME: ${{ env.IMAGE_NAME }}
-          VARIANT: ${{ matrix.variant }}
-          BUILT_IMAGE: ${{ steps.build.outputs.image }}
-        run: |
-          set -euo pipefail
-
-          case "${VARIANT}" in
-            ubuntu-noble)
-              tags=(ubuntu-noble ubuntu-noble-dind latest codespaces)
-              ;;
-            debian-trixie)
-              tags=(debian-trixie)
-              ;;
-            wolfi)
-              tags=(wolfi secure)
-              ;;
-            *)
-              echo "::error::Unsupported variant: ${VARIANT}"
-              exit 1
-              ;;
-          esac
-
-          for tag in "${tags[@]}"; do
-            target="${REGISTRY}/${IMAGE_NAME}:${tag}"
-            docker tag "${BUILT_IMAGE}" "${target}"
-
-            # Retry push to mitigate transient GHCR "unknown blob" errors.
-            for attempt in 1 2 3; do
-              if docker push "${target}"; then
-                break
-              fi
-              if [ "${attempt}" -eq 3 ]; then
-                echo "::error::Failed to push ${target} after ${attempt} attempts"
-                exit 1
-              fi
-              sleep $((attempt * 5))
-            done
-          done
+        variant: [ubuntu-noble, debian-trixie, wolfi]
+    uses: ./.github/workflows/build-image.yml
+    with:
+      variant: ${{ matrix.variant }}
+      publish: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.publish == true }}
+      refresh: ${{ github.event_name == 'schedule' }}
+      fail_on_critical: true
+    secrets: inherit

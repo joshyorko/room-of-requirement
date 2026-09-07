@@ -63,7 +63,7 @@ class GitHubActionsUpdater:
                 for key in list(node.keys()):
                     value = node[key]
                     if key == "uses" and isinstance(value, str):
-                        result = self._maybe_update_uses(value, path)
+                        result = self._maybe_update_uses(value, path, _eol_comment(node, key))
                         if result and result.value != value:
                             node[key] = result.value
                             # Add version as end-of-line comment using ruamel.yaml
@@ -83,7 +83,12 @@ class GitHubActionsUpdater:
                 self.yaml.dump(data, stream)
         return changed
 
-    def _maybe_update_uses(self, value: str, path: Path) -> Optional[UpdateResult]:
+    def _maybe_update_uses(
+        self,
+        value: str,
+        path: Path,
+        comment_version: Optional[str] = None,
+    ) -> Optional[UpdateResult]:
         original = value.strip()
         if "@" not in original:
             return None
@@ -96,11 +101,14 @@ class GitHubActionsUpdater:
         match = ACTION_REF_PATTERN.match(original)
         if not match:
             action, _, ref = original.partition("@")
-            comment_version = None
+            parsed_comment_version = None
         else:
             action = match.group("action")
             ref = match.group("ref")
-            comment_version = match.group("comment")
+            parsed_comment_version = match.group("comment")
+
+        if comment_version is None:
+            comment_version = parsed_comment_version
 
         # Extract base action path (owner/repo) for allowlist lookup
         # Actions like github/codeql-action/upload-sarif should match github/codeql-action
@@ -201,3 +209,15 @@ class GitHubActionsUpdater:
             return Version(trimmed)
         except InvalidVersion:
             return None
+
+
+def _eol_comment(node: CommentedMap, key: object) -> Optional[str]:
+    """Return a normalized end-of-line YAML comment for a mapping key."""
+    comment_items = node.ca.items.get(key)
+    if not comment_items or len(comment_items) < 3 or comment_items[2] is None:
+        return None
+    comment = comment_items[2].value.strip()
+    if not comment.startswith("#"):
+        return None
+    value = comment[1:].strip()
+    return value or None

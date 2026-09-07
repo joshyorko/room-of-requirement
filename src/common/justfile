@@ -113,6 +113,18 @@ brew-install formula:
 brew-update:
     brew update && brew upgrade
 
+# Install the optional global language profile explicitly.
+runtime-defaults:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    if ! command -v mise &>/dev/null; then
+        echo "mise not found in PATH" >&2
+        exit 1
+    fi
+    export MISE_RUBY_COMPILE=0
+    mise use --global node@lts python@latest go@latest ruby@latest
+    mise reshim
+
 # Enable Ruby tooling on demand via mise (recommended)
 ruby-enable ruby_version='latest':
     #!/usr/bin/env bash

@@ -22,13 +22,14 @@ find_brewfile() {
         return
     fi
 
-    if [ -f ".devcontainer/brew/ror.Brewfile" ]; then
-        printf '%s\n' ".devcontainer/brew/ror.Brewfile"
+    if [ -f "src/common/brew/ror.Brewfile" ]; then
+        printf '%s\n' "src/common/brew/ror.Brewfile"
         return
     fi
 
-    if [ -f "src/common/brew/ror.Brewfile" ]; then
-        printf '%s\n' "src/common/brew/ror.Brewfile"
+    # Preserve the optional downstream-project layout after retiring our copy.
+    if [ -f ".devcontainer/brew/ror.Brewfile" ]; then
+        printf '%s\n' ".devcontainer/brew/ror.Brewfile"
         return
     fi
 

@@ -4,6 +4,7 @@ import json
 import logging
 import os
 import subprocess
+import sys
 from pathlib import Path
 from typing import Dict
 
@@ -26,47 +27,24 @@ REPO_ROOT = ROBOT_ROOT.parent.parent
 
 @task
 def maintenance() -> None:
-    """Run all maintenance tasks: update workflows, dependency pins, and run pre-commit.
+    """Run specialized maintenance that is not owned by Renovate.
 
     This robot focuses on:
-    1. GitHub Actions workflow version updates (github_actions.json)
-    2. External download pin updates (PyPI, Docker Hub, and similar sources via downloads.json)
-    3. Pre-commit hook repo updates from `.pre-commit-config.yaml`
-    4. Homebrew version tracking (informational only)
-    5. Curated Brewfile validation to catch renamed or missing formulae early
-
-    Homebrew tools are NOT auto-updated - they're managed via curated Brewfiles
-    and updated manually or via `brew update && brew upgrade`.
+    Renovate owns standard GitHub Actions, Dockerfile, and pre-commit updates.
+    This task updates only allowlisted specialized downloads, validates canonical
+    Brewfiles, and refreshes feature lockfiles.
     """
 
     allowlists = _load_allowlists()
     report = MaintenanceReport()
     failures: list[str] = []
 
-    # Update GitHub Actions workflows
-    actions_allowlist = allowlists.get("github_actions", {})
-    workflows_dir = REPO_ROOT / ".github" / "workflows"
-    if workflows_dir.exists():
-        updater = GitHubActionsUpdater(actions_allowlist, report=report)
-        updated_files = updater.update_workflows(workflows_dir)
-        if updated_files:
-            logging.info("Updated GitHub Actions workflows: %s", ", ".join(sorted(updated_files)))
-    else:
-        logging.info("No workflows directory found; skipping workflow updates.")
-
-    # Update PyPI packages
+    # Update specialized allowlisted downloads. Standard Dockerfile dependencies
+    # remain Renovate-owned and are marked manual-only in the allowlist.
     downloads_allowlist = allowlists.get("downloads", {})
     if downloads_allowlist:
         downloads_updater = DownloadsUpdater(downloads_allowlist, repo_root=REPO_ROOT, report=report)
         downloads_updater.update_targets()
-
-    # Log Homebrew versions for informational purposes (no updates)
-    homebrew_allowlist = allowlists.get("homebrew", {})
-    if homebrew_allowlist:
-        homebrew_updater = HomebrewUpdater(homebrew_allowlist, report=report)
-        versions = homebrew_updater.update_formulas()
-        if versions:
-            logging.info("Homebrew formula versions (baked into image): %s", versions)
 
     brewfile_issues = _validate_curated_brewfiles()
     if brewfile_issues:
@@ -80,9 +58,6 @@ def maintenance() -> None:
 
     # Regenerate devcontainer lockfile to keep feature digests pinned
     update_devcontainer_lockfile(REPO_ROOT, report)
-
-    # Run pre-commit to auto-fix formatting issues
-    _run_precommit_autofixes()
 
     _write_report(report)
     if failures:
@@ -110,7 +85,7 @@ def update_downloads_only() -> None:
         repo_root=REPO_ROOT,
         report=report,
     )
-    downloads_updater.update_targets()
+    downloads_updater.update_targets(include_manual=True)
     _write_report(report)
 
 
@@ -148,6 +123,16 @@ def test_devcontainer_build() -> None:
     except FileNotFoundError:
         logging.error("devcontainer CLI not found. Ensure @devcontainers/cli is installed via npm.")
         raise
+
+
+@task
+def unit_tests() -> None:
+    """Run the non-mutating maintenance-robot unit suite in the RCC environment."""
+    subprocess.run(
+        [sys.executable, "-B", "-m", "unittest", "discover", "-s", "tests", "-v"],
+        cwd=str(ROBOT_ROOT),
+        check=True,
+    )
 
 
 @task
@@ -192,7 +177,7 @@ def _load_allowlists() -> Dict[str, Dict[str, dict]]:
 
 
 def _validate_curated_brewfiles():
-    brew_dir = REPO_ROOT / ".devcontainer" / "brew"
+    brew_dir = REPO_ROOT / "src" / "common" / "brew"
     if not brew_dir.exists():
         logging.info("No curated Brewfile directory found at %s", brew_dir)
         return []
@@ -225,87 +210,3 @@ def _write_report(report: MaintenanceReport) -> None:
     report_path = output_dir / "maintenance_report.json"
     report_path.write_text(json.dumps(report.to_dict(), indent=2), encoding="utf-8")
     logging.info("Wrote maintenance report for task '%s' to %s", _current_task_name(), report_path)
-
-
-def _refresh_precommit_configuration() -> None:
-    """Keep the repository's pre-commit configuration current."""
-    logging.info("Migrating pre-commit configuration...")
-    migrate_result = subprocess.run(
-        ["pre-commit", "migrate-config"],
-        cwd=str(REPO_ROOT),
-        capture_output=False,
-        text=True,
-    )
-    if migrate_result.returncode != 0:
-        logging.warning("Failed to migrate pre-commit configuration")
-
-    logging.info("Refreshing all configured pre-commit hook repos...")
-    autoupdate_result = subprocess.run(
-        ["pre-commit", "autoupdate"],
-        cwd=str(REPO_ROOT),
-        capture_output=False,
-        text=True,
-    )
-    if autoupdate_result.returncode != 0:
-        logging.warning("Failed to autoupdate pre-commit hook repos")
-
-
-def _run_precommit_autofixes() -> None:
-    """Run pre-commit hooks to auto-fix formatting issues."""
-    logging.info("Running pre-commit auto-fixes...")
-    try:
-        # Run prettier on YAML files first to fix formatting
-        logging.info("Running prettier on YAML files...")
-        prettier_result = subprocess.run(
-            ["prettier", "--write", "**/*.{yaml,yml}"],
-            cwd=str(REPO_ROOT),
-            capture_output=True,
-            text=True,
-            shell=False,
-        )
-        if prettier_result.returncode == 0:
-            logging.info("Prettier formatting completed")
-        else:
-            raise RuntimeError(f"Prettier had issues: {prettier_result.stderr}")
-
-        _refresh_precommit_configuration()
-
-        # Pre-install hook environments without touching .git/hooks; the robot
-        # invokes pre-commit directly in CI and local maintenance runs.
-        logging.info("Installing pre-commit hook environments...")
-        install_result = subprocess.run(
-            ["pre-commit", "install-hooks"],
-            cwd=str(REPO_ROOT),
-            capture_output=False,
-            text=True,
-        )
-        if install_result.returncode != 0:
-            raise RuntimeError("Failed to install pre-commit hook environments")
-
-        # Run pre-commit with output visible
-        logging.info("Running pre-commit on all files...")
-        result = subprocess.run(
-            ["pre-commit", "run", "--all-files"],
-            cwd=str(REPO_ROOT),
-            capture_output=False,
-            text=True,
-        )
-
-        if result.returncode == 0:
-            logging.info("All pre-commit hooks passed")
-        else:
-            logging.info("Pre-commit made changes or reported failures; rerunning once")
-            rerun_result = subprocess.run(
-                ["pre-commit", "run", "--all-files"],
-                cwd=str(REPO_ROOT),
-                capture_output=False,
-                text=True,
-            )
-            if rerun_result.returncode == 0:
-                logging.info("All pre-commit hooks passed after rerun")
-            else:
-                raise RuntimeError("Pre-commit failed after rerun")
-    except FileNotFoundError as e:
-        raise RuntimeError(f"Required maintenance tool not found: {e}") from e
-    except Exception as e:
-        raise RuntimeError(f"Pre-commit failed: {e}") from e

@@ -222,8 +222,9 @@ class BrewfileValidator:
         if _entry_name_variants(name) & names:
             return True
 
-        # Untapped Homebrew metadata can omit entry lists even when the tap exists.
-        return not names
+        # Empty or omitted member lists are unknown membership, not validation.
+        # Call ``brew info`` so Homebrew resolves the requested formula or cask.
+        return False
 
     def _run_check(
         self,

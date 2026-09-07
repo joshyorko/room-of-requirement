@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-`latest` points at the Ubuntu Noble variant, which is the default Codespaces path. Core tools like `mise`, `starship`, `zoxide`, and `bbrew`, plus default Node, Go, and Ruby runtimes are ready to use. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
+`latest` points at the Ubuntu Noble variant, which is the default Codespaces path. Core tools `mise`, `starship`, and `zoxide` are included. Language runtimes are configured for each project; `bbrew` and additional bundles install on demand. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
 
 Published variant tags:
 
@@ -38,7 +38,7 @@ Published variant tags:
 
 1. Open in VS Code with Dev Containers extension
 2. Click "Reopen in Container"
-3. Start coding in under 60 seconds!
+3. Wait for project initialization to finish, then start coding.
 
 ### Option 3: DevPod
 
@@ -83,14 +83,14 @@ Room of Requirement uses **Homebrew as the first-class package manager**. Instea
 
 ### Pre-installed Tools (Baked into Image)
 
-These are baked into the image for instant availability:
+The shell foundation is baked into the image; the bundle selector installs on demand:
 
 | Tool | Purpose |
 |------|---------|
 | **mise** | Polyglot version manager (Node, Python, Go, Ruby, etc.) |
 | **starship** | Cross-shell prompt with git/tool status |
 | **zoxide** | Smart directory navigation (`z` command) |
-| **bbrew** | Bold Brew TUI baked in for browsing optional Brewfile installs |
+| **bbrew** (on demand) | Installed by `ujust bbrew` for browsing optional Brewfile installs |
 
 
 ### Curated Brewfiles
@@ -114,7 +114,7 @@ ujust brew-download-ror # Download the RoR Brewfile artifacts without installing
 
 ## 🏭 Building Variants
 
-Inspect the Dockerfile-only build plan:
+Inspect the Dockerfile-only build plan. These targets use local `ror-debug:*` tags and do not process Dev Container Features:
 
 ```bash
 docker buildx bake --print
@@ -172,16 +172,18 @@ MY_VAR = "value"
 
 Tool versions automatically switch when you `cd` into the project directory.
 
+Project creation installs declared Brewfile, mise, and Node dependencies and fails if a required step fails. It does not run global setup tasks, upgrade package managers, or clear the npm cache. To opt into global Node, Python, Go, and Ruby defaults, run `ujust runtime-defaults`. Existing global mise configuration is preserved; remove unwanted global tool entries explicitly when moving an existing home to project-only configuration.
+
 ---
 
 ## 💎 Ruby and Rails
 
-Ruby is installed by default via `mise`. Use `mise` to pin a different version when needed:
+Ruby is opt-in. Declare it in the project mise configuration or install a global version explicitly:
 
 ```bash
-ruby --version
 mise use -g ruby@latest
-gem install rails
+mise exec -- ruby --version
+mise exec -- gem install rails
 ```
 
 This keeps Ruby isolated to `mise` (no `sudo gem` and no Homebrew Ruby symlink conflicts).
@@ -269,7 +271,7 @@ room-of-requirement/
 
 ## 🎛️ Customization Examples
 
-### Standard Setup (Core Tools Pre-baked)
+### Standard Setup (Shell Foundation Included)
 
 ```json
 {
@@ -277,14 +279,14 @@ room-of-requirement/
 }
 ```
 
-Core tools are pre-installed: mise, starship, zoxide, bbrew, plus default Node, Go, and Ruby runtimes. Use `ujust bbrew` for additional tools from the curated Brewfiles, including the `ror` bundle.
+The image includes mise, starship, and zoxide. Project configuration selects language runtimes. Use `ujust bbrew` to install its selector and additional tools from the curated Brewfiles, including the `ror` bundle.
 
 ### With Additional Kubernetes Tools
 
 ```json
 {
   "image": "ghcr.io/joshyorko/room-of-requirement:latest",
-  "postCreateCommand": "brew bundle --file=/tmp/brew/k8s.Brewfile"
+  "postCreateCommand": "brew bundle --file=.devcontainer/Brewfile"
 }
 ```
 
@@ -341,24 +343,30 @@ mise ERROR Failed to install tools: core:node@lts, core:python@latest, core:go@l
 core:node@lts: failed create_dir_all: ~/.local/share/mise/installs/node/24.13.0: Permission denied (os error 13)
 ```
 
-**Solution**: The container automatically fixes mise cache directory permissions on startup in Codespaces. If you still encounter issues after the container starts:
+Inspect the current identity and the affected path before changing ownership:
 
-1. **Restart your terminal**: Close and reopen the terminal to ensure permissions are applied
-2. **Reload the window**: Press `Ctrl+Shift+P` and run "Developer: Reload Window"
-3. **Manual fix**: Run `sudo chown -R vscode:vscode ~/.local/share/mise` to fix permissions
+```bash
+id
+stat -c '%u:%g %a %n' ~/.local/share/mise
+```
 
-**Why this happens**: GitHub Codespaces mounts named volumes with root ownership by default. The entrypoint script detects Codespaces and automatically fixes permissions for the mise cache directory during container initialization, ensuring mise commands work properly.
+Bootstrap initializes missing paths and repairs managed mount roots without recursively rewriting existing files. Old data may belong to a previous login UID. Follow [Home Persistence](docs/DEVPOD-HOME-PERSISTENCE.md) for migration and rollback; do not recursively normalize the entire home or rootless container storage.
 
 ### Docker in DevPod
 
 The published Ubuntu and Debian streams use the official Docker-in-Docker Dev
 Container Feature. The Wolfi stream uses Docker packages baked into the image.
 All published streams are expected to have `docker` on `PATH` and a daemon
-started by the container entrypoint. The image also ships
-`/etc/docker/daemon.json` with `fuse-overlayfs` as the storage driver so nested
-container runs work under project-container hosts such as DevPod and
-Codespaces. `docker info` and `docker run --rm hello-world` should work without
-a manual `ujust` repair step.
+started by the container entrypoint. Dev Container clients apply the declared
+Docker and containerd storage volumes. Raw Docker-based probes must also place
+those graph stores on suitable volumes rather than the container's writable
+layer. Wolfi's fallback selects a compatible storage driver for the backing
+filesystem and verifies API readiness. `docker info` and
+`docker run --rm hello-world` verify the configured runtime.
+
+Existing workspaces need the explicit storage-name migration described in
+[Home Persistence](docs/DEVPOD-HOME-PERSISTENCE.md) before switching to the new
+configuration. Existing volumes are retained; migration is never automatic.
 
 The Wolfi stream also provides rootless `podman`, `buildah`, and `skopeo` for
 the `vscode` user. Podman uses a separate named storage volume and the

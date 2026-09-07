@@ -1,9 +1,6 @@
-variable "REGISTRY" {
-  default = "ghcr.io"
-}
-
+# Raw Dockerfile debugging only. Published images use Dev Container Features.
 variable "IMAGE_NAME" {
-  default = "joshyorko/room-of-requirement"
+  default = "ror-debug"
 }
 
 group "default" {
@@ -14,26 +11,11 @@ group "default" {
   ]
 }
 
-group "codespaces" {
-  targets = [
-    "ubuntu-noble-dind"
-  ]
-}
-
 target "ubuntu-noble" {
   context = "."
   dockerfile = "src/ubuntu-noble/.devcontainer/Dockerfile"
   tags = [
-    "${REGISTRY}/${IMAGE_NAME}:ubuntu-noble",
-    "${REGISTRY}/${IMAGE_NAME}:latest"
-  ]
-}
-
-target "ubuntu-noble-dind" {
-  inherits = ["ubuntu-noble"]
-  tags = [
-    "${REGISTRY}/${IMAGE_NAME}:ubuntu-noble-dind",
-    "${REGISTRY}/${IMAGE_NAME}:codespaces"
+    "${IMAGE_NAME}:ubuntu-noble"
   ]
 }
 
@@ -41,7 +23,7 @@ target "debian-trixie" {
   context = "."
   dockerfile = "src/debian-trixie/.devcontainer/Dockerfile"
   tags = [
-    "${REGISTRY}/${IMAGE_NAME}:debian-trixie"
+    "${IMAGE_NAME}:debian-trixie"
   ]
 }
 
@@ -49,7 +31,6 @@ target "wolfi" {
   context = "."
   dockerfile = "src/wolfi/.devcontainer/Dockerfile"
   tags = [
-    "${REGISTRY}/${IMAGE_NAME}:wolfi",
-    "${REGISTRY}/${IMAGE_NAME}:secure"
+    "${IMAGE_NAME}:wolfi"
   ]
 }

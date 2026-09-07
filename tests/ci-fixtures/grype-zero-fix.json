@@ -1,0 +1,38 @@
+{
+  "descriptor": {
+    "name": "grype",
+    "version": "0.118.0"
+  },
+  "matches": [
+    {
+      "vulnerability": {
+        "id": "GO-2026-4887",
+        "severity": "High",
+        "fix": {
+          "versions": [],
+          "state": ""
+        }
+      },
+      "artifact": {
+        "name": "github.com/docker/docker",
+        "version": "v28.5.2+incompatible",
+        "type": "go-module"
+      }
+    },
+    {
+      "vulnerability": {
+        "id": "GO-2026-5932",
+        "severity": "Unknown",
+        "fix": {
+          "versions": [],
+          "state": ""
+        }
+      },
+      "artifact": {
+        "name": "golang.org/x/crypto",
+        "version": "v0.51.0",
+        "type": "go-module"
+      }
+    }
+  ]
+}

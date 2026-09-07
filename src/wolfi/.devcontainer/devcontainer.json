@@ -17,13 +17,12 @@
     "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
   },
   "mounts": [
-    "source=ror-homebrew-cache,target=/home/linuxbrew/.cache/Homebrew,type=volume",
     "source=ror-vscode-home-${devcontainerId},target=/home/vscode,type=volume",
     "source=ror-mise-cache,target=/home/vscode/.local/share/mise,type=volume",
     "source=ror-npm-cache,target=/home/vscode/.npm,type=volume",
     "source=ror-zsh-history,target=/home/vscode/.zsh_history_dir,type=volume",
-    "source=ror-docker-data,target=/var/lib/docker,type=volume",
-    "source=ror-wolfi-podman-storage,target=/home/vscode/.local/share/containers/storage,type=volume"
+    "source=ror-docker-data-${devcontainerId},target=/var/lib/docker,type=volume",
+    "source=ror-wolfi-podman-storage-${devcontainerId},target=/home/vscode/.local/share/containers/storage,type=volume"
   ],
   "customizations": {
     "vscode": {
@@ -70,7 +69,5 @@
   "runArgs": [
     "--privileged"
   ],
-  "onCreateCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true; sudo apk cache clean 2>/dev/null || true",
-  "updateContentCommand": "sudo sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true; sudo apk cache clean 2>/dev/null || true",
-  "postCreateCommand": "/bin/bash /usr/local/bin/seed-vscode-home.sh || true; /bin/bash /usr/local/bin/devcontainer-post-create.sh || /bin/bash .devcontainer/post-create.sh 2>/dev/null || true"
+  "postCreateCommand": "/bin/bash /usr/local/bin/devcontainer-post-create.sh"
 }
