@@ -35,9 +35,9 @@ def hashed(value):
 class CosignFormatTests(unittest.TestCase):
     def test_legacy_slsa_is_reached_with_v3_bundles_present_without_relaxing_verification(self):
         cosign = shutil.which("cosign")
-        self.assertIsNotNone(cosign, "Install the pipeline's Cosign 3.0.5 to run this required probe")
+        self.assertIsNotNone(cosign, "Install the pipeline's Cosign 3.1.3 to run this required probe")
         version = subprocess.run([cosign, "version"], text=True, capture_output=True, check=True)
-        self.assertIn("v3.0.5", version.stdout + version.stderr)
+        self.assertIn("v3.1.3", version.stdout + version.stderr)
         routes, requests = {}, []
 
         def blob(data, media):

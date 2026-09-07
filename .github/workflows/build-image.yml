@@ -225,6 +225,8 @@ jobs:
     needs: verify
     if: needs.verify.outputs.publish == 'true'
     runs-on: ubuntu-latest
+    # Bound a stalled keyless signing flow; this does not change signing semantics.
+    timeout-minutes: 15
     permissions:
       contents: read
       packages: write
