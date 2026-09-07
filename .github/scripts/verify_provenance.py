@@ -12,6 +12,7 @@ from image_identity import digest
 def main():
     require(os.environ["GENERATOR_RESULT"] == "success", "provenance generator did not succeed")
     subject = digest(os.environ["DIGEST"])
+    # Payloads are unused here; keep large attestations out of the Actions log.
     subprocess.run([
         "cosign", "verify-attestation", "--check-claims", "--type", "slsaprovenance",
         # SLSA v2.1.0 writes Cosign 2.2.3 legacy attestations. Existing v3 SPDX/context
@@ -21,7 +22,7 @@ def main():
         "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v2.1.0",
         "--certificate-oidc-issuer", "https://token.actions.githubusercontent.com",
         os.environ["IMAGE"] + "@" + subject,
-    ], check=True)
+    ], check=True, stdout=subprocess.DEVNULL)
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:
         output.write(f"subject_digest={subject}\n")
 

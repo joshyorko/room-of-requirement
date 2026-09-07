@@ -48,11 +48,13 @@ def main():
                 + re.escape(os.environ["GITHUB_REF"]) + "$")
     identity_args = ["--certificate-identity-regexp", identity,
                      "--certificate-oidc-issuer", "https://token.actions.githubusercontent.com"]
-    subprocess.run(["cosign", "verify", *identity_args, ref], check=True)
+    # Verification stdout contains unused payloads, including multi-megabyte SBOM
+    # lines that stall Actions log processing. Keep stderr and exit checks intact.
+    subprocess.run(["cosign", "verify", *identity_args, ref], check=True, stdout=subprocess.DEVNULL)
     subprocess.run(["cosign", "verify-attestation", *identity_args,
-                    "--check-claims", "--type", "spdxjson", ref], check=True)
+                    "--check-claims", "--type", "spdxjson", ref], check=True, stdout=subprocess.DEVNULL)
     subprocess.run(["cosign", "verify-attestation", *identity_args,
-                    "--check-claims", "--type", context_type, ref], check=True)
+                    "--check-claims", "--type", context_type, ref], check=True, stdout=subprocess.DEVNULL)
     with open(os.environ["GITHUB_OUTPUT"], "a") as output:
         output.write(f'subject_digest={plan["digest"]}\n')
 
