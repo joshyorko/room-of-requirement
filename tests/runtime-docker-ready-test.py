@@ -124,6 +124,7 @@ assert json.loads(response.split(b"\\r\\n\\r\\n", 1)[1])["ServerVersion"] == "fi
                     try:
                         os.killpg(process.pid, signal.SIGTERM)
                     except ProcessLookupError:
+                        # The fixture process group already exited; nothing remains to stop.
                         pass
                     process.wait(timeout=5)
             self.assertEqual(status, 0, log.read_text())

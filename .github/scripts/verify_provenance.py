@@ -18,8 +18,7 @@ def main():
         # bundles suppress Cosign 3's automatic legacy fallback; select it explicitly.
         "--new-bundle-format=false",
         "--certificate-identity",
-        "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/"
-        "generator_container_slsa3.yml@refs/tags/v2.1.0",
+        "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v2.1.0",
         "--certificate-oidc-issuer", "https://token.actions.githubusercontent.com",
         os.environ["IMAGE"] + "@" + subject,
     ], check=True)

@@ -113,8 +113,8 @@ class CosignFormatTests(unittest.TestCase):
                 # never attempts the legacy provenance, even though its tag exists.
                 control = subprocess.run([
                     cosign, "verify-attestation", "--check-claims", "--type", "slsaprovenance",
-                    "--certificate-identity", "https://github.com/slsa-framework/slsa-github-generator/"
-                    ".github/workflows/generator_container_slsa3.yml@refs/tags/v2.1.0",
+                    "--certificate-identity",
+                    "https://github.com/slsa-framework/slsa-github-generator/.github/workflows/generator_container_slsa3.yml@refs/tags/v2.1.0",
                     "--certificate-oidc-issuer", "https://token.actions.githubusercontent.com",
                     env["IMAGE"] + "@" + env["DIGEST"],
                 ], capture_output=True, text=True, timeout=60, check=False)
