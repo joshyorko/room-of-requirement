@@ -82,6 +82,18 @@ jobs:
           /home/linuxbrew/.linuxbrew/bin/brew --version
         shell: bash
 
+      - name: Register curated Homebrew taps
+        shell: bash
+        run: |
+          for brewfile in src/common/brew/*.Brewfile; do
+            taps=$(brew bundle list --file="$brewfile" --taps)
+            while IFS= read -r tap; do
+              if [ -n "$tap" ]; then
+                brew tap "$tap"
+              fi
+            done <<< "$taps"
+          done
+
       - name: Run maintenance robot
         env:
           GITHUB_TOKEN: ${{ github.token }}
