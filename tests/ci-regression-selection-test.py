@@ -1,6 +1,7 @@
 """Run the workflow's regression step against failing suite sentinels."""
 
 import fnmatch
+import json
 import os
 from pathlib import Path
 import shutil
@@ -17,6 +18,51 @@ IMAGE_SUITES = {"runtime-home-ownership-test.sh", "vscode-home-contract-test.sh"
 
 
 class RegressionSelectionTests(unittest.TestCase):
+    def test_maintenance_registers_declared_taps_and_propagates_setup_failures(self):
+        workflow = yaml.safe_load((ROOT / ".github/workflows/rcc-maintenance.yml").read_text())
+        steps = workflow["jobs"]["maintenance"]["steps"]
+        names = [step.get("name") for step in steps]
+        setup_index = names.index("Register curated Homebrew taps")
+        self.assertLess(names.index("Install Homebrew"), setup_index)
+        self.assertLess(setup_index, names.index("Run maintenance robot"))
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            brew_dir = root / "src/common/brew"
+            brew_dir.mkdir(parents=True)
+            for name in ("a.Brewfile", "empty.Brewfile"):
+                (brew_dir / name).touch()
+            brew = root / "brew"
+            brew.write_text(f"#!{sys.executable}\n" + '''
+import json, os, sys
+args = sys.argv[1:]
+with open(os.environ['CALLS'], 'a') as calls:
+    calls.write(json.dumps(args) + '\\n')
+if args[:2] == ['bundle', 'list']:
+    if os.environ['FAIL'] == 'list':
+        sys.exit(47)
+    if '--file=src/common/brew/a.Brewfile' in args:
+        print('team/tools\\nother/tap')
+elif args == ['tap', 'team/tools'] or args == ['tap', 'other/tap']:
+    if os.environ['FAIL'] == 'tap':
+        sys.exit(48)
+else:
+    sys.exit(99)
+''')
+            brew.chmod(0o755)
+            for failure, expected in (("", 0), ("list", 47), ("tap", 48)):
+                with self.subTest(failure=failure):
+                    calls = root / (failure + "-calls")
+                    result = subprocess.run(
+                        ["bash", "-e", "-o", "pipefail", "-c", steps[setup_index]["run"]],
+                        cwd=root, env=dict(os.environ, PATH=f"{root}:{os.environ['PATH']}",
+                                          CALLS=str(calls), FAIL=failure), capture_output=True, text=True)
+                    self.assertEqual(result.returncode, expected, result.stderr)
+                    commands = [json.loads(line) for line in calls.read_text().splitlines()]
+                    taps = [args for args in commands if args[0] == "tap"]
+                    self.assertEqual(taps, [] if failure == "list" else
+                                     [["tap", "team/tools"]] if failure == "tap" else
+                                     [["tap", "team/tools"], ["tap", "other/tap"]])
+
     def test_missing_just_is_reported_before_running_suites(self):
         with tempfile.TemporaryDirectory() as temp:
             root = Path(temp)
