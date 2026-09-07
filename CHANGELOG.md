@@ -1,5 +1,17 @@
 # Changelog
 
+## [1.20.1](https://github.com/joshyorko/room-of-requirement/compare/v1.20.0...v1.20.1) (2026-09-07)
+
+
+### 🐛 Bug Fixes
+
+* align Cosign CI and bound signing jobs ([35802a3](https://github.com/joshyorko/room-of-requirement/commit/35802a334855c1881f87a5705d7a182f7c1606c9))
+* align Cosign CI and bound signing jobs ([bafe4cf](https://github.com/joshyorko/room-of-requirement/commit/bafe4cfa748a5d6780f8ab7a157cbbd86d7d4328))
+* keep Cosign verification payloads out of CI logs ([ff8c5d4](https://github.com/joshyorko/room-of-requirement/commit/ff8c5d41253bba4f5c47cade7fd8883822cbd473))
+* keep Cosign verification payloads out of CI logs ([2eef195](https://github.com/joshyorko/room-of-requirement/commit/2eef195840da3e010f1b8e4426581cb3f159b408))
+* register Brewfile taps before maintenance validation ([80328c9](https://github.com/joshyorko/room-of-requirement/commit/80328c96e699bc700737bae0685ebdf17afdcf92))
+* register Brewfile taps before maintenance validation ([694dce2](https://github.com/joshyorko/room-of-requirement/commit/694dce22ffa30cbf92f7bee661c89c8b290a42b3))
+
 ## [1.20.0](https://github.com/joshyorko/room-of-requirement/compare/v1.19.2...v1.20.0) (2026-09-07)
 
 
