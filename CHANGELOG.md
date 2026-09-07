@@ -1,5 +1,45 @@
 # Changelog
 
+## [1.20.0](https://github.com/joshyorko/room-of-requirement/compare/v1.19.2...v1.20.0) (2026-09-07)
+
+
+### ✨ Features
+
+* build feature-aware candidates and execute CI runtime contracts ([5c66867](https://github.com/joshyorko/room-of-requirement/commit/5c6686783eff3cbb82b35f6a4b70b3ae31fed9c2))
+* gate shared image and release publication on verified digests ([80b4bf5](https://github.com/joshyorko/room-of-requirement/commit/80b4bf521872f5c6863835920e36d8baab2f99a8))
+
+
+### 🐛 Bug Fixes
+
+* accept Grype zero-value fix metadata ([f761102](https://github.com/joshyorko/room-of-requirement/commit/f761102ab45bdd6a9dcb65506d21016f63879e85))
+* address CodeQL review comments ([b557a5c](https://github.com/joshyorko/room-of-requirement/commit/b557a5c4d40fa6aaac1ca9f0cbad873e98684a1e))
+* bind scan and publication gates to candidate subjects ([6e648ef](https://github.com/joshyorko/room-of-requirement/commit/6e648eff36c3d71f0e062f1882946b6da064f326))
+* enforce explicit CI scan and promotion policy ([633b378](https://github.com/joshyorko/room-of-requirement/commit/633b378c7fa95efdb6bc7140a865c0478add3605))
+* execute maintained runtime regressions in CI ([bde0c84](https://github.com/joshyorko/room-of-requirement/commit/bde0c84cd1caefc11bed17afb7a55a2d2d7313d4))
+* expose project runtimes during hydration ([0b50571](https://github.com/joshyorko/room-of-requirement/commit/0b505717f5147059a07f9d824b66048d7873c12a))
+* grant candidate access to disposable template workspace ([b52130c](https://github.com/joshyorko/room-of-requirement/commit/b52130cc6dff0cc7f00ed5ef0aa6831b992bb617))
+* harden maintenance updater contracts ([791c735](https://github.com/joshyorko/room-of-requirement/commit/791c7356994c9747f1f969609893d023d770cdc7))
+* honor project setup and nested Docker storage ([7731c12](https://github.com/joshyorko/room-of-requirement/commit/7731c12a96b308a80e359772de9fdd3c6dc09164))
+* isolate the Wolfi Docker image probe ([5da72a2](https://github.com/joshyorko/room-of-requirement/commit/5da72a2006085111b7cfe16ba793ff0474e2148c))
+* keep Docker dry-run configuration in memory ([e89f702](https://github.com/joshyorko/room-of-requirement/commit/e89f7023904c472d9093eaa4c03768082703a86f))
+* keep seed links at exact destinations ([5a54099](https://github.com/joshyorko/room-of-requirement/commit/5a54099c6b2940d8909b8d97cf2c6e518c3a4557))
+* make project hydration deterministic ([82832af](https://github.com/joshyorko/room-of-requirement/commit/82832af4048c1197316b30a0be661efbc55dc6e3))
+* persist and verify candidate build metadata through the CLI ([d0fa0e7](https://github.com/joshyorko/room-of-requirement/commit/d0fa0e79122672b5fa03e78a3aefdb29ebb06ee0))
+* preserve isolated runtime storage ([b0dc76a](https://github.com/joshyorko/room-of-requirement/commit/b0dc76ab5101faa7c0f40050668362c48c260ccf))
+* preserve runtime state and verify image publication ([13daf4f](https://github.com/joshyorko/room-of-requirement/commit/13daf4f16e6fa60a284d52c542d9bd5543007229))
+* provision just for hosted runtime regressions ([5aba416](https://github.com/joshyorko/room-of-requirement/commit/5aba416aa44b01c81e4dc01faabab1d1c848eda8))
+* reuse starter image Docker feature ([32342c9](https://github.com/joshyorko/room-of-requirement/commit/32342c9fc97282a3adda8731803cf34550bd7018))
+* seed persistent homes without clobbering ([3c70ebf](https://github.com/joshyorko/room-of-requirement/commit/3c70ebfca95115381dc132e2728932dba1c49678))
+* validate Docker daemon readiness ([7a45a34](https://github.com/joshyorko/room-of-requirement/commit/7a45a349b1284c23ec63e01700e4980bda4d8909))
+* validate images with declared storage and user contracts ([34da087](https://github.com/joshyorko/room-of-requirement/commit/34da087f9ea7fd36337da9de1118efe17af0eb05))
+* verify pinned SLSA provenance using its legacy format ([42dd770](https://github.com/joshyorko/room-of-requirement/commit/42dd770e581430684998c4d7cec4e399f48522a3))
+
+
+### 📚 Documentation
+
+* align development guidance with canonical image sources ([b839592](https://github.com/joshyorko/room-of-requirement/commit/b8395924f547f4f7f32841778c6fcb2d61daedc5))
+* record approved audit remediation plan ([5f5ddbf](https://github.com/joshyorko/room-of-requirement/commit/5f5ddbfb39a60452a484cf6899de2fefa59ea63c))
+
 ## [1.19.2](https://github.com/joshyorko/room-of-requirement/compare/v1.19.1...v1.19.2) (2026-08-28)
 
 
