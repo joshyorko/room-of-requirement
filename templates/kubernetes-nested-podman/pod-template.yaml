@@ -1,0 +1,21 @@
+# Devsy >= 1.17.0 POD_MANIFEST_TEMPLATE, for NEW Wolfi/secure workspaces only.
+# Use STRICT_SECURITY=false; the explicit container override removes blanket
+# privilege while retaining the root bootstrap and subordinate UID mapping.
+apiVersion: v1
+kind: Pod
+spec:
+  automountServiceAccountToken: false
+  hostUsers: true
+  containers:
+    - name: devsy
+      env:
+        - name: ROR_NESTED_PODMAN
+          value: "1"
+      securityContext:
+        privileged: false
+        runAsUser: 0
+        runAsGroup: 0
+        runAsNonRoot: false
+        capabilities:
+          add:
+            - SYS_ADMIN

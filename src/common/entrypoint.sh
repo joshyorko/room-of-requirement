@@ -16,6 +16,10 @@ run_as_root() {
     fi
 }
 
+if [ "${ROR_NESTED_PODMAN:-0}" = 1 ]; then
+    /usr/local/bin/ror-nested-podman-bootstrap.sh
+fi
+
 if command -v apk >/dev/null 2>&1; then
     run_as_root sed -i '/gcompat/d' /etc/apk/world 2>/dev/null || true
 fi
@@ -73,6 +77,12 @@ prepare_podman_runtime() {
 }
 
 prepare_podman_runtime
+
+# This launch contract is for nested rootless Podman. Docker-in-Docker has a
+# separate privilege/capability contract and is not started in this mode.
+if [ "${ROR_NESTED_PODMAN:-0}" = 1 ]; then
+    exec "$@"
+fi
 
 if [ -x /usr/local/share/docker-init.sh ] && [ "${ROR_USE_DEVCONTAINER_DOCKER_INIT:-1}" != "0" ]; then
     log "Delegating Docker startup to Dev Container Docker-in-Docker feature"

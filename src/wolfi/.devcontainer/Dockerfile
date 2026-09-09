@@ -293,6 +293,7 @@ COPY --chown=vscode:vscode src/common/scripts/ror-podman-runsc-check.sh /usr/loc
 RUN chmod +x /usr/local/bin/ror-podman-runsc-check.sh
 
 # Copy entrypoint wrapper for Docker-in-Docker (handles both DevPod and Codespaces)
+COPY --chmod=0755 src/common/scripts/ror-nested-podman-bootstrap.sh /usr/local/bin/ror-nested-podman-bootstrap.sh
 COPY src/common/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh
 
