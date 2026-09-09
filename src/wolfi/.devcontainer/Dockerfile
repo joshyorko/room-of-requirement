@@ -286,6 +286,12 @@ RUN chmod +x /usr/local/bin/ror-docker-start.sh
 COPY --chown=vscode:vscode src/common/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh
 RUN chmod +x /usr/local/bin/ror-brew-download.sh
 
+# Copy the bounded rootless Podman/runsc diagnostic. A complete Review-owned
+# runsc bundle remains an external runtime input; this image never downloads or
+# selects an OCI fallback.
+COPY --chown=vscode:vscode src/common/scripts/ror-podman-runsc-check.sh /usr/local/bin/ror-podman-runsc-check.sh
+RUN chmod +x /usr/local/bin/ror-podman-runsc-check.sh
+
 # Copy entrypoint wrapper for Docker-in-Docker (handles both DevPod and Codespaces)
 COPY src/common/entrypoint.sh /usr/local/bin/entrypoint.sh
 RUN chmod +x /usr/local/bin/entrypoint.sh

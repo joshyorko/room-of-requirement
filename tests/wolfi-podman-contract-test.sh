@@ -6,6 +6,8 @@ DOCKERFILE="${ROOT_DIR}/src/wolfi/.devcontainer/Dockerfile"
 ENTRYPOINT="${ROOT_DIR}/src/common/entrypoint.sh"
 DEVCONTAINER="${ROOT_DIR}/src/wolfi/.devcontainer/devcontainer.json"
 STORAGE_CONFIG="${ROOT_DIR}/src/wolfi/config/containers-storage.conf"
+JUSTFILE="${ROOT_DIR}/src/common/justfile"
+CHECK_SCRIPT="${ROOT_DIR}/src/common/scripts/ror-podman-runsc-check.sh"
 
 fail() {
     echo "FAIL: $*" >&2
@@ -16,14 +18,14 @@ assert_contains() {
     local file="$1"
     local pattern="$2"
     local label="$3"
-    grep -Eq "${pattern}" "${file}" || fail "${label}: ${pattern} not found in ${file}"
+    grep -Eq -- "${pattern}" "${file}" || fail "${label}: ${pattern} not found in ${file}"
 }
 
 assert_not_contains() {
     local file="$1"
     local pattern="$2"
     local label="$3"
-    if grep -Eq "${pattern}" "${file}"; then
+    if grep -Eq -- "${pattern}" "${file}"; then
         fail "${label}: unexpected ${pattern} in ${file}"
     fi
 }
@@ -57,6 +59,18 @@ assert config["storage"]["options"]["overlay"]["mount_program"] == "/usr/bin/fus
 PY
 assert_contains "${DOCKERFILE}" 'src/wolfi/config/containers-storage.conf[[:space:]]+/usr/share/ror/config/containers-storage.conf' \
     "persistent-home Podman baseline"
+assert_contains "${DOCKERFILE}" 'ror-podman-runsc-check\.sh[[:space:]]+/usr/local/bin/ror-podman-runsc-check\.sh' \
+    "bounded Podman/runsc checker"
+assert_contains "${JUSTFILE}" 'exec /usr/local/bin/ror-podman-runsc-check\.sh --diagnose-only' \
+    "supported cgroup diagnostic"
+assert_contains "${JUSTFILE}" 'podman-runsc-check runtime:' \
+    "supported Podman/runsc probe"
+assert_contains "${CHECK_SCRIPT}" 'RESULT: BLOCKED' \
+    "explicit delegation blocker result"
+assert_contains "${CHECK_SCRIPT}" 'Required outer host/orchestrator change' \
+    "outer delegation remediation"
+assert_not_contains "${CHECK_SCRIPT}" '(^|[[:space:]])--privileged([[:space:]]|$)|(^|[[:space:]])--ignore-cgroups([[:space:]]|$)|cgroups-disabled|--network[[:space:]]+host' \
+    "forbidden runtime workaround"
 assert_contains "${ENTRYPOINT}" 'XDG_RUNTIME_DIR' "dynamic runtime directory"
 assert_contains "${ENTRYPOINT}" 'mount --make-rshared /' "shared root mount"
 assert_not_contains "${ENTRYPOINT}" 'chown[[:space:]]+-R.*(HOME|podman|storage|mise|npm)' \

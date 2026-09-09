@@ -172,36 +172,16 @@ docker-status:
 docker-clean:
     docker system prune -af
 
-# Check cgroup v2 memory controller status
+# Check cgroup v2 visibility/delegation; the full runsc probe is separate.
 cgroup-check:
     #!/usr/bin/env bash
-    echo "=== cgroup v2 Status (for k3d/k3s) ==="
-    echo ""
-    if [ -f /sys/fs/cgroup/cgroup.controllers ]; then
-        echo "✓ cgroup v2 detected"
-        echo ""
-        echo "Available controllers at root:"
-        cat /sys/fs/cgroup/cgroup.controllers
-        echo ""
-        echo "Delegated to subtree (child cgroups):"
-        cat /sys/fs/cgroup/cgroup.subtree_control
-        echo ""
-        SUBTREE=$(cat /sys/fs/cgroup/cgroup.subtree_control 2>/dev/null || echo "")
-        if echo "$SUBTREE" | grep -q "memory"; then
-            echo "✓ Memory controller is delegated - k3d/k3s should work"
-        else
-            echo "⚠ Memory controller is not delegated"
-        fi
-        echo ""
-        CURRENT_CGROUP=$(cat /proc/self/cgroup | cut -d: -f3)
-        echo "Current cgroup: $CURRENT_CGROUP"
-    else
-        echo "⚠ cgroup v2 not detected (using cgroup v1)"
-        echo "k3d/k3s may still work on cgroup v1"
-    fi
-    echo ""
-    echo "Docker cgroup info:"
-    docker info 2>/dev/null | awk -F': +' '/Cgroup Driver/ {d=$2} /Cgroup Version/ {v=$2} END {if (d != "") print d " (v" v ")"; else print "Docker not running"}'
+    exec /usr/local/bin/ror-podman-runsc-check.sh --diagnose-only
+
+# Run a disposable rootless Podman container with a complete absolute runsc bundle.
+podman-runsc-check runtime:
+    #!/usr/bin/env bash
+    set -euo pipefail
+    exec /usr/local/bin/ror-podman-runsc-check.sh --runtime "{{runtime}}"
 
 # Create a k3d cluster
 k3d-create cluster_name='mycluster':

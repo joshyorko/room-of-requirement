@@ -374,6 +374,26 @@ Homebrew-provided `pasta` network helper; it does not replace the Docker CLI,
 daemon, socket, or storage. Use `podman info` and `podman run --rm alpine:3.22
 true` to verify the additional runtime.
 
+For a Review-owned gVisor bundle, run the bounded check as `vscode` with its
+absolute `runsc` path:
+
+```bash
+ujust cgroup-check
+ujust podman-runsc-check /absolute/path/to/release-20260831.0/runsc
+```
+
+`cgroup-check` reports controller visibility separately from delegation. A
+successful static result is only a prerequisite; the full check must observe
+`runsc` from a running container, execute a synthetic command, reach the
+network through normal `pasta`, and verify its isolated container/image cleanup.
+If it returns a cgroup delegation blocker, the image cannot repair that
+boundary. The outer host or orchestrator must provide a dedicated cgroup v2
+subtree, enable the required controllers in its ancestors, place the workspace
+process in it, and delegate the subtree directory plus `cgroup.procs` and
+`cgroup.subtree_control` to the unprivileged workspace uid. Do not use disabled
+cgroups, host networking, a fallback runtime, or blanket privilege as a probe
+workaround.
+
 ---
 
 ## 📄 License

@@ -23,7 +23,8 @@ Need more tools?
   ror   - gh, uv, sqlite, duckdb, Codex, Claude Code, RCC, Action Server
 
 Kubernetes:
-  $ ujust cgroup-check       # Inspect cgroup state
+  $ ujust cgroup-check       # Inspect cgroup visibility and delegation
+  $ ujust podman-runsc-check /absolute/path/to/runsc
   $ ujust k3d-create         # Create k3d cluster
   $ kind create cluster      # Create Kind cluster
 

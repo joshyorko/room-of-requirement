@@ -101,6 +101,7 @@ COPY --chown=vscode:vscode src/common/scripts/mise-seed-cache.sh /usr/local/bin/
 COPY --chown=vscode:vscode src/common/scripts/seed-vscode-home.sh /usr/local/bin/seed-vscode-home.sh
 COPY --chown=vscode:vscode src/common/scripts/ror-docker-start.sh /usr/local/bin/ror-docker-start.sh
 COPY --chown=vscode:vscode src/common/scripts/ror-brew-download.sh /usr/local/bin/ror-brew-download.sh
+COPY --chown=vscode:vscode src/common/scripts/ror-podman-runsc-check.sh /usr/local/bin/ror-podman-runsc-check.sh
 COPY src/common/entrypoint.sh /usr/local/bin/entrypoint.sh
 COPY --chown=vscode:vscode src/common/brew /usr/share/ror/brew
 COPY --chown=vscode:vscode src/common/justfile /usr/share/ror/justfile
@@ -111,6 +112,7 @@ RUN chmod +x \
         /usr/local/bin/seed-vscode-home.sh \
         /usr/local/bin/ror-docker-start.sh \
         /usr/local/bin/ror-brew-download.sh \
+        /usr/local/bin/ror-podman-runsc-check.sh \
         /usr/local/bin/entrypoint.sh && \
     chmod 644 /usr/share/ror/justfile && \
     printf '#!/bin/bash\nexec just --justfile /usr/share/ror/justfile --working-directory /usr/share/ror "$@"\n' > /usr/local/bin/ujust && \
