@@ -32,6 +32,13 @@ fi
 
 temp_root="$(mktemp -d)"
 cleanup_test() {
+    for pid_file in "${temp_root}"/podman-*.pids; do
+        [ -f "${pid_file}" ] || continue
+        while IFS= read -r pid; do
+            [ -n "${pid}" ] || continue
+            kill -KILL "${pid}" 2>/dev/null || true
+        done < "${pid_file}"
+    done
     chmod -R u+w "${temp_root}" 2>/dev/null || true
     rm -rf "${temp_root}"
 }
@@ -130,6 +137,18 @@ hang_real() {
     wait "${child_pid}"
 }
 
+hang_with_term_ignoring_descendant() {
+    printf '%s\n' "$$" >> "${ROR_FAKE_PODMAN_PID_FILE}"
+    (
+        trap '' TERM INT
+        sleep "${ROR_FAKE_PODMAN_HANG_SECONDS:-3}"
+    ) &
+    child_pid=$!
+    printf '%s\n' "${child_pid}" >> "${ROR_FAKE_PODMAN_PID_FILE}"
+    trap 'exit 0' TERM INT
+    wait "${child_pid}"
+}
+
 command_name=""
 for argument in "$@"; do
     case "${argument}" in
@@ -144,8 +163,12 @@ case "${command_name}" in
         printf 'true cgroupfs netavark\n'
         ;;
     run)
+        if [ "${ROR_FAKE_HANG_STAGE:-}" = ignore ]; then
+            hang_with_term_ignoring_descendant
+        fi
         if [ "${ROR_FAKE_HANG_STAGE:-}" = before ] ||
-            [ "${ROR_FAKE_HANG_STAGE:-}" = pull ]; then
+            [ "${ROR_FAKE_HANG_STAGE:-}" = pull ] ||
+            [ "${ROR_FAKE_HANG_STAGE:-}" = race ]; then
             hang_real
         fi
         : > "${ROR_FAKE_PODMAN_STATE}"
@@ -196,6 +219,24 @@ esac
 PODMAN
 chmod 755 "${fake_bin}/podman"
 
+race_bin="${temp_root}/race-bin"
+mkdir -p "${race_bin}"
+cat > "${race_bin}/ps" <<'PS'
+#!/usr/bin/env bash
+set -euo pipefail
+count=0
+if [ -f "${ROR_FAKE_PS_COUNT}" ]; then
+    count="$(cat "${ROR_FAKE_PS_COUNT}")"
+fi
+count=$((count + 1))
+printf '%s\n' "${count}" > "${ROR_FAKE_PS_COUNT}"
+if [ "${count}" -le 2 ]; then
+    exit 0
+fi
+exec /usr/bin/ps "$@"
+PS
+chmod 755 "${race_bin}/ps"
+
 run_probe() {
     local label="$1"
     local hang_mode="${2:-}"
@@ -206,8 +247,12 @@ run_probe() {
     local run_status="${7:-0}"
     local status=0
     local started_seconds="${SECONDS}"
+    local probe_path="${fake_bin}:${PATH}"
+    if [ "${hang_mode}" = race ]; then
+        probe_path="${race_bin}:${probe_path}"
+    fi
     set +e
-    PATH="${fake_bin}:${PATH}" \
+    PATH="${probe_path}" \
         ROR_PODMAN_BIN="${fake_bin}/podman" \
         ROR_CGROUP_ROOT="${delegated_root}" \
         ROR_CGROUP_CURRENT_DIR="${delegated_root}/current" \
@@ -220,6 +265,7 @@ run_probe() {
         ROR_FAKE_PODMAN_LOG="${temp_root}/podman-${label}.log" \
         ROR_FAKE_PODMAN_STATE="${temp_root}/podman-${label}.state" \
         ROR_FAKE_PODMAN_PID_FILE="${temp_root}/podman-${label}.pids" \
+        ROR_FAKE_PS_COUNT="${temp_root}/podman-${label}.ps-count" \
         ROR_FAKE_PODMAN_CLEANUP_ONCE="${temp_root}/podman-${label}.cleanup-once" \
         ROR_FAKE_HANG_STAGE="${hang_mode}" \
         ROR_FAKE_PODMAN_HANG_SECONDS="3" \
@@ -275,9 +321,15 @@ assert_hang_is_bounded() {
     if grep -q 'RESULT: PASS' "${temp_root}/probe-${label}.log"; then
         fail "${label} emitted PASS after a timeout"
     fi
+    assert_contains "${temp_root}/probe-${label}.log" 'pgid=[0-9]+' \
+        "${label} captured a process group before termination"
     [ -s "${temp_root}/podman-${label}.pids" ] || fail "${label} did not run a real hanging executable"
     while IFS= read -r pid; do
         [ -n "${pid}" ] || continue
+        for _attempt in 1 2 3 4 5 6 7 8 9 10; do
+            kill -0 "${pid}" 2>/dev/null || break
+            sleep 0.1
+        done
         if kill -0 "${pid}" 2>/dev/null; then
             fail "${label} left hanging process ${pid} alive"
         fi
@@ -291,6 +343,8 @@ assert_hang_is_bounded before before
 assert_hang_is_bounded after after
 assert_hang_is_bounded overall before 5 2
 assert_hang_is_bounded exec exec
+assert_hang_is_bounded ignore ignore
+assert_hang_is_bounded race race
 
 if run_probe cleanup cleanup 1 8 1 3; then
     fail "cleanup hanging child must fail closed"
@@ -310,6 +364,10 @@ assert_contains "${temp_root}/podman-cleanup.log" 'rm --force' \
     "container cleanup attempted after cleanup hang"
 while IFS= read -r pid; do
     [ -n "${pid}" ] || continue
+    for _attempt in 1 2 3 4 5 6 7 8 9 10; do
+        kill -0 "${pid}" 2>/dev/null || break
+        sleep 0.1
+    done
     if kill -0 "${pid}" 2>/dev/null; then
         fail "cleanup left hanging process ${pid} alive"
     fi

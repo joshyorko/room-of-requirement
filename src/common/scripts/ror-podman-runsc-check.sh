@@ -90,6 +90,24 @@ process_group_id() {
     ps -o pgid= -p "$1" 2>/dev/null | tr -d ' ' || true
 }
 
+sample_process_group_id() {
+    local pid="$1"
+    local pgid
+
+    for _attempt in 1 2 3 4 5 6 7 8 9 10; do
+        pgid="$(process_group_id "${pid}")"
+        if [[ "${pgid}" =~ ^[1-9][0-9]*$ ]]; then
+            printf '%s\n' "${pgid}"
+            return
+        fi
+        sleep 0.01
+    done
+    # setsid normally makes the launched process the session/process-group
+    # leader. Keep a numeric fallback if process metadata raced startup; the
+    # timeout path still attempts group and leader termination.
+    printf '%s\n' "${pid}"
+}
+
 terminate_process_group() {
     local pid="$1"
     local pgid="$2"
@@ -109,12 +127,12 @@ terminate_process_group() {
         fi
         sleep 0.1
     done
-    if kill -0 "${pid}" 2>/dev/null; then
-        if [ -n "${pgid}" ] && [ "${pgid}" != "0" ] && [ "${pgid}" != "${parent_pgid}" ]; then
-            kill -KILL -- "-${pgid}" 2>/dev/null || true
-        fi
-        kill -KILL "${pid}" 2>/dev/null || true
+    # Kill the whole captured group even when the leader honored TERM and
+    # exited. Descendants may ignore TERM and outlive the leader.
+    if [ -n "${pgid}" ] && [ "${pgid}" != "0" ] && [ "${pgid}" != "${parent_pgid}" ]; then
+        kill -KILL -- "-${pgid}" 2>/dev/null || true
     fi
+    kill -KILL "${pid}" 2>/dev/null || true
     wait "${pid}" 2>/dev/null || true
 }
 
@@ -141,7 +159,7 @@ execute_bounded() {
 
     setsid -- "$@" >"${output_file}" 2>&1 &
     child_pid=$!
-    child_pgid="$(process_group_id "${child_pid}")"
+    child_pgid="$(sample_process_group_id "${child_pid}")"
     while kill -0 "${child_pid}" 2>/dev/null; do
         if [ "${SECONDS}" -ge "${operation_deadline}" ]; then
             timed_out=1
