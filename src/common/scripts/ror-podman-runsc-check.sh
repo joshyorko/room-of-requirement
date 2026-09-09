@@ -16,6 +16,12 @@ RUNTIME_PATH=""
 IMAGE="${DEFAULT_IMAGE}"
 EVIDENCE_PARENT="${ROR_RUNSC_PROBE_EVIDENCE_DIR:-}"
 DIAGNOSE_ONLY=0
+OPERATION_TIMEOUT_SECONDS="${ROR_RUNSC_PROBE_OPERATION_TIMEOUT_SECONDS:-60}"
+OVERALL_TIMEOUT_SECONDS="${ROR_RUNSC_PROBE_OVERALL_TIMEOUT_SECONDS:-300}"
+CLEANUP_TIMEOUT_SECONDS="${ROR_RUNSC_PROBE_CLEANUP_TIMEOUT_SECONDS:-10}"
+CLEANUP_OVERALL_TIMEOUT_SECONDS="${ROR_RUNSC_PROBE_CLEANUP_OVERALL_TIMEOUT_SECONDS:-30}"
+COMMAND_TIMEOUT_SECONDS=0
+COMMAND_DEADLINE_SECONDS=0
 
 usage() {
     cat <<'USAGE'
@@ -34,6 +40,12 @@ Options:
   --image IMAGE         Disposable public image (default: docker.io/library/alpine:3.22).
   --evidence-dir DIR    Retain the owned probe log under DIR.
   -h, --help            Show this help.
+
+Environment:
+  ROR_RUNSC_PROBE_OPERATION_TIMEOUT_SECONDS       Per-child deadline (default: 60).
+  ROR_RUNSC_PROBE_OVERALL_TIMEOUT_SECONDS         Full probe deadline (default: 300).
+  ROR_RUNSC_PROBE_CLEANUP_TIMEOUT_SECONDS        Per-cleanup-child deadline (default: 10).
+  ROR_RUNSC_PROBE_CLEANUP_OVERALL_TIMEOUT_SECONDS Cleanup deadline (default: 30).
 USAGE
 }
 
@@ -61,14 +73,107 @@ log_command() {
     log "+ ${rendered}"
 }
 
+positive_integer() {
+    [[ "$1" =~ ^[1-9][0-9]*$ ]]
+}
+
+validate_timeout() {
+    local name="$1"
+    local value="$2"
+    if ! positive_integer "${value}"; then
+        printf 'ERROR: %s must be a positive integer (got %s)\n' "${name}" "${value}" >&2
+        exit 64
+    fi
+}
+
+process_group_id() {
+    ps -o pgid= -p "$1" 2>/dev/null | tr -d ' ' || true
+}
+
+terminate_process_group() {
+    local pid="$1"
+    local pgid="$2"
+    local grace_seconds="${3:-1}"
+    local parent_pgid grace_deadline
+
+    parent_pgid="$(process_group_id "$$")"
+    if [ -n "${pgid}" ] && [ "${pgid}" != "0" ] && [ "${pgid}" != "${parent_pgid}" ]; then
+        kill -TERM -- "-${pgid}" 2>/dev/null || true
+    fi
+    kill -TERM "${pid}" 2>/dev/null || true
+
+    grace_deadline=$((SECONDS + grace_seconds))
+    while kill -0 "${pid}" 2>/dev/null; do
+        if [ "${SECONDS}" -ge "${grace_deadline}" ]; then
+            break
+        fi
+        sleep 0.1
+    done
+    if kill -0 "${pid}" 2>/dev/null; then
+        if [ -n "${pgid}" ] && [ "${pgid}" != "0" ] && [ "${pgid}" != "${parent_pgid}" ]; then
+            kill -KILL -- "-${pgid}" 2>/dev/null || true
+        fi
+        kill -KILL "${pid}" 2>/dev/null || true
+    fi
+    wait "${pid}" 2>/dev/null || true
+}
+
+execute_bounded() {
+    local label="$1"
+    local output_file="$2"
+    local timeout_seconds="$3"
+    local overall_deadline="$4"
+    shift 4
+
+    local child_pid child_pgid operation_deadline status timed_out=0
+    : >"${output_file}"
+
+    if [ "${overall_deadline}" -gt 0 ] && [ "${SECONDS}" -ge "${overall_deadline}" ]; then
+        log "TIMEOUT: ${label} overall deadline expired before start"
+        log "exit=124"
+        return 124
+    fi
+
+    operation_deadline=$((SECONDS + timeout_seconds))
+    if [ "${overall_deadline}" -gt 0 ] && [ "${overall_deadline}" -lt "${operation_deadline}" ]; then
+        operation_deadline="${overall_deadline}"
+    fi
+
+    setsid -- "$@" >"${output_file}" 2>&1 &
+    child_pid=$!
+    child_pgid="$(process_group_id "${child_pid}")"
+    while kill -0 "${child_pid}" 2>/dev/null; do
+        if [ "${SECONDS}" -ge "${operation_deadline}" ]; then
+            timed_out=1
+            log "TIMEOUT: ${label} exceeded its deadline; terminating pid=${child_pid} pgid=${child_pgid:-unknown}"
+            terminate_process_group "${child_pid}" "${child_pgid}" 1
+            break
+        fi
+        sleep 0.1
+    done
+
+    if [ "${timed_out}" -eq 1 ]; then
+        status=124
+    elif wait "${child_pid}"; then
+        status=0
+    else
+        status=$?
+    fi
+    tee -a "${LOG_FILE}" <"${output_file}"
+    log "exit=${status}"
+    return "${status}"
+}
+
 run_logged() {
-    local status
+    local output_file status
+    output_file="$(mktemp "${PROBE_DIR}/command.XXXXXX")"
     log_command "$@"
     set +e
-    "$@" 2>&1 | tee -a "${LOG_FILE}"
-    status="${PIPESTATUS[0]}"
+    execute_bounded "command" "${output_file}" "${COMMAND_TIMEOUT_SECONDS}" \
+        "${COMMAND_DEADLINE_SECONDS}" "$@"
+    status=$?
     set -e
-    log "exit=${status}"
+    rm -f -- "${output_file}"
     return "${status}"
 }
 
@@ -78,11 +183,10 @@ capture_logged() {
     local status
     log_command "$@"
     set +e
-    "$@" >"${output_file}" 2>&1
+    execute_bounded "command" "${output_file}" "${COMMAND_TIMEOUT_SECONDS}" \
+        "${COMMAND_DEADLINE_SECONDS}" "$@"
     status=$?
     set -e
-    tee -a "${LOG_FILE}" <"${output_file}"
-    log "exit=${status}"
     return "${status}"
 }
 
@@ -254,7 +358,13 @@ diagnose_cgroups() {
 # shellcheck disable=SC2329 # Invoked indirectly by the EXIT trap.
 cleanup_probe() {
     local cleanup_status=0 image_ids_file final_ps_file final_images_file image_id compact
+    local saved_timeout saved_deadline
     [ "${PROBE_INITIALIZED:-0}" -eq 1 ] || return 0
+
+    saved_timeout="${COMMAND_TIMEOUT_SECONDS}"
+    saved_deadline="${COMMAND_DEADLINE_SECONDS}"
+    COMMAND_TIMEOUT_SECONDS="${CLEANUP_TIMEOUT_SECONDS}"
+    COMMAND_DEADLINE_SECONDS=$((SECONDS + CLEANUP_OVERALL_TIMEOUT_SECONDS))
 
     image_ids_file="${PROBE_DIR}/image-ids.txt"
     final_ps_file="${PROBE_DIR}/final-ps.json"
@@ -299,6 +409,8 @@ cleanup_probe() {
             cleanup_status=1
         fi
     fi
+    COMMAND_TIMEOUT_SECONDS="${saved_timeout}"
+    COMMAND_DEADLINE_SECONDS="${saved_deadline}"
     return "${cleanup_status}"
 }
 
@@ -378,6 +490,15 @@ case "${IMAGE}" in
         ;;
 esac
 
+validate_timeout ROR_RUNSC_PROBE_OPERATION_TIMEOUT_SECONDS "${OPERATION_TIMEOUT_SECONDS}"
+validate_timeout ROR_RUNSC_PROBE_OVERALL_TIMEOUT_SECONDS "${OVERALL_TIMEOUT_SECONDS}"
+validate_timeout ROR_RUNSC_PROBE_CLEANUP_TIMEOUT_SECONDS "${CLEANUP_TIMEOUT_SECONDS}"
+validate_timeout ROR_RUNSC_PROBE_CLEANUP_OVERALL_TIMEOUT_SECONDS "${CLEANUP_OVERALL_TIMEOUT_SECONDS}"
+command -v setsid >/dev/null 2>&1 || {
+    printf 'ERROR: setsid is required to terminate timed-out child process groups\n' >&2
+    exit 1
+}
+
 if [ "$(id -u)" -eq 0 ]; then
     printf 'ERROR: run the full probe as the target unprivileged user; root cannot prove rootless delegation\n' >&2
     exit 2
@@ -432,8 +553,14 @@ export CONTAINERS_AUTH_FILE="${AUTH_FILE}"
 export XDG_CONFIG_HOME="${PROBE_DIR}/config"
 export DOCKER_CONFIG="${PROBE_DIR}/docker-config"
 PROBE_INITIALIZED=1
+PROBE_START_SECONDS="${SECONDS}"
+PROBE_DEADLINE_SECONDS=$((PROBE_START_SECONDS + OVERALL_TIMEOUT_SECONDS))
+COMMAND_TIMEOUT_SECONDS="${OPERATION_TIMEOUT_SECONDS}"
+COMMAND_DEADLINE_SECONDS="${PROBE_DEADLINE_SECONDS}"
 CONTAINER_NAME="ror-runsc-probe-$(id -u)-$$"
 trap finish_probe EXIT
+
+log "Deadlines: operation=${OPERATION_TIMEOUT_SECONDS}s overall=${OVERALL_TIMEOUT_SECONDS}s cleanup-operation=${CLEANUP_TIMEOUT_SECONDS}s cleanup-overall=${CLEANUP_OVERALL_TIMEOUT_SECONDS}s"
 
 if diagnose_cgroups >"${PROBE_DIR}/cgroup-diagnostic.txt" 2>&1; then
     diagnosis_status=0
