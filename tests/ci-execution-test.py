@@ -162,11 +162,21 @@ class ExecutionTests(unittest.TestCase):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi")
         self.assertEqual(result.returncode, 0, result.stderr)
         executions = [c for c in self.calls() if c[:2] == ["docker", "exec"]]
-        self.assertEqual(len(executions), 4)
+        self.assertEqual(len(executions), 6)
         self.assertIn("vscode", executions[1])
         self.assertNotIn("--privileged", executions[1])
         self.assertIn("root", executions[2])
         self.assertIn("/ror-source/.github/scripts/home-smoke.sh", executions[2])
+        self.assertIn("root", executions[3])
+        self.assertTrue(any("ghostty-smoke.sh" in argument for argument in executions[3]))
+        self.assertNotIn("-i", executions[3])
+        self.assertIn("-t", executions[3])
+        self.assertEqual(executions[3][executions[3].index("-e") + 1], "TERM=xterm-ghostty")
+        self.assertIn("vscode", executions[4])
+        self.assertTrue(any("ghostty-smoke.sh" in argument for argument in executions[4]))
+        self.assertNotIn("-i", executions[4])
+        self.assertIn("-t", executions[4])
+        self.assertEqual(executions[4][executions[4].index("-e") + 1], "TERM=xterm-ghostty")
         run = next(c for c in self.calls() if c[:2] == ["docker", "run"])
         self.assertIn("type=bind,source=" + str(ROOT) + ",target=/ror-source,readonly", run)
 
@@ -205,6 +215,25 @@ class ExecutionTests(unittest.TestCase):
                                  FAIL_COMMAND="home-smoke.sh")
         self.assertNotEqual(result.returncode, 0)
         self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], self.calls())
+
+    def test_ghostty_contract_runs_for_every_stream(self):
+        for variant in ("ubuntu-noble", "debian-trixie", "wolfi"):
+            with self.subTest(variant=variant):
+                (self.work / "calls").unlink(missing_ok=True)
+                result = self.run_script("runtime-smoke.sh", "local:candidate", variant)
+                self.assertEqual(result.returncode, 0, result.stderr)
+                executions = [c for c in self.calls() if c[:2] == ["docker", "exec"]]
+                ghostty_calls = [c for c in executions if any("ghostty-smoke.sh" in argument for argument in c)]
+                self.assertTrue(ghostty_calls)
+                self.assertEqual(len(ghostty_calls), 2)
+
+    def test_ghostty_failure_cleans_the_owned_container(self):
+        for variant in ("ubuntu-noble", "debian-trixie", "wolfi"):
+            with self.subTest(variant=variant):
+                result = self.run_script("runtime-smoke.sh", "local:candidate", variant,
+                                         FAIL_COMMAND="ghostty-smoke.sh")
+                self.assertNotEqual(result.returncode, 0)
+                self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], self.calls())
 
     def promotion(self, **changes):
         data = json.loads(self.request(event="push", ref="refs/heads/main", enforce=True))

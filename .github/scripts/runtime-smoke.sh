@@ -25,6 +25,10 @@ if [[ "$variant" == wolfi ]]; then
     docker exec -i --user vscode "$container" bash --noprofile --norc -s < "$scripts/podman-smoke.sh"
 fi
 docker exec --user root "$container" bash /ror-source/.github/scripts/home-smoke.sh
+docker exec -t --user root -e TERM=xterm-ghostty "$container" \
+    bash /ror-source/.github/scripts/ghostty-smoke.sh root
+docker exec -t --user vscode -e TERM=xterm-ghostty "$container" \
+    bash /ror-source/.github/scripts/ghostty-smoke.sh vscode
 if [[ "$variant" == wolfi ]]; then
     docker exec --user root "$container" bash /ror-source/tests/runtime-native-smoke.sh --in-container
     bash "$source_root/tests/runtime-docker-image-smoke.sh" "$image"
