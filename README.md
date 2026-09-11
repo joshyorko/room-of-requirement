@@ -374,6 +374,43 @@ Homebrew-provided `pasta` network helper; it does not replace the Docker CLI,
 daemon, socket, or storage. Use `podman info` and `podman run --rm alpine:3.22
 true` to verify the additional runtime.
 
+### Ghostty terminals
+
+All three image builds include Ghostty's `xterm-ghostty` terminfo entry and
+image-local Bash/Zsh shell integration. Container attachment must preserve
+`TERM=xterm-ghostty`; do not replace it with `xterm-256color`, mount the host's
+terminfo directory, or point `TERMINFO` at a host-only path. The image does not
+install the Ghostty GUI.
+
+The support is installed at image build time, so recreate an existing
+container after upgrading to an image with this change. SSH sessions launched
+from Ghostty should preserve `TERM`; the RoR images already contain the entry
+and other remote hosts need their own compatible terminfo installation.
+
+Existing home dotfiles are preserved. To enable the optional integration in
+a customized home, add this at the top of `.bashrc`:
+
+```bash
+if [[ $- == *i* && "${TERM:-}" == "xterm-ghostty" && "${ROR_GHOSTTY_SHELL_INTEGRATION:-1}" != 0 ]] && ! declare -F __ghostty_hook >/dev/null; then
+    source /usr/share/ror/ghostty/shell-integration/bash/ghostty.bash
+fi
+```
+
+For Zsh, add this to `.zshrc`:
+
+```zsh
+if [[ -o interactive && "${TERM:-}" == "xterm-ghostty" && "${ROR_GHOSTTY_SHELL_INTEGRATION:-1}" != 0 ]]; then
+    source -- /usr/share/ror/ghostty/shell-integration/zsh/ghostty-integration
+fi
+```
+
+Set `ROR_GHOSTTY_SHELL_INTEGRATION=0` before shell startup to opt out of the
+RoR hooks. `GHOSTTY_SHELL_FEATURES` remains available for upstream optional
+features; prompt markers and working-directory reporting work without it.
+The host's Ghostty configuration is not forwarded automatically over SSH.
+For Docker attachment from the host, use `docker exec -it -e TERM="$TERM"
+<container> zsh`. Keep tmux's own `TERM` inside tmux.
+
 ---
 
 ## 📄 License

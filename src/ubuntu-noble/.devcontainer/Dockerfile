@@ -39,15 +39,22 @@ RUN apt-get update && \
         just \
         jq \
         locales \
+        ncurses-bin \
         openssh-client \
         procps \
         sudo \
         tzdata \
         unzip \
+        util-linux \
         wget \
         zsh && \
     locale-gen C.UTF-8 && \
     rm -rf /var/lib/apt/lists/*
+
+COPY src/common/ghostty /usr/share/ror/ghostty
+COPY src/common/scripts/install-ghostty-support.sh /usr/local/bin/install-ghostty-support.sh
+RUN chmod +x /usr/local/bin/install-ghostty-support.sh && \
+    /usr/local/bin/install-ghostty-support.sh
 
 COPY src/common/scripts/install-docker-compose.sh /usr/local/bin/install-docker-compose.sh
 

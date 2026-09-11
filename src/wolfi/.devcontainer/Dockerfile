@@ -59,6 +59,7 @@ RUN apk add --no-cache \
     just \
     jq \
     libstdc++ \
+    ncurses \
     openssh-client \
     posix-libc-utils \
     procps \
@@ -246,6 +247,12 @@ COPY --chmod=0755 src/wolfi/scripts/apk-wrapper.sh /sbin/apk
 # Copy first run notice for VS Code to display
 RUN mkdir -p /usr/local/etc/vscode-dev-containers
 COPY src/common/first-run-notice.txt /usr/local/etc/vscode-dev-containers/first-run-notice.txt
+
+COPY src/common/ghostty /usr/share/ror/ghostty
+COPY src/common/scripts/install-ghostty-support.sh /usr/local/bin/install-ghostty-support.sh
+RUN chmod +x /usr/local/bin/install-ghostty-support.sh && \
+    apk add --no-cache script && \
+    /usr/local/bin/install-ghostty-support.sh
 
 # Copy shell configuration (backup to /usr/share/ror/config/ survives home volume mounts)
 RUN mkdir -p /usr/share/ror/config /etc/docker /home/vscode/.config/containers && \

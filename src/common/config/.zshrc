@@ -8,6 +8,14 @@
 # VS Code injects prompt markers that display as %{%}∙%{%} when using Starship
 unset VSCODE_SHELL_INTEGRATION
 
+# Ghostty shell integration is image-local so container shells do not depend
+# on the host Ghostty resource directory.
+if [[ -o interactive && "${TERM:-}" == "xterm-ghostty" && \
+    "${ROR_GHOSTTY_SHELL_INTEGRATION:-1}" != 0 && \
+    -r /usr/share/ror/ghostty/shell-integration/zsh/ghostty-integration ]]; then
+    source -- /usr/share/ror/ghostty/shell-integration/zsh/ghostty-integration
+fi
+
 # ============================================================================
 # FIRST-RUN NOTICE (client-agnostic fallback)
 # ============================================================================

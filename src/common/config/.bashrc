@@ -2,6 +2,16 @@
 # Room of Requirement DevContainer - Bash Configuration
 # Starship prompt shared with zsh via starship.toml
 
+# Ghostty shell integration is image-local so container shells do not depend
+# on the host Ghostty resource directory.
+if [[ $- == *i* && "${TERM:-}" == "xterm-ghostty" && \
+    "${ROR_GHOSTTY_SHELL_INTEGRATION:-1}" != 0 && \
+    -r /usr/share/ror/ghostty/shell-integration/bash/ghostty.bash ]]; then
+    if ! declare -F __ghostty_hook >/dev/null; then
+        builtin source /usr/share/ror/ghostty/shell-integration/bash/ghostty.bash
+    fi
+fi
+
 # ============================================================================
 # PATH CONFIGURATION
 # ============================================================================
