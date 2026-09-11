@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.2](https://github.com/joshyorko/room-of-requirement/compare/v1.20.1...v1.20.2) (2026-09-11)
+
+
+### 🐛 Bug Fixes
+
+* support Ghostty terminals across all image streams ([#424](https://github.com/joshyorko/room-of-requirement/issues/424)) ([1d2b0b5](https://github.com/joshyorko/room-of-requirement/commit/1d2b0b5ba1deeef9c3ba8230f22dff270806c256))
+
 ## [1.20.1](https://github.com/joshyorko/room-of-requirement/compare/v1.20.0...v1.20.1) (2026-09-07)
 
 
