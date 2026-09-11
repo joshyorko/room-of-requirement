@@ -1,8 +1,14 @@
 name: Release Please
 
 on:
+  workflow_run:
+    workflows: [Build Devcontainers]
+    types: [completed]
   push:
     branches: [main]
+    paths:
+      - '.release-please-manifest.json'
+      - 'CHANGELOG.md'
   workflow_dispatch:
 
 permissions:
@@ -10,7 +16,11 @@ permissions:
 
 jobs:
   release-please:
-    if: github.ref == 'refs/heads/main'
+    if: >-
+      (github.event_name == 'workflow_run' && github.event.workflow_run.conclusion == 'success' &&
+      github.event.workflow_run.head_branch == 'main') ||
+      (github.event_name == 'push' && github.ref == 'refs/heads/main') ||
+      (github.event_name == 'workflow_dispatch' && github.ref == 'refs/heads/main')
     runs-on: ubuntu-latest
     permissions:
       contents: write
