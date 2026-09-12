@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.3](https://github.com/joshyorko/room-of-requirement/compare/v1.20.2...v1.20.3) (2026-09-11)
+
+
+### 🐛 Bug Fixes
+
+* serialize release preparation after image verification ([#426](https://github.com/joshyorko/room-of-requirement/issues/426)) ([ead5fe0](https://github.com/joshyorko/room-of-requirement/commit/ead5fe0802acfcc3c2d460be355c35139a56297c))
+
 ## [1.20.2](https://github.com/joshyorko/room-of-requirement/compare/v1.20.1...v1.20.2) (2026-09-11)
 
 
