@@ -30,7 +30,7 @@ def main():
                "--docker-path", str(Path(__file__).resolve().with_name("build_metadata.py"))]
     if plan["refresh"]:
         # CLI 0.89.0 forwards --no-cache AND --pull for Dockerfile builds,
-        # refreshing mutable apt/apk/Brew/feature installations on the monthly run.
+        # Refresh mutable apt/apk/Brew/feature installations when requested by the caller.
         command.append("--no-cache")
     if plan["publish"]:
         command.append("--push")

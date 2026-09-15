@@ -47,6 +47,6 @@ jobs:
     with:
       variant: ${{ matrix.variant }}
       publish: ${{ github.event_name == 'push' || github.event_name == 'schedule' || inputs.publish == true }}
-      refresh: ${{ github.event_name == 'schedule' }}
+      refresh: ${{ github.event_name == 'schedule' || github.event_name == 'push' }}
       fail_on_critical: true
     secrets: inherit

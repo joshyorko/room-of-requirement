@@ -120,6 +120,13 @@ else:
                         self.assertTrue(any(fnmatch.fnmatch("tests/" + suite.name, pattern)
                                             for pattern in workflow["on"][event]["paths"]))
 
+    def test_published_main_builds_refresh_mutable_dependencies(self):
+        workflow = yaml.load((ROOT / ".github/workflows/build-devcontainers.yml").read_text(),
+                             Loader=yaml.BaseLoader)
+        refresh = workflow["jobs"]["images"]["with"]["refresh"]
+        self.assertIn("github.event_name == 'schedule'", refresh)
+        self.assertIn("github.event_name == 'push'", refresh)
+
 
 if __name__ == "__main__":
     unittest.main()
