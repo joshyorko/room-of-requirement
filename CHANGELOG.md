@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.4](https://github.com/joshyorko/room-of-requirement/compare/v1.20.3...v1.20.4) (2026-09-15)
+
+
+### 🐛 Bug Fixes
+
+* refresh published image dependencies ([68c6dad](https://github.com/joshyorko/room-of-requirement/commit/68c6dad47500955a3cd8023750071e44b7b25ee9))
+
 ## [1.20.3](https://github.com/joshyorko/room-of-requirement/compare/v1.20.2...v1.20.3) (2026-09-11)
 
 
