@@ -90,21 +90,33 @@ class CliBuildTests(unittest.TestCase):
                         CI_DOCKER_STATE=str(self.root / "state.json"), RUNNER_TEMP=str(self.root),
                         GITHUB_OUTPUT=str(self.root / "output"), PYTHONDONTWRITEBYTECODE="1")
 
-    def build(self, with_feature, run_id="123"):
+    def build(self, with_feature, run_id="123", event="schedule", refresh=False):
         config = dict(build=dict(dockerfile="Dockerfile", context="../../.."))
         if with_feature:
             config["features"] = {"../../../.devcontainer/feature": {}}
         (self.config / "devcontainer.json").write_text(json.dumps(config))
         state_path = self.root / "state.json"
         state_path.unlink(missing_ok=True)
-        request = dict(event="schedule", ref="refs/heads/main", source=self.source,
+        ref = "refs/pull/1/merge" if event == "pull_request" else "refs/heads/main"
+        request = dict(event=event, ref=ref, source=self.source,
                        repository="owner/repo", variant="wolfi", run_id=run_id, run_attempt="1",
-                       publish=True, enforce=True, refresh=False, release_version="")
+                       publish=True, enforce=True, refresh=refresh, release_version="")
         result = subprocess.run([str(SCRIPTS / "build_image.py")], cwd=self.root,
                                 env=self.env | {"REQUEST": json.dumps(request)},
                                 text=True, capture_output=True, timeout=60, check=False)
         self.assertEqual(result.returncode, 0, result.stderr[-4000:])
         return json.loads(state_path.read_text()), request
+
+    def test_refreshed_pr_builds_pull_without_cache_and_never_publish(self):
+        for feature in (False, True):
+            with self.subTest(feature=feature):
+                state, _ = self.build(feature, event="pull_request", refresh=True)
+                self.assertEqual(len(state["builds"]), 1)
+                build = state["builds"][0]
+                for flag in ("--no-cache", "--pull"):
+                    self.assertIn(flag, build)
+                for flag in ("--cache-to", "--push"):
+                    self.assertNotIn(flag, build)
 
     def test_actual_cli_places_run_metadata_on_its_single_final_build_with_and_without_features(self):
         for feature in (False, True):
