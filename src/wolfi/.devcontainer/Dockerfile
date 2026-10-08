@@ -7,10 +7,10 @@
 # ARG PINS: Base image version
 # ============================================================================
 # Wolfi base image - kept current by maintenance robot for security patches
-ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:238642d42c5613936474d00b900c4e65fb6f637d8991c913403ff09a09cf43a3
+ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:05d24163df148be377275af8374c16523a1dc7e19bf4f1c689784791553c5e45
 # Official Docker CLI image used to override Wolfi's CLI binary while Wolfi's
 # docker-cli package is still built with a vulnerable Go stdlib revision.
-ARG DOCKER_CLI_IMAGE=docker:29.8.2-cli@sha256:b1805116a6a86cc591b5d5f60a910a0715cdcc9d18d866ad68b1457ead25c35c
+ARG DOCKER_CLI_IMAGE=docker:29.8.2-cli@sha256:35cfcf893c20f2931f4909151b5407aaaeab711277de7ce8b8f521f095d54c32
 ARG DOCKER_COMPOSE_VERSION=v5.5.1
 
 # Upstream Docker CLI binary pinned to the newest published Docker CLI image.
