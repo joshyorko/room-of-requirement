@@ -382,3 +382,248 @@ ignore:
     package:
       name: busybox
       type: apk
+
+  # ============================================================================
+  # Go advisories observed in Build Devcontainers run 38239680002 (2026-10-12).
+  # GO-2026-6604 concerns Windows junctions; builds target linux/amd64.
+  # https://vuln.go.dev/ID/GO-2026-6604.json
+  # GO-2026-6612 / CVE-2026-78663 remain in published container tools.
+  # https://vuln.go.dev/ID/GO-2026-6612.json
+  # Upstream Compose v5.6.0 and Buildx v0.38.0 still embed affected Go code.
+  # Wolfi public feeds lack buildah 1.45.1-r3, skopeo 1.24.1-r3, and
+  # podman-6.0 6.0.2-r11, despite the scan database reporting those fixes.
+  # HTTP/2 exceptions accept residual risk; they do not patch the binaries.
+  # Remove each exception when its upstream binary/package is rebuilt.
+  # Exact versions and locations leave other Critical-with-fix findings fatal.
+  # ============================================================================
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.58.0
+      location: /usr/local/bin/docker-compose
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.58.0
+      location: /usr/bin/ctr
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.58.0
+      location: /usr/bin/containerd
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.59.0
+      location: /usr/libexec/docker/cli-plugins/docker-buildx
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.8
+      location: /usr/libexec/docker/cli-plugins/docker-buildx
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.8
+      location: /usr/local/bin/docker-compose
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.8
+      location: /usr/libexec/docker/cli-plugins/docker-buildx
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.8
+      location: /usr/local/bin/docker-compose
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.59.0
+      location: /usr/bin/dockerd
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.59.0
+      location: /usr/bin/docker
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.27.1
+      location: /usr/bin/dockerd
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.27.1
+      location: /usr/bin/containerd
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.27.1
+      location: /usr/bin/ctr
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.27.1
+      location: /usr/bin/containerd
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.27.1
+      location: /usr/bin/dockerd
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.27.1
+      location: /usr/bin/docker
+  - vulnerability: CVE-2026-78663
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: buildah
+      type: apk
+      version: 1.44.0-r1
+      location: /usr/lib/apk/db/installed
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.54.0
+      location: /usr/bin/buildah
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.55.0
+      location: /usr/bin/skopeo
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.56.0
+      location: /usr/bin/podman
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: golang.org/x/net
+      type: go-module
+      version: v0.56.0
+      location: /usr/bin/podman-remote
+  - vulnerability: CVE-2026-78663
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: podman-6.0
+      type: apk
+      version: 6.0.2-r2
+      location: /usr/lib/apk/db/installed
+  - vulnerability: CVE-2026-78663
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: skopeo
+      type: apk
+      version: 1.23.0-r0
+      location: /usr/lib/apk/db/installed
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.3
+      location: /usr/bin/skopeo
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.4
+      location: /usr/bin/buildah
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.6
+      location: /usr/bin/podman-remote
+  - vulnerability: GO-2026-6612
+    reason: Temporary exception pending upstream rebuild; fixed public artifact unavailable
+      on 2026-10-12. Exact package, version, and image path only.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.6
+      location: /usr/bin/podman
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.4
+      location: /usr/bin/buildah
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.6
+      location: /usr/bin/podman-remote
+  - vulnerability: GO-2026-6604
+    reason: Windows-only os.Root junction advisory; these images target linux/amd64.
+    package:
+      name: stdlib
+      type: go-module
+      version: go1.26.6
+      location: /usr/bin/podman
