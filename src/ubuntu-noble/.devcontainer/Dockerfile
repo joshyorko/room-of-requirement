@@ -18,6 +18,7 @@ RUN apt-get update && \
         python3 && \
     rm -rf /var/lib/apt/lists/*
 COPY src/common/container-tools /build/container-tools
+ENV GOPATH=/root/go
 RUN --mount=type=cache,target=/root/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     python3 /build/container-tools/build.py --output /out
