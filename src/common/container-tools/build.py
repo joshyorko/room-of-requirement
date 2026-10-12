@@ -61,7 +61,7 @@ def extract_source(archive, expected, destination):
         if len(roots) != 1:
             raise ValueError('source archive must have exactly one release root')
         destination.mkdir(parents=True)
-        source.extractall(destination)
+        source.extractall(destination, filter='data')
     return destination / roots.pop()
 
 

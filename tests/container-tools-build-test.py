@@ -11,6 +11,7 @@ import subprocess
 import tarfile
 import tempfile
 import unittest
+from unittest.mock import patch
 
 HELPERS = Path(__file__).resolve().parents[1] / 'src/common/container-tools'
 sys.path.insert(0, str(HELPERS))
@@ -23,10 +24,11 @@ class SourceBuildTests(unittest.TestCase):
         cls.builder = importlib.util.module_from_spec(specification)
         specification.loader.exec_module(cls.builder)
 
-    def archive(self, directory, name, link=None):
+    def archive(self, directory, name, link=None, mode=0o644):
         path = directory / 'source.tar.gz'
         with tarfile.open(path, 'w:gz') as archive:
             member = tarfile.TarInfo(name)
+            member.mode = mode
             if link:
                 member.type = tarfile.SYMTYPE
                 member.linkname = link
@@ -58,6 +60,16 @@ class SourceBuildTests(unittest.TestCase):
             archive = self.archive(root, 'release/link', '../../escaped')
             with self.assertRaisesRegex(ValueError, 'unsafe'):
                 self.builder.extract_source(archive, self.builder.sha256(archive), root / 'out')
+
+    def test_source_archive_cannot_preserve_privileged_mode_bits(self):
+        with tempfile.TemporaryDirectory() as temporary:
+            root = Path(temporary)
+            archive = self.archive(root, 'release/tool', mode=0o6755)
+            # Model Python 3.11's permissive default in the Debian builder.
+            with patch.object(tarfile.TarFile, 'extraction_filter',
+                              staticmethod(tarfile.fully_trusted_filter)):
+                extracted = self.builder.extract_source(archive, self.builder.sha256(archive), root / 'out')
+            self.assertEqual((extracted / 'tool').stat().st_mode & 0o6000, 0)
 
     def test_extracts_single_source_root(self):
         with tempfile.TemporaryDirectory() as temporary:
