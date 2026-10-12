@@ -147,6 +147,8 @@ def native_dependencies(binaries, initial, env):
 
 
 def build_bundle(output, wolfi=False, source_cache=None):
+    if not hasattr(tarfile, 'data_filter'):
+        raise RuntimeError('Source builder requires Python with tarfile.data_filter support')
     configuration = json.loads((HERE / 'sources.json').read_text())
     env = dict(os.environ, GOTOOLCHAIN='local', GOOS='linux', GOFLAGS='', CGO_ENABLED='0',
                GOMAXPROCS=os.environ.get('GOMAXPROCS', '2'))

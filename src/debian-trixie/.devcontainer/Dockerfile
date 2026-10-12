@@ -1,21 +1,11 @@
 # syntax=docker/dockerfile:1.28@sha256:bb22d9815c728170f72750f4e5b0d672e06176142e1d602c7e66c050100b7e5b
 
-ARG ROR_GO_BUILDER_IMAGE=golang:1.27.2-bookworm@sha256:5cf287a799e6b94384bad13d16b14904c531f51ba65792237e122ce42b392f61
+ARG ROR_GO_BUILDER_IMAGE=golang:1.27.2-trixie@sha256:e58d6f83b3416618d8bcac2b3dde1b7f7e3c4a77d25e88637f8bbae81536c48d
 
 # Rebuild embedded Go dependencies before any runtime image is assembled.
 FROM ${ROR_GO_BUILDER_IMAGE} AS container-tools-build
 RUN apt-get update && \
-    apt-get install -y --no-install-recommends \
-        libapparmor-dev \
-        libbtrfs-dev \
-        libdevmapper-dev \
-        libgpgme-dev \
-        libseccomp-dev \
-        libselinux1-dev \
-        libsqlite3-dev \
-        libsystemd-dev \
-        pkg-config \
-        python3 && \
+    apt-get install -y --no-install-recommends python3 && \
     rm -rf /var/lib/apt/lists/*
 COPY src/common/container-tools /build/container-tools
 ENV GOPATH=/root/go
