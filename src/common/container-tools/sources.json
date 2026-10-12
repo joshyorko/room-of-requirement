@@ -1,0 +1,42 @@
+{
+  "go_version": "go1.27.2",
+  "x_net_version": "v0.60.0",
+  "sources": {
+    "compose": {
+      "version": "5.5.1",
+      "revision": "5f94fb0aa42a2cd1248c6e6c7fafb87546b9c8de",
+      "url": "https://codeload.github.com/docker/compose/tar.gz/refs/tags/v5.5.1",
+      "sha256": "311077662698fd8e34769a894f9d5240befb1730990efa8ed58e0fa8725d2d84"
+    },
+    "buildx": {
+      "version": "0.38.0",
+      "revision": "0dbe87f36ed472fe36b6796c3f70b4210a731fc5",
+      "url": "https://codeload.github.com/docker/buildx/tar.gz/refs/tags/v0.38.0",
+      "sha256": "f4705415fe4e011f19c6fe0fa324fef81236791815c51bb6210b3bbbca5b1319"
+    },
+    "containerd": {
+      "version": "2.4.1",
+      "revision": "f2551031d7276a770f65f98c9b52e57e7dad07e8",
+      "url": "https://codeload.github.com/containerd/containerd/tar.gz/refs/tags/v2.4.1",
+      "sha256": "c213c8222ec2b51f88eb541cd75e5905b35ae7d0b82d6d812f0b8121d11131a6"
+    },
+    "buildah": {
+      "version": "1.45.2",
+      "revision": "e6fe86e627dc3af52637e26e42f2cb26b92b8758",
+      "url": "https://codeload.github.com/containers/buildah/tar.gz/refs/tags/v1.45.2",
+      "sha256": "bcf85e76b9d1ce18a20efb32d330a624e7ee6fd368ae1da4ef0b17b0738615c9"
+    },
+    "podman": {
+      "version": "6.0.2",
+      "revision": "b28edb9ad70ce4317dc762ee9ce0a6d081d154e9",
+      "url": "https://codeload.github.com/containers/podman/tar.gz/refs/tags/v6.0.2",
+      "sha256": "0895a541aeb7aa8e99133ed2b328c1bb40fd397b7c3b01e083396c90e8628756"
+    },
+    "skopeo": {
+      "version": "1.24.1",
+      "revision": "77f3d92f861271c7cb9175afcf876017bcae9202",
+      "url": "https://codeload.github.com/containers/skopeo/tar.gz/refs/tags/v1.24.1",
+      "sha256": "6a3f342a327ec7684198eb0e15114940b6101506db48d9a96590f5942cb3b335"
+    }
+  }
+}

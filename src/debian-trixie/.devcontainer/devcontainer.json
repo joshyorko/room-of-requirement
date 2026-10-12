@@ -24,7 +24,8 @@
       "version": "latest",
       "moby": false,
       "dockerDashComposeVersion": "none"
-    }
+    },
+    "../../../.devcontainer/features/container-tools": {}
   },
   "privileged": true,
   "overrideCommand": false,

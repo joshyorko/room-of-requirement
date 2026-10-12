@@ -22,9 +22,10 @@
   "features": {
     "ghcr.io/devcontainers/features/docker-in-docker:4": {
       "version": "latest",
-      "moby": true,
+      "moby": false,
       "dockerDashComposeVersion": "none"
-    }
+    },
+    "../../../.devcontainer/features/container-tools": {}
   },
   "privileged": true,
   "overrideCommand": false,
