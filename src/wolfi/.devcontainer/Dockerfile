@@ -15,7 +15,7 @@ ARG DOCKER_CLI_IMAGE=docker:29.9.0-cli@sha256:1a4c7cb63513f349bdad01fcc6e0f3f2f6
 # Upstream Docker CLI binary pinned to the newest published Docker CLI image.
 # Grype ignores the remaining stdlib CVE in /usr/bin/docker until Docker ships
 # a rebuilt CLI with a fixed Go toolchain.
-ARG ROR_GO_BUILDER_IMAGE=golang:1.27.2-trixie@sha256:e58d6f83b3416618d8bcac2b3dde1b7f7e3c4a77d25e88637f8bbae81536c48d
+ARG ROR_GO_BUILDER_IMAGE=golang:1.27.2-trixie@sha256:47667934874913a449b96faa7ef4777fa285d9ec29126ee80ed61c45b7cccf0e
 
 # Rebuild embedded Go dependencies before any runtime image is assembled.
 FROM ${ROR_GO_BUILDER_IMAGE} AS container-tools-build
