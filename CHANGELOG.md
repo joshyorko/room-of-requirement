@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.20.6](https://github.com/joshyorko/room-of-requirement/compare/v1.20.5...v1.20.6) (2026-10-13)
+
+
+### 🐛 Bug Fixes
+
+* migrate Azure CLI Brewfile entry to cask ([#485](https://github.com/joshyorko/room-of-requirement/issues/485)) ([d494d86](https://github.com/joshyorko/room-of-requirement/commit/d494d864755dc0617737eef551745ba8e2650bbe))
+* rebuild container tools with patched Go dependencies ([#484](https://github.com/joshyorko/room-of-requirement/issues/484)) ([9707a11](https://github.com/joshyorko/room-of-requirement/commit/9707a11db794e41e0dc50bf3705933e78f799e51))
+* reduce SBOM file metadata for attestation uploads ([#487](https://github.com/joshyorko/room-of-requirement/issues/487)) ([eab8de4](https://github.com/joshyorko/room-of-requirement/commit/eab8de4205b49c84968af324269ea3f9a1d0a2e8))
+
 ## [1.20.5](https://github.com/joshyorko/room-of-requirement/compare/v1.20.4...v1.20.5) (2026-10-02)
 
 
