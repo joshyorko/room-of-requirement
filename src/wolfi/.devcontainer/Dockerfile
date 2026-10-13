@@ -11,11 +11,43 @@ ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:1c451d46a0d5c4e
 # Official Docker CLI image used to override Wolfi's CLI binary while Wolfi's
 # docker-cli package is still built with a vulnerable Go stdlib revision.
 ARG DOCKER_CLI_IMAGE=docker:29.9.0-cli@sha256:1a4c7cb63513f349bdad01fcc6e0f3f2f67d37b9da86f14dc0d4a0942eecda00
-ARG DOCKER_COMPOSE_VERSION=v5.5.1
 
 # Upstream Docker CLI binary pinned to the newest published Docker CLI image.
 # Grype ignores the remaining stdlib CVE in /usr/bin/docker until Docker ships
 # a rebuilt CLI with a fixed Go toolchain.
+ARG ROR_GO_BUILDER_IMAGE=golang:1.27.2-trixie@sha256:e58d6f83b3416618d8bcac2b3dde1b7f7e3c4a77d25e88637f8bbae81536c48d
+
+# Rebuild embedded Go dependencies before any runtime image is assembled.
+FROM ${ROR_GO_BUILDER_IMAGE} AS container-tools-build
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 && \
+    rm -rf /var/lib/apt/lists/*
+COPY src/common/container-tools /build/container-tools
+ENV GOPATH=/root/go
+RUN --mount=type=cache,target=/root/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    python3 /build/container-tools/build.py --output /out
+
+
+# Keep native signing/storage libraries on Wolfi's own ABI.
+FROM ${WOLFI_BASE_IMAGE} AS container-tools-native
+RUN apk add --no-cache \
+    btrfs-progs-dev \
+    build-base \
+    curl \
+    gpgme-dev \
+    libseccomp-dev \
+    pkgconf \
+    python-3.15 \
+    sqlite-dev
+RUN apk add --no-cache systemd-dev
+COPY --from=container-tools-build /usr/local/go /usr/local/go
+ENV PATH="/usr/local/go/bin:${PATH}"
+COPY src/common/container-tools /build/container-tools
+RUN --mount=type=cache,target=/root/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    python3 /build/container-tools/build.py --output /out --wolfi
+
 FROM ${DOCKER_CLI_IMAGE} AS docker-cli-upstream
 
 # ============================================================================
@@ -24,7 +56,6 @@ FROM ${DOCKER_CLI_IMAGE} AS docker-cli-upstream
 FROM ${WOLFI_BASE_IMAGE} AS base
 
 ARG TARGETARCH
-ARG DOCKER_COMPOSE_VERSION
 
 LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement"
@@ -40,7 +71,6 @@ ENV LANG=C.UTF-8 \
     TZ=UTC \
     DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true
 
-COPY src/common/scripts/install-docker-compose.sh /usr/local/bin/install-docker-compose.sh
 
 # Install system packages (minimal set for devcontainer features to work)
 # Security: Use fixed versions where available, keep minimal footprint
@@ -118,10 +148,6 @@ RUN apk add --no-cache \
     pango \
     playwright \
     xdg-utils && \
-    chmod +x /usr/local/bin/install-docker-compose.sh && \
-    DOCKER_COMPOSE_VERSION="${DOCKER_COMPOSE_VERSION}" \
-    TARGETARCH="${TARGETARCH}" \
-    /usr/local/bin/install-docker-compose.sh && \
     # Verify critical security tools
     curl --version && \
     git --version
@@ -237,6 +263,9 @@ USER 0
 # Security updates remain build-fatal; only stale world-file cleanup is optional.
 COPY --chmod=0755 src/wolfi/scripts/security-update.sh /usr/local/bin/ror-security-update.sh
 RUN /usr/local/bin/ror-security-update.sh
+
+COPY --from=container-tools-native /out /usr/local/share/ror/container-tools
+RUN /usr/local/share/ror/container-tools/install.sh
 
 # Create apk wrapper that filters out gcompat requests
 # VS Code/DevPod keeps trying to install gcompat even with DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true

@@ -1,0 +1,9 @@
+{
+  "id": "container-tools",
+  "version": "1.0.0",
+  "name": "Source-built container tools",
+  "description": "Restore checksum-verified source-built tools after Docker-in-Docker setup.",
+  "installsAfter": [
+    "ghcr.io/devcontainers/features/docker-in-docker"
+  ]
+}

@@ -1,9 +1,21 @@
 # syntax=docker/dockerfile:1.28@sha256:bb22d9815c728170f72750f4e5b0d672e06176142e1d602c7e66c050100b7e5b
 
+ARG ROR_GO_BUILDER_IMAGE=golang:1.27.2-trixie@sha256:e58d6f83b3416618d8bcac2b3dde1b7f7e3c4a77d25e88637f8bbae81536c48d
+
+# Rebuild embedded Go dependencies before any runtime image is assembled.
+FROM ${ROR_GO_BUILDER_IMAGE} AS container-tools-build
+RUN apt-get update && \
+    apt-get install -y --no-install-recommends python3 && \
+    rm -rf /var/lib/apt/lists/*
+COPY src/common/container-tools /build/container-tools
+ENV GOPATH=/root/go
+RUN --mount=type=cache,target=/root/go/pkg/mod \
+    --mount=type=cache,target=/root/.cache/go-build \
+    python3 /build/container-tools/build.py --output /out
+
 FROM mcr.microsoft.com/devcontainers/base:ubuntu-24.04@sha256:d94c97dd9cacf183d0a6fd12a8e87b526e9e928307674ae9c94139139c0c6eae
 
 ARG TARGETARCH
-ARG DOCKER_COMPOSE_VERSION=v5.5.1
 
 LABEL maintainer="Josh Yorko <joshua.yorko@gmail.com>"
 LABEL org.opencontainers.image.title="Room of Requirement Ubuntu Noble"
@@ -56,12 +68,8 @@ COPY src/common/scripts/install-ghostty-support.sh /usr/local/bin/install-ghostt
 RUN chmod +x /usr/local/bin/install-ghostty-support.sh && \
     /usr/local/bin/install-ghostty-support.sh
 
-COPY src/common/scripts/install-docker-compose.sh /usr/local/bin/install-docker-compose.sh
-
-RUN chmod +x /usr/local/bin/install-docker-compose.sh && \
-    DOCKER_COMPOSE_VERSION="${DOCKER_COMPOSE_VERSION}" \
-    TARGETARCH="${TARGETARCH}" \
-    /usr/local/bin/install-docker-compose.sh
+COPY --from=container-tools-build /out /usr/local/share/ror/container-tools
+RUN /usr/local/share/ror/container-tools/install.sh
 
 RUN groupadd -f docker && \
     usermod -aG docker vscode
