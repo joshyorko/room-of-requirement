@@ -171,6 +171,9 @@ jobs:
         run: .github/scripts/template_smoke.py
       - name: Generate SPDX SBOM from the tested image
         uses: anchore/sbom-action@66cbf4bc1f1c0d2edc94016e65bc221b6bb0ad6c  # v0.24.3
+        env:
+          # Keep optional file metadata out of large transparency-log requests.
+          SYFT_FILE_METADATA_SELECTION: none
         with:
           image: ${{ steps.build.outputs.scan_image }}
           syft-version: v1.51.1
