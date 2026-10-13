@@ -4,7 +4,7 @@ tap "hashicorp/tap"
 
 # Cloud CLIs
 brew "awscli"              # AWS CLI v2
-brew "azure-cli"           # Azure CLI
+cask "azure-cli"           # Azure CLI
 
 # Infrastructure as Code
 brew "hashicorp/tap/terraform"  # Infrastructure as code
