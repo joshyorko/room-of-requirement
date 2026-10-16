@@ -10,7 +10,7 @@
 ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:256c88bb066424045021090932d50be93c8e3f2ce3586707702a401b146f3e43
 # Official Docker CLI image used to override Wolfi's CLI binary while Wolfi's
 # docker-cli package is still built with a vulnerable Go stdlib revision.
-ARG DOCKER_CLI_IMAGE=docker:29.9.0-cli@sha256:1a4c7cb63513f349bdad01fcc6e0f3f2f67d37b9da86f14dc0d4a0942eecda00
+ARG DOCKER_CLI_IMAGE=docker:29.9.1-cli@sha256:6fae2214c3121a28d5aa639d09032f61310b7c9c75ffbad1025f261a1b621800
 
 # Upstream Docker CLI binary pinned to the newest published Docker CLI image.
 # Grype ignores the remaining stdlib CVE in /usr/bin/docker until Docker ships
