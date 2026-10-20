@@ -5,6 +5,7 @@ import importlib.util
 import io
 import os
 from pathlib import Path
+import re
 import sys
 import shutil
 import subprocess
@@ -23,6 +24,17 @@ class SourceBuildTests(unittest.TestCase):
         specification = importlib.util.spec_from_file_location('container_build', HELPERS / 'build.py')
         cls.builder = importlib.util.module_from_spec(specification)
         specification.loader.exec_module(cls.builder)
+
+    def test_builder_images_match_required_go_toolchain(self):
+        root = HELPERS.parents[2]
+        for variant in ('debian-trixie', 'ubuntu-noble', 'wolfi'):
+            with self.subTest(variant=variant):
+                dockerfile = root / 'src' / variant / '.devcontainer/Dockerfile'
+                match = re.search(r'^ARG ROR_GO_BUILDER_IMAGE=golang:([^@\s]+)',
+                                  dockerfile.read_text(), re.MULTILINE)
+                self.assertIsNotNone(match)
+                self.assertEqual('go' + match[1].removesuffix('-trixie'),
+                                 self.builder.GO_VERSION)
 
     def archive(self, directory, name, link=None, mode=0o644):
         path = directory / 'source.tar.gz'
@@ -79,7 +91,7 @@ class SourceBuildTests(unittest.TestCase):
             self.assertEqual((extracted / 'go.mod').read_bytes(), b'data')
 
     def test_parses_real_go_build_metadata_and_replacements(self):
-        metadata = '/out/bin/ctr: go1.27.2\n\tpath\tgithub.com/containerd/containerd/v2/cmd/ctr\n\tmod\tgithub.com/containerd/containerd/v2\t(devel)\t\n\tdep\tgolang.org/x/net\tv0.60.0\th1:abc=\n\tbuild\tCGO_ENABLED=0\n'
+        metadata = f'/out/bin/ctr: {self.builder.GO_VERSION}\n\tpath\tgithub.com/containerd/containerd/v2/cmd/ctr\n\tmod\tgithub.com/containerd/containerd/v2\t(devel)\t\n\tdep\tgolang.org/x/net\tv0.60.0\th1:abc=\n\tbuild\tCGO_ENABLED=0\n'
         self.builder.validate_go_metadata(metadata, static=True)
         with self.assertRaisesRegex(ValueError, 'x/net'):
             self.builder.validate_go_metadata(metadata.replace('v0.60.0', 'v0.59.0'), static=True)
@@ -156,10 +168,10 @@ class SourceBuildTests(unittest.TestCase):
             self.assertEqual(actual, ['runtime-helper', 'so:libc.so.6'])
 
     def test_rejects_old_standard_library_and_wrong_cgo(self):
-        with self.assertRaisesRegex(ValueError, 'go1.27.2'):
+        with self.assertRaisesRegex(ValueError, re.escape(self.builder.GO_VERSION)):
             self.builder.validate_go_metadata('/out/bin/ctr: go1.27.1\n\tbuild\tCGO_ENABLED=0\n', static=True)
         with self.assertRaisesRegex(ValueError, 'CGO_ENABLED'):
-            self.builder.validate_go_metadata('/out/bin/podman: go1.27.2\n\tbuild\tCGO_ENABLED=0\n', static=False)
+            self.builder.validate_go_metadata(f'/out/bin/podman: {self.builder.GO_VERSION}\n\tbuild\tCGO_ENABLED=0\n', static=False)
 
 
 if __name__ == '__main__':
