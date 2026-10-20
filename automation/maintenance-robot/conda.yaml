@@ -7,14 +7,14 @@ channels:
 
 dependencies:
   - python=3.13.11
-  - uv=0.12.21
+  - uv=0.13.3
   - nodejs=24.12.0
 
   - pip:
       - requests==2.34.2
       - ruamel.yaml==0.19.1
       - click==8.5.0
-      - robocorp==3.1.4
+      - robocorp==3.1.6
       - robocorp-truststore==0.9.1
       - python-dotenv==1.2.1
 
