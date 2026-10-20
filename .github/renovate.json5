@@ -11,6 +11,19 @@
   "customManagers": [
     {
       "customType": "regex",
+      "description": "Track the Go toolchain required by the container-tool builder.",
+      "managerFilePatterns": [
+        "/^src/common/container-tools/sources\\.json$/"
+      ],
+      "matchStrings": [
+        "\"go_version\":\\s*\"go(?<currentValue>\\d+\\.\\d+\\.\\d+)\""
+      ],
+      "depNameTemplate": "golang",
+      "datasourceTemplate": "docker",
+      "versioningTemplate": "docker"
+    },
+    {
+      "customType": "regex",
       "description": "Track the RCC version used by the maintenance workflow.",
       "managerFilePatterns": [
         "/^\\.github/workflows/rcc-maintenance\\.ya?ml$/"
@@ -23,6 +36,14 @@
       "datasourceTemplate": "github-releases",
       "versioningTemplate": "semver",
       "extractVersionTemplate": "^v?(?<version>.*)$"
+    }
+  ],
+  "packageRules": [
+    {
+      "description": "Keep Go builder images and their required toolchain pin in one PR.",
+      "matchPackageNames": ["golang"],
+      "matchDatasources": ["docker"],
+      "groupName": "Go builder toolchain"
     }
   ]
 }
