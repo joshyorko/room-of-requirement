@@ -1,6 +1,6 @@
 # syntax=docker/dockerfile:1.28@sha256:bb22d9815c728170f72750f4e5b0d672e06176142e1d602c7e66c050100b7e5b
 
-ARG ROR_GO_BUILDER_IMAGE=golang:1.27.2-trixie@sha256:47667934874913a449b96faa7ef4777fa285d9ec29126ee80ed61c45b7cccf0e
+ARG ROR_GO_BUILDER_IMAGE=golang:1.27.3-trixie@sha256:1896654cfc5c2b5ad74c07f29cb36f5d2d1cbed42e3054070fbfe444e521e83c
 
 # Rebuild embedded Go dependencies before any runtime image is assembled.
 FROM ${ROR_GO_BUILDER_IMAGE} AS container-tools-build
