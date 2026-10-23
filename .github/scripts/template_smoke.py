@@ -166,6 +166,7 @@ def smoke(root, meta):
             (evidence / "template-up.json").write_text(result + "\n")
             container = json.loads(result)["containerId"]
             node = capture("devcontainer", "exec", "--workspace-folder", work,
+                           "--container-id", container,
                            "mise", "exec", "--", "node", "--version")
             validate_node(node)
             (evidence / "template-node.txt").write_text(node + "\n")
