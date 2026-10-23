@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.7](https://github.com/joshyorko/room-of-requirement/compare/v1.20.6...v1.20.7) (2026-10-23)
+
+
+### 🐛 Bug Fixes
+
+* **ci:** repair Cosign regression and verify patched Node builds ([#515](https://github.com/joshyorko/room-of-requirement/issues/515)) ([2d98423](https://github.com/joshyorko/room-of-requirement/commit/2d984237bb47d3598a8ee91ed38a587f263325b6))
+
 ## [1.20.6](https://github.com/joshyorko/room-of-requirement/compare/v1.20.5...v1.20.6) (2026-10-13)
 
 
