@@ -18,6 +18,8 @@ import tempfile
 import threading
 import unittest
 
+import yaml
+
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPT = ROOT / ".github/scripts/verify_provenance.py"
 OCI = "application/vnd.oci.image.manifest.v1+json"
@@ -35,9 +37,17 @@ def hashed(value):
 class CosignFormatTests(unittest.TestCase):
     def test_legacy_slsa_is_reached_with_v3_bundles_present_without_relaxing_verification(self):
         cosign = shutil.which("cosign")
-        self.assertIsNotNone(cosign, "Install the pipeline's Cosign 3.1.3 to run this required probe")
+        workflow = yaml.safe_load((ROOT / ".github/workflows/build-image.yml").read_text())
+        releases = {step["with"]["cosign-release"] for job in workflow["jobs"].values()
+                    for step in job.get("steps", [])
+                    if step.get("uses", "").startswith("sigstore/cosign-installer@")}
+        self.assertEqual(len(releases), 1, "All pipeline Cosign installations must use the same release")
+        release = releases.pop()
+        self.assertIsNotNone(cosign, f"Install the pipeline's Cosign {release} to run this required probe")
         version = subprocess.run([cosign, "version"], text=True, capture_output=True, check=True)
-        self.assertIn("v3.1.3", version.stdout + version.stderr)
+        resolved = next(line.split()[1] for line in (version.stdout + version.stderr).splitlines()
+                        if line.startswith("GitVersion:"))
+        self.assertEqual(release, resolved)
         routes, requests = {}, []
 
         def blob(data, media):
