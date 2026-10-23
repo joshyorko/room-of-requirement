@@ -2,6 +2,8 @@
 """Starter application retains lifecycle/features and only isolates CI storage."""
 
 import copy
+import hashlib
+from http.server import BaseHTTPRequestHandler, ThreadingHTTPServer
 import importlib.util
 import json
 import os
@@ -10,6 +12,7 @@ import shutil
 import subprocess
 import sys
 import tempfile
+import threading
 import unittest
 
 SCRIPTS = Path(__file__).resolve().parents[1] / ".github/scripts"
@@ -17,6 +20,59 @@ sys.path.insert(0, str(SCRIPTS))
 
 
 class TemplateTests(unittest.TestCase):
+    def test_template_package_refuses_tampered_registry_bytes(self):
+        module = self.module()
+        blob = b"template archive"
+        digest = "sha256:" + hashlib.sha256(blob).hexdigest()
+        descriptor = dict(digest=digest, size=len(blob))
+        manifest = json.dumps(dict(config=descriptor, layers=[descriptor])).encode()
+        manifest_digest = "sha256:" + hashlib.sha256(manifest).hexdigest()
+        state = dict(tamper="")
+
+        class Registry(BaseHTTPRequestHandler):
+            def do_GET(self):
+                is_manifest = "/manifests/" in self.path
+                content = manifest if is_manifest else blob
+                if state["tamper"] == ("manifest" if is_manifest else "blob"):
+                    content += b"changed"
+                self.send_response(200)
+                self.send_header("Docker-Content-Digest", manifest_digest)
+                self.end_headers()
+                self.wfile.write(content)
+
+            def log_message(self, *args):
+                pass
+
+        server = ThreadingHTTPServer(("127.0.0.1", 0), Registry)
+        thread = threading.Thread(target=server.serve_forever, daemon=True)
+        thread.start()
+        try:
+            endpoint = f"127.0.0.1:{server.server_port}"
+            result = module.package_evidence(endpoint, "1.0.0")
+            self.assertEqual(result["manifest_digest"], manifest_digest)
+            self.assertEqual(result["config"], descriptor)
+            for target in ("manifest", "blob"):
+                state["tamper"] = target
+                with self.subTest(target=target), self.assertRaises(ValueError):
+                    module.package_evidence(endpoint, "1.0.0")
+        finally:
+            server.shutdown()
+            server.server_close()
+            thread.join()
+
+    def test_payload_hashes_cover_generated_files_and_detect_changes(self):
+        module = self.module()
+        with tempfile.TemporaryDirectory() as temp:
+            root = Path(temp)
+            (root / ".devcontainer").mkdir()
+            payload = root / ".devcontainer/devcontainer.json"
+            payload.write_bytes(b"{}")
+            self.assertEqual(module.payload_hashes(root),
+                             {".devcontainer/devcontainer.json": hashlib.sha256(b"{}").hexdigest()})
+            before = module.payload_hashes(root)
+            payload.write_bytes(b'{"image":"changed"}')
+            self.assertNotEqual(module.payload_hashes(root), before)
+
     def module(self):
         self.assertTrue((SCRIPTS / "template_smoke.py").exists())
         spec = importlib.util.spec_from_file_location("template", SCRIPTS / "template_smoke.py")
@@ -103,7 +159,7 @@ class TemplateTests(unittest.TestCase):
             root.chmod(0o1777)  # Match /tmp: the runner may remove its own workspace.
             helpers = root / "helpers"
             helpers.mkdir(mode=0o755)
-            for name in ("template_smoke.py", "ci_policy.py"):
+            for name in ("template_smoke.py", "ci_policy.py", "build_toolchain.py"):
                 shutil.copyfile(SCRIPTS / name, helpers / name)
             work = root / "project"
             outside = root / "outside"

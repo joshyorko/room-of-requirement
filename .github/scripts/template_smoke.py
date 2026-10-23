@@ -3,6 +3,7 @@
 
 import argparse
 import copy
+import hashlib
 import json
 import os
 from pathlib import Path
@@ -13,11 +14,13 @@ import subprocess
 import sys
 import tempfile
 import time
+import tomllib
 import urllib.error
 import urllib.request
 import uuid
 
 from ci_policy import VARIANTS, require
+from build_toolchain import validate_node
 
 
 def capture(*args):
@@ -82,6 +85,32 @@ def prepare_workspace(work, candidate_uid):
                             follow_symlinks=False)
 
 
+def payload_hashes(root):
+    return {str(path.relative_to(root)): hashlib.sha256(path.read_bytes()).hexdigest()
+            for path in sorted(root.rglob("*")) if path.is_file()}
+
+
+def package_evidence(endpoint, version):
+    """Verify the OCI bytes actually used by the loopback apply operation."""
+    base = f"http://{endpoint}/v2/ci/templates/ror-starter"
+    request = urllib.request.Request(base + "/manifests/" + version,
+                                     headers={"Accept": "application/vnd.oci.image.manifest.v1+json"})
+    with urllib.request.urlopen(request, timeout=30) as response:
+        raw = response.read()
+        digest = "sha256:" + hashlib.sha256(raw).hexdigest()
+        require(response.headers.get("Docker-Content-Digest") == digest, "template manifest digest mismatch")
+    manifest = json.loads(raw)
+    layers = manifest["layers"]
+    require(layers, "template package layers missing")
+    for descriptor in [manifest["config"], *layers]:
+        require(re.fullmatch(r"sha256:[a-f0-9]{64}", descriptor["digest"]), "invalid template layer digest")
+        with urllib.request.urlopen(base + "/blobs/" + descriptor["digest"], timeout=30) as response:
+            content = response.read()
+        require("sha256:" + hashlib.sha256(content).hexdigest() == descriptor["digest"],
+                "template package hash mismatch")
+    return dict(manifest_digest=digest, config=manifest["config"], layers=layers)
+
+
 def smoke(root, meta):
     require(meta["variant"] == os.environ["VARIANT"], "template/candidate variant mismatch")
     scripts = Path(__file__).resolve().parent
@@ -106,13 +135,21 @@ def smoke(root, meta):
                 time.sleep(1)
         subprocess.run(["devcontainer", "templates", "publish", str(root),
                         "--registry", endpoint, "--namespace", "ci/templates"], check=True)
+        package = package_evidence(endpoint, meta["version"])
         with tempfile.TemporaryDirectory(prefix=identity) as work:
             subprocess.run(["devcontainer", "templates", "apply", "--workspace-folder", work,
-                            "--template-id", f'{endpoint}/ci/templates/ror-starter:{meta["version"]}'], check=True)
+                            "--template-id", f'{endpoint}/ci/templates/ror-starter@{package["manifest_digest"]}'], check=True)
             config_path = Path(work) / ".devcontainer/devcontainer.json"
             applied = json.loads(config_path.read_text())
             require(image_variant(applied["image"], os.environ["GITHUB_REPOSITORY"]) == meta["variant"],
                     "applied template image changed unexpectedly")
+            receipt = dict(source=capture("git", "rev-parse", "HEAD"),
+                           repository=os.environ["GITHUB_REPOSITORY"], package=package,
+                           source_files=payload_hashes(root), applied_files=payload_hashes(Path(work)),
+                           declared_image=applied["image"], tested_image=os.environ["TEST_IMAGE"],
+                           declared_tools=tomllib.loads((Path(work) / ".mise.toml").read_text())["tools"],
+                           node_scope="Template file hashes and runtime declarations; embedded image Node is inventoried separately")
+            (evidence / "template-package.json").write_text(json.dumps(receipt, indent=2) + "\n")
             config, names = isolate(applied, os.environ["TEST_IMAGE"], identity)
             for name in names:
                 subprocess.run(["docker", "volume", "create", name], check=True)
@@ -128,6 +165,10 @@ def smoke(root, meta):
                              "--update-remote-user-uid-default", "never")
             (evidence / "template-up.json").write_text(result + "\n")
             container = json.loads(result)["containerId"]
+            node = capture("devcontainer", "exec", "--workspace-folder", work,
+                           "mise", "exec", "--", "node", "--version")
+            validate_node(node)
+            (evidence / "template-node.txt").write_text(node + "\n")
             for script, user in (("docker-smoke.sh", None), ("podman-smoke.sh", "vscode")):
                 if user and meta["variant"] != "wolfi":
                     continue

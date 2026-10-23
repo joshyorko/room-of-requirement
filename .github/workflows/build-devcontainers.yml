@@ -5,6 +5,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - '.node-version'
       - '.devcontainer/**'
       - '.github/workflows/build-image.yml'
       - '.github/workflows/build-devcontainers.yml'
@@ -15,6 +16,7 @@ on:
     branches: [main]
     paths:
       - 'src/**'
+      - '.node-version'
       - '.devcontainer/**'
       - '.github/workflows/build-image.yml'
       - '.github/workflows/build-devcontainers.yml'

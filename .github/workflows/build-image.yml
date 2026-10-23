@@ -79,9 +79,11 @@ jobs:
           cosign-release: v3.1.4
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
-          node-version: '24'
+          node-version-file: .node-version
       - name: Install pinned CLI for command-generation regressions
-        run: npm install -g @devcontainers/cli@0.89.0
+        env:
+          EXPECTED_SOURCE: ${{ inputs.source_sha || github.sha }}
+        run: python3 .github/scripts/build_toolchain.py --evidence "$RUNNER_TEMP/lint-toolchain"
       - name: Install runtime regression prerequisites
         run: |
           sudo apt-get update
@@ -97,6 +99,13 @@ jobs:
           echo "$RUNNER_TEMP/mise/bin" >> "$GITHUB_PATH"
       - name: CI policy and execution regressions
         run: .github/scripts/regressions.sh
+      - name: Preserve lint toolchain evidence
+        uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
+        if: always()
+        with:
+          name: lint-toolchain-${{ inputs.variant }}-${{ github.run_attempt }}
+          path: ${{ runner.temp }}/lint-toolchain/
+          if-no-files-found: error
       - uses: hadolint/hadolint-action@06be81baf89a55ffd0e24b8f04a4185738dd3387  # v3.5.0
         with:
           dockerfile: src/${{ inputs.variant }}/.devcontainer/Dockerfile
@@ -105,7 +114,7 @@ jobs:
           output-file: hadolint.sarif
           no-fail: false
       - uses: actions/upload-artifact@cf430e030ddbb5b0abf93d22962f4752f3646cd9  # v7.0.2
-        if: always()
+        if: always() && hashFiles('hadolint.sarif') != ''
         with:
           name: hadolint-${{ inputs.variant }}-${{ github.run_attempt }}
           path: hadolint.sarif
@@ -139,9 +148,11 @@ jobs:
       - uses: docker/setup-buildx-action@f87e5991a6d7451dcb8d9637bfbc97413f497069  # v4.4.1
       - uses: actions/setup-node@949feb2413d6458794dcd2491c4babbbce0c15c1  # v7.1.0
         with:
-          node-version: '24'
+          node-version-file: .node-version
       - name: Install feature-aware builder
-        run: npm install -g @devcontainers/cli@0.89.0
+        env:
+          EXPECTED_SOURCE: ${{ inputs.source_sha || github.sha }}
+        run: python3 .github/scripts/build_toolchain.py --evidence "$RUNNER_TEMP/image-evidence"
       - uses: docker/login-action@81c6f93d4bc991e510b342a00b419b3bb4efc5c6  # v4.7.0
         if: inputs.publish && github.event_name != 'pull_request'
         with:
@@ -183,6 +194,8 @@ jobs:
           upload-release-assets: false
       - name: Validate SPDX output, including on PRs
         run: .github/scripts/attest_image.py --validate-only
+      - name: Inventory embedded Node separately from the build toolchain
+        run: python3 .github/scripts/node_inventory.py "$RUNNER_TEMP/image-evidence"
       - name: Scan tested image with Grype
         id: grype
         uses: anchore/scan-action@27805bf3b4e84b4a5c980df22ed233c00390a439  # v7.4.2
