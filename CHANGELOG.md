@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.20.8](https://github.com/joshyorko/room-of-requirement/compare/v1.20.7...v1.20.8) (2026-10-24)
+
+
+### 🐛 Bug Fixes
+
+* **wolfi:** provision rootless krun KVM group access ([d033714](https://github.com/joshyorko/room-of-requirement/commit/d033714b3196c65386201a1848d8fb2a897e42cd))
+
 ## [1.20.7](https://github.com/joshyorko/room-of-requirement/compare/v1.20.6...v1.20.7) (2026-10-23)
 
 
