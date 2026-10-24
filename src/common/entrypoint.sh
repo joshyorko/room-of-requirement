@@ -74,6 +74,11 @@ prepare_podman_runtime() {
 
 prepare_podman_runtime
 
+# Wolfi supplies this helper; prepare account groups before Devsy opens sessions.
+if [ -x /usr/local/bin/prepare-kvm.sh ]; then
+    /usr/local/bin/prepare-kvm.sh || log "Warning: Failed to register the KVM device group"
+fi
+
 if [ -x /usr/local/share/docker-init.sh ] && [ "${ROR_USE_DEVCONTAINER_DOCKER_INIT:-1}" != "0" ]; then
     log "Delegating Docker startup to Dev Container Docker-in-Docker feature"
     exec /usr/local/share/docker-init.sh "$@"

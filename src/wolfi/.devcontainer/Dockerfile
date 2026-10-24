@@ -109,6 +109,8 @@ RUN apk add --no-cache \
     dockerd-oci-entrypoint \
     fuse-overlayfs \
     podman-6.0 \
+    crun \
+    libkrun \
     buildah \
     skopeo \
     shadow-subids \
@@ -266,6 +268,11 @@ RUN /usr/local/bin/ror-security-update.sh
 
 COPY --from=container-tools-native /out /usr/local/share/ror/container-tools
 RUN /usr/local/share/ror/container-tools/install.sh
+
+# Fail the image build if the OCI runtime lacks its KVM backend.
+RUN crun --version | grep -F '+LIBKRUN' && test -x /usr/bin/krun
+COPY src/wolfi/config/containers-krun.conf /etc/containers/containers.conf.d/50-krun.conf
+COPY --chmod=0755 src/wolfi/scripts/prepare-kvm.sh /usr/local/bin/prepare-kvm.sh
 
 # Create apk wrapper that filters out gcompat requests
 # VS Code/DevPod keeps trying to install gcompat even with DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL=true

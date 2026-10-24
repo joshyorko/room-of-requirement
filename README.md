@@ -424,3 +424,31 @@ MIT License - See [LICENSE](LICENSE) for details.
 > _"It is a room that a person can only enter when they have real need of it. Sometimes it is there, and sometimes it is not, but when it appears, it is always equipped for the seeker's needs."_
 
 Because every developer deserves a workspace that adapts to their needs—just like magic. 🪄
+
+### Wolfi KVM access
+
+Wolfi explicitly installs crun/libkrun and registers `/usr/bin/krun` with
+Podman. The image build checks crun's `+LIBKRUN` feature. On startup,
+`src/wolfi/scripts/prepare-kvm.sh` reads the passed-through `/dev/kvm` group ID,
+registers it if needed, and adds `vscode` to that group for new Devsy SSH
+sessions. It never changes device ownership or permissions and refuses to add
+`vscode` to group 0. If KVM is absent, the helper leaves account groups alone.
+
+The system Podman drop-in preserves existing supplementary groups through
+crun/krun, allowing rootless access to group-restricted KVM devices. It does
+not select krun as the default OCI runtime or grant additional host groups.
+User Podman configuration can override the system annotation list.
+
+Consumers must request `/dev/kvm` passthrough using their provider's supported
+configuration, for example `runArgs: ["--device=/dev/kvm"]` with Devsy's Docker
+driver. The host must support KVM and permit device access, including nested
+virtualization when applicable. Publish the updated Wolfi image before
+recreating consumers; preserve existing persistent volumes. Real VM operation
+and Review/Luna Factory remain unverified until tested in a fresh devcontainer.
+
+Offline regression checks:
+
+```bash
+python3 tests/wolfi-kvm-test.py
+bash tests/wolfi-podman-contract-test.sh
+```
