@@ -7,7 +7,7 @@ brew "eza"                 # Modern ls replacement
 brew "fd"                  # Fast find alternative
 brew "fzf"                 # Fuzzy finder
 brew "ripgrep"             # Fast recursive grep (rg)
-brew "tldr"                # Simplified man pages
+brew "tealdeer"            # Simplified man pages (tldr)
 brew "tree"                # Directory tree viewer
 
 # Shell and development tools

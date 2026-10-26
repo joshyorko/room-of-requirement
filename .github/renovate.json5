@@ -40,6 +40,13 @@
   ],
   "packageRules": [
     {
+      "description": "Hold starter Python at 3.15.1 until newer standalone builds are available.",
+      "matchManagers": ["mise"],
+      "matchPackageNames": ["python"],
+      "matchFileNames": ["templates/ror-starter/.mise.toml"],
+      "allowedVersions": "<=3.15.1"
+    },
+    {
       "description": "Keep Go builder images and their required toolchain pin in one PR.",
       "matchPackageNames": ["golang"],
       "matchDatasources": ["docker"],
