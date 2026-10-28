@@ -7,7 +7,7 @@
 # ARG PINS: Base image version
 # ============================================================================
 # Wolfi base image - kept current by maintenance robot for security patches
-ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:360896efb0753a5701c48f860e17130c205eae5a264797aa3e7ea126ee2923a7
+ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:31cfe087eb48bde827a6e0f607a12865f6f37d89093b95b324b9d5714e3cedab
 # Official Docker CLI image used to override Wolfi's CLI binary while Wolfi's
 # docker-cli package is still built with a vulnerable Go stdlib revision.
 ARG DOCKER_CLI_IMAGE=docker:29.9.2-cli@sha256:5e6baf67325a79f64ed3bed6863954d5e05d0f3d4e57cbdb14809346814bbfdb
@@ -183,6 +183,7 @@ FROM users AS homebrew
 # Security: Only install what's strictly necessary for Homebrew to function
 # Runtime libraries (libffi, zlib, yaml, readline) needed for mise to compile Ruby and gems
 # ncurses-dev added for Ruby 3.4.7 compilation (required for irb/readline)
+# Pin the package floor because the generic ruby-dev alias resolved to vulnerable 3.3.6-r3.
 RUN apk add --no-cache \
     build-base \
     libffi \
@@ -192,7 +193,7 @@ RUN apk add --no-cache \
     openssl-dev \
     readline \
     readline-dev \
-    ruby-dev \
+    'ruby-3.3-dev>=3.3.12-r10' \
     yaml \
     yaml-dev \
     zlib \
