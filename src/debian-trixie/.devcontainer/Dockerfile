@@ -13,7 +13,7 @@ RUN --mount=type=cache,target=/root/go/pkg/mod \
     --mount=type=cache,target=/root/.cache/go-build \
     python3 /build/container-tools/build.py --output /out
 
-FROM mcr.microsoft.com/devcontainers/base:trixie@sha256:6ee2b4097c75d33e9a94d941577a3286e5d629434fba384688b06daeeaaeac99
+FROM mcr.microsoft.com/devcontainers/base:trixie@sha256:f8a211038233c62fe98b24302671b223758e8e214d34186d757591e0be1be199
 
 ARG TARGETARCH
 
