@@ -183,6 +183,7 @@ FROM users AS homebrew
 # Security: Only install what's strictly necessary for Homebrew to function
 # Runtime libraries (libffi, zlib, yaml, readline) needed for mise to compile Ruby and gems
 # ncurses-dev added for Ruby 3.4.7 compilation (required for irb/readline)
+# Pin the package floor because the generic ruby-dev alias resolved to vulnerable 3.3.6-r3.
 RUN apk add --no-cache \
     build-base \
     libffi \
@@ -192,7 +193,7 @@ RUN apk add --no-cache \
     openssl-dev \
     readline \
     readline-dev \
-    ruby-dev \
+    'ruby-3.3-dev>=3.3.12-r10' \
     yaml \
     yaml-dev \
     zlib \

@@ -143,5 +143,7 @@ grep -Eq 'src/wolfi/scripts/security-update.sh[[:space:]]+/usr/local/bin/ror-sec
     "${WOLFI_DOCKERFILE}" || fail "Wolfi image must execute the maintained security update script"
 grep -Eq 'src/wolfi/scripts/apk-wrapper.sh[[:space:]]+/sbin/apk' \
     "${WOLFI_DOCKERFILE}" || fail "Wolfi image must install the maintained apk wrapper"
+grep -Fq "'ruby-3.3-dev>=3.3.12-r10'" "${WOLFI_DOCKERFILE}" || \
+    fail "Wolfi image must require Ruby fixes for CVE-2026-97229 and CVE-2026-110264"
 
 echo "runtime image contract tests passed"
