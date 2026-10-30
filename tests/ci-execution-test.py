@@ -4,6 +4,8 @@
 import json
 import hashlib
 import os
+import io
+import tarfile
 from pathlib import Path
 import subprocess
 import tempfile
@@ -14,6 +16,16 @@ ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / ".github/scripts"
 SHA = "a" * 40
 CONFIG_DIGEST = "sha256:" + "b" * 64
+LOCAL_MANIFEST_RAW = json.dumps({"schemaVersion": 2,
+    "mediaType": "application/vnd.oci.image.manifest.v1+json",
+    "config": {"digest": CONFIG_DIGEST}, "layers": []}).encode()
+LOCAL_DOCKER_ID = "sha256:" + hashlib.sha256(LOCAL_MANIFEST_RAW).hexdigest()
+LOCAL_ARCHIVE = io.BytesIO()
+with tarfile.open(fileobj=LOCAL_ARCHIVE, mode="w") as archive:
+    member = tarfile.TarInfo("blobs/sha256/" + LOCAL_DOCKER_ID.removeprefix("sha256:"))
+    member.size = len(LOCAL_MANIFEST_RAW)
+    archive.addfile(member, io.BytesIO(LOCAL_MANIFEST_RAW))
+LOCAL_ARCHIVE_BYTES = LOCAL_ARCHIVE.getvalue()
 MANIFEST = json.dumps({"schemaVersion": 2, "mediaType": "application/vnd.oci.image.manifest.v1+json",
                        "config": {"digest": CONFIG_DIGEST}, "layers": []})
 DIGEST = "sha256:" + hashlib.sha256(MANIFEST.encode()).hexdigest()
@@ -36,7 +48,10 @@ if name == 'devcontainer':
         sys.exit('expected deliberate single-manifest export')
     print('{"outcome":"success"}')
 elif name == 'docker':
-    if args[:3] == ['buildx', 'imagetools', 'inspect']:
+    if args[:2] == ['image', 'save']:
+        with open(os.environ['SAVED_MANIFEST_ARCHIVE'], 'rb') as archive:
+            sys.stdout.buffer.write(archive.read())
+    elif args[:3] == ['buildx', 'imagetools', 'inspect']:
         if '--raw' in args:
             sys.stdout.write(os.environ['MANIFEST'])
         elif '{{json .Image}}' in args:
@@ -45,7 +60,12 @@ elif name == 'docker':
         else:
             print(os.environ['INSPECT_DIGEST'])
     elif args[:2] == ['image', 'inspect']:
-        if '{{json .Config.Labels}}' in args:
+        if '{{json .}}' in args:
+            key = 'PULLED_INSPECT' if '@' in args[2] else 'LOCAL_INSPECT'
+            inspected = json.loads(os.environ[key])
+            inspected.setdefault('Config', {}).setdefault('Labels', json.loads(os.environ['CANDIDATE_LABELS']))
+            print(json.dumps(inspected))
+        elif '{{json .Config.Labels}}' in args:
             print(os.environ['CANDIDATE_LABELS'])
         else:
             print(os.environ.get('LOCAL_ID', 'sha256:' + 'b' * 64))
@@ -72,7 +92,12 @@ class ExecutionTests(unittest.TestCase):
                         GITHUB_OUTPUT=str(self.work / "output"), PYTHONDONTWRITEBYTECODE="1",
                         GITHUB_STEP_SUMMARY=str(self.work / "summary"),
                         MANIFEST=MANIFEST, INSPECT_DIGEST=DIGEST,
+                        SAVED_MANIFEST_ARCHIVE=str(self.work / "manifest.tar"),
+                        LOCAL_INSPECT=json.dumps({"Id": CONFIG_DIGEST}),
+                        PULLED_INSPECT=json.dumps({"Id": DIGEST, "Descriptor": {
+                            "mediaType": "application/vnd.oci.image.manifest.v1+json", "digest": DIGEST}}),
                         CANDIDATE_LABELS=json.dumps(LABELS), IMAGE_LABELS=json.dumps(LABELS))
+        (self.work / "manifest.tar").write_bytes(LOCAL_ARCHIVE_BYTES)
 
     def run_script(self, name, *args, **env):
         return subprocess.run([str(SCRIPTS / name), *args], cwd=ROOT, env=self.env | env,
@@ -98,6 +123,7 @@ class ExecutionTests(unittest.TestCase):
         self.assertNotIn("--cache-to", builds[0])
         self.assertNotIn("--push", builds[0])
         self.assertFalse(any("push" in c or "create" in c for c in self.calls()))
+        self.assertFalse(any(c[:3] == ["docker", "image", "save"] for c in self.calls()))
 
     def test_schedule_refreshes_and_tests_reference_is_registry_digest(self):
         result = self.run_script("build_image.py", REQUEST=self.request(
@@ -109,13 +135,54 @@ class ExecutionTests(unittest.TestCase):
         output = (self.work / "output").read_text()
         self.assertIn("test_image=ghcr.io/owner/repo@" + DIGEST, output)
         self.assertIn(["docker", "pull", "ghcr.io/owner/repo@" + DIGEST], self.calls())
+        self.assertFalse(any(c[:3] == ["docker", "image", "save"] for c in self.calls()))
 
     def test_wrong_checkout_failed_build_or_invalid_digest_stops(self):
         for env in (dict(SOURCE_SHA="c" * 40), dict(FAIL_COMMAND="devcontainer build"),
-                    dict(INSPECT_DIGEST=""), dict(LOCAL_ID="sha256:" + "d" * 64)):
+                    dict(INSPECT_DIGEST=""),
+                    dict(PULLED_INSPECT=json.dumps({"Id": "sha256:" + "d" * 64}))):
             with self.subTest(env=env):
                 result = self.run_script("build_image.py", REQUEST=self.request(
                     event="push", ref="refs/heads/main"), **env)
+                self.assertNotEqual(result.returncode, 0)
+
+    def test_local_containerd_build_uses_docker_id_for_runtime_and_config_digest_for_scan(self):
+        docker_id = LOCAL_DOCKER_ID
+        image = {"Id": docker_id, "Descriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": docker_id}}
+        result = self.run_script("build_image.py", REQUEST=self.request(),
+                                 LOCAL_INSPECT=json.dumps(image))
+        self.assertEqual(result.returncode, 0, result.stderr)
+        output = (self.work / "output").read_text()
+        self.assertIn("test_image=" + docker_id, output)
+        self.assertIn("scan_image=docker:" + docker_id, output)
+        self.assertIn(["docker", "image", "inspect", "ghcr.io/owner/repo:candidate-wolfi-123-1",
+                       "--format", "{{json .}}"], self.calls())
+        self.assertIn(["docker", "image", "save", docker_id], self.calls())
+        identity = json.loads((self.work / "image-evidence/identity.json").read_text())
+        self.assertEqual(identity, dict(mode="local", docker_id=docker_id, config_digest=CONFIG_DIGEST))
+        self.assertEqual((self.work / "image-evidence/manifest.json").read_bytes(), LOCAL_MANIFEST_RAW)
+        self.assertFalse((self.work / "image-evidence/image.tar").exists())
+
+    def test_registry_pull_validates_descriptor_even_when_config_annotation_is_absent(self):
+        docker_id = "sha256:" + "c" * 64
+        pulled = {"Id": DIGEST, "Descriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json", "digest": DIGEST}}
+        result = self.run_script("build_image.py", REQUEST=self.request(
+            event="schedule", ref="refs/heads/main"), PULLED_INSPECT=json.dumps(pulled))
+        self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_invalid_local_containerd_descriptor_fails_closed(self):
+        docker_id = LOCAL_DOCKER_ID
+        base = {"Id": docker_id, "Descriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": docker_id}}
+        for descriptor in (base["Descriptor"] | {"mediaType": "application/vnd.oci.image.index.v1+json"},
+                           base["Descriptor"] | {"digest": "sha256:" + "d" * 64}):
+            with self.subTest(descriptor=descriptor):
+                result = self.run_script("build_image.py", REQUEST=self.request(),
+                    LOCAL_INSPECT=json.dumps(base | {"Descriptor": descriptor}))
                 self.assertNotEqual(result.returncode, 0)
 
     def test_missing_or_wrong_pulled_candidate_metadata_is_rejected(self):
