@@ -7,14 +7,64 @@ from pathlib import Path
 import re
 import subprocess
 import sys
+import tarfile
 
 from ci_policy import context, require
 from build_metadata import validate_labels
-from image_identity import digest, registry_identity
+from image_identity import (digest, local_identity, registry_identity,
+                            validate_local_image)
 
 
 def capture(*args):
     return subprocess.check_output(args, text=True).strip()
+
+
+def _stop_save(process):
+    if process.stdout is not None and not process.stdout.closed:
+        process.stdout.close()
+    try:
+        process.terminate()
+    except ProcessLookupError:
+        pass
+    try:
+        process.wait(timeout=5)
+    except subprocess.TimeoutExpired:
+        process.kill()
+        process.wait()
+
+
+def saved_manifest(docker_id):
+    docker_id = digest(docker_id)
+    blob_name = "blobs/sha256/" + docker_id.removeprefix("sha256:")
+    process = subprocess.Popen(["docker", "image", "save", docker_id],
+                               stdout=subprocess.PIPE)
+    raw_manifest = None
+    try:
+        with tarfile.open(fileobj=process.stdout, mode="r|", bufsize=1024 * 1024) as archive:
+            for member in archive:
+                if member.name != blob_name:
+                    continue
+                require(raw_manifest is None, "docker image save contains a duplicate manifest blob")
+                require(member.isfile(), "docker image save manifest blob is not a regular file")
+                require(0 <= member.size <= 4 * 1024 * 1024,
+                        "docker image save manifest blob exceeds 4 MiB")
+                source = archive.extractfile(member)
+                require(source is not None, "docker image save manifest blob cannot be read")
+                raw_manifest = source.read(member.size + 1)
+                require(len(raw_manifest) == member.size,
+                        "docker image save manifest blob size does not match its header")
+        while process.stdout.read(1024 * 1024):
+            pass
+    except (tarfile.TarError, EOFError) as exc:
+        _stop_save(process)
+        raise ValueError("invalid docker image save archive") from exc
+    except Exception:
+        _stop_save(process)
+        raise
+    process.stdout.close()
+    require(process.wait() == 0, "docker image save failed")
+    require(raw_manifest is not None, "docker image save manifest blob missing")
+    return raw_manifest
 
 
 def main():
@@ -55,16 +105,25 @@ def main():
         (evidence / "manifest.json").write_bytes(raw_manifest)
         plan["test_image"] = plan["image"] + "@" + plan["digest"]
         subprocess.run(["docker", "pull", plan["test_image"]], check=True)
-        local_id = capture("docker", "image", "inspect", plan["test_image"], "--format", "{{.Id}}")
-        require(local_id == identity["config_digest"], "pulled image differs from candidate config")
+        inspected = json.loads(capture("docker", "image", "inspect", plan["test_image"],
+                                       "--format", "{{json .}}"))
+        validate_local_image(inspected, identity)
         plan["scan_image"] = "registry:" + plan["test_image"]
     else:
-        local_id = digest(capture("docker", "image", "inspect", plan["candidate"], "--format", "{{.Id}}"))
-        identity = {"mode": "local", "config_digest": local_id}
-        plan["test_image"] = local_id
-        plan["scan_image"] = "docker:" + local_id
-    labels = json.loads(capture("docker", "image", "inspect", plan["test_image"],
-                                 "--format", "{{json .Config.Labels}}"))
+        inspected = json.loads(capture("docker", "image", "inspect", plan["candidate"],
+                                       "--format", "{{json .}}"))
+        descriptor = inspected.get("Descriptor")
+        if descriptor is None:
+            identity = local_identity(inspected)
+        else:
+            docker_id = digest(inspected.get("Id"))
+            raw_manifest = saved_manifest(docker_id)
+            identity = local_identity(inspected, raw_manifest)
+            (evidence / "manifest.json").write_bytes(raw_manifest)
+        docker_id = identity["docker_id"]
+        plan["test_image"] = docker_id
+        plan["scan_image"] = "docker:" + docker_id
+    labels = inspected["Config"]["Labels"]
     validate_labels(labels, plan)
     (evidence / "metadata.json").write_text(json.dumps(labels, indent=2) + "\n")
     (evidence / "identity.json").write_text(json.dumps(identity, indent=2) + "\n")

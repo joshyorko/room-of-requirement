@@ -17,12 +17,28 @@ SCRIPTS = ROOT / ".github/scripts"
 sys.path.insert(0, str(SCRIPTS))
 
 RECORDER = '''#!/usr/bin/env python3
-import hashlib, json, os, pathlib, sys
+import hashlib, io, json, os, pathlib, sys, tarfile
 args = sys.argv[1:]
 state_path = pathlib.Path(os.environ['CI_DOCKER_STATE'])
 state = json.loads(state_path.read_text()) if state_path.exists() else {'labels': {}, 'builds': []}
 if args[:2] == ['buildx', 'version']:
     print('github.com/docker/buildx v0.30.0 abc')
+elif args[:2] == ['image', 'save']:
+    labels = state.get('labels', {})
+    config = {'architecture': 'amd64', 'os': 'linux',
+              'config': {'User': 'root', 'Env': ['PATH=/usr/bin'], 'Labels': labels}}
+    config_raw = json.dumps(config).encode()
+    config_id = 'sha256:' + hashlib.sha256(config_raw).hexdigest()
+    manifest = {'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
+                'config': {'digest': config_id}, 'layers': []}
+    raw = json.dumps(manifest).encode()
+    digest = 'sha256:' + hashlib.sha256(raw).hexdigest()
+    archive_bytes = io.BytesIO()
+    with tarfile.open(fileobj=archive_bytes, mode='w') as archive:
+        member = tarfile.TarInfo('blobs/sha256/' + digest.removeprefix('sha256:'))
+        member.size = len(raw)
+        archive.addfile(member, io.BytesIO(raw))
+    sys.stdout.buffer.write(archive_bytes.getvalue())
 elif args[:2] == ['buildx', 'build'] or args[:1] == ['build']:
     labels = {}
     for index, value in enumerate(args):
@@ -41,12 +57,17 @@ elif args[:2] == ['image', 'inspect'] or args[:3] == ['buildx', 'imagetools', 'i
     manifest = {'schemaVersion': 2, 'mediaType': 'application/vnd.oci.image.manifest.v1+json',
                 'config': {'digest': config_id}, 'layers': []}
     raw = json.dumps(manifest)
+    manifest_id = 'sha256:' + hashlib.sha256(raw.encode()).hexdigest()
     if '--raw' in args:
         sys.stdout.write(raw)
     elif '{{.Manifest.Digest}}' in args:
         print('sha256:' + hashlib.sha256(raw.encode()).hexdigest())
     elif '{{.Id}}' in args:
         print(config_id)
+    elif '{{json .}}' in args:
+        descriptor = {'mediaType': manifest['mediaType'], 'digest': manifest_id}
+        print(json.dumps({'Id': manifest_id, 'Descriptor': descriptor,
+                          'Config': config['config']}))
     elif '{{json .Config.Labels}}' in args:
         print(json.dumps(state['labels']))
     elif '{{json .Image}}' in args:
@@ -106,6 +127,17 @@ class CliBuildTests(unittest.TestCase):
                                 text=True, capture_output=True, timeout=60, check=False)
         self.assertEqual(result.returncode, 0, result.stderr[-4000:])
         return json.loads(state_path.read_text()), request
+
+    def test_actual_cli_local_containerd_identity_separates_runtime_id_from_scan_config(self):
+        state, _ = self.build(True, event="pull_request")
+        receipt = json.loads((self.root / "image-evidence/identity.json").read_text())
+        self.assertEqual(receipt["mode"], "local")
+        self.assertNotEqual(receipt["docker_id"], receipt["config_digest"])
+        output = (self.root / "output").read_text()
+        self.assertIn("test_image=" + receipt["docker_id"], output)
+        self.assertIn("scan_image=docker:" + receipt["docker_id"], output)
+        inspections = [line for line in output.splitlines() if line.startswith("test_image=")]
+        self.assertEqual(len(inspections), 1)
 
     def test_refreshed_pr_builds_pull_without_cache_and_never_publish(self):
         for feature in (False, True):
