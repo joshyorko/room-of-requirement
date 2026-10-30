@@ -10,7 +10,8 @@ import sys
 
 from ci_policy import context, require
 from build_metadata import validate_labels
-from image_identity import digest, registry_identity
+from image_identity import (local_identity, registry_identity,
+                            validate_local_image)
 
 
 def capture(*args):
@@ -55,16 +56,18 @@ def main():
         (evidence / "manifest.json").write_bytes(raw_manifest)
         plan["test_image"] = plan["image"] + "@" + plan["digest"]
         subprocess.run(["docker", "pull", plan["test_image"]], check=True)
-        local_id = capture("docker", "image", "inspect", plan["test_image"], "--format", "{{.Id}}")
-        require(local_id == identity["config_digest"], "pulled image differs from candidate config")
+        inspected = json.loads(capture("docker", "image", "inspect", plan["test_image"],
+                                       "--format", "{{json .}}"))
+        validate_local_image(inspected, identity)
         plan["scan_image"] = "registry:" + plan["test_image"]
     else:
-        local_id = digest(capture("docker", "image", "inspect", plan["candidate"], "--format", "{{.Id}}"))
-        identity = {"mode": "local", "config_digest": local_id}
-        plan["test_image"] = local_id
-        plan["scan_image"] = "docker:" + local_id
-    labels = json.loads(capture("docker", "image", "inspect", plan["test_image"],
-                                 "--format", "{{json .Config.Labels}}"))
+        inspected = json.loads(capture("docker", "image", "inspect", plan["candidate"],
+                                       "--format", "{{json .}}"))
+        identity = local_identity(inspected)
+        docker_id = identity["docker_id"]
+        plan["test_image"] = docker_id
+        plan["scan_image"] = "docker:" + docker_id
+    labels = inspected["Config"]["Labels"]
     validate_labels(labels, plan)
     (evidence / "metadata.json").write_text(json.dumps(labels, indent=2) + "\n")
     (evidence / "identity.json").write_text(json.dumps(identity, indent=2) + "\n")

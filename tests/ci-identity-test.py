@@ -11,10 +11,60 @@ import tempfile
 import unittest
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".github/scripts"))
-from image_identity import registry_identity, scan_identity, verified_subject
+from image_identity import (local_identity, registry_identity, scan_identity,
+                            validate_local_image, verified_subject)
 
 
 class IdentityTests(unittest.TestCase):
+    def test_classic_local_inspect_uses_id_for_docker_and_config_identity(self):
+        config = "sha256:" + "1" * 64
+        self.assertEqual(local_identity({"Id": config}),
+                         dict(mode="local", docker_id=config, config_digest=config))
+
+    def test_containerd_local_inspect_requires_single_manifest_and_config_annotation(self):
+        docker_id = "sha256:" + "1" * 64
+        config = "sha256:" + "2" * 64
+        image = {"Id": docker_id, "Descriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json",
+            "digest": docker_id, "annotations": {"config.digest": config}}}
+        self.assertEqual(local_identity(image),
+                         dict(mode="local", docker_id=docker_id, config_digest=config))
+
+    def test_local_inspect_rejects_missing_or_malformed_descriptor_identity(self):
+        docker_id = "sha256:" + "1" * 64
+        valid = {"mediaType": "application/vnd.oci.image.manifest.v1+json",
+                 "digest": docker_id, "annotations": {"config.digest": "sha256:" + "2" * 64}}
+        for descriptor in (
+                valid | {"annotations": {}},
+                valid | {"annotations": {"config.digest": "bad"}},
+                valid | {"digest": "sha256:" + "3" * 64},
+                valid | {"mediaType": "application/vnd.oci.image.index.v1+json"},
+                valid | {"annotations": []},
+                []):
+            with self.subTest(descriptor=descriptor):
+                with self.assertRaises(ValueError):
+                    local_identity({"Id": docker_id, "Descriptor": descriptor})
+        for image in ({}, {"Id": "bad"}, {"Id": docker_id, "Descriptor": "bad"}):
+            with self.subTest(image=image):
+                with self.assertRaises(ValueError):
+                    local_identity(image)
+
+    def test_pulled_containerd_descriptor_can_omit_config_annotation(self):
+        docker_id = "sha256:" + "3" * 64
+        config = "sha256:" + "2" * 64
+        manifest = docker_id
+        identity = dict(mode="registry", manifest_digest=manifest, config_digest=config)
+        image = {"Id": docker_id, "Descriptor": {
+            "mediaType": "application/vnd.oci.image.manifest.v1+json", "digest": manifest}}
+        self.assertEqual(validate_local_image(image, identity), docker_id)
+        for descriptor in (
+                image["Descriptor"] | {"digest": "sha256:" + "4" * 64},
+                image["Descriptor"] | {"mediaType": "application/vnd.oci.image.index.v1+json"},
+                image["Descriptor"] | {"annotations": {"config.digest": "sha256:" + "5" * 64}}):
+            with self.subTest(descriptor=descriptor):
+                with self.assertRaises(ValueError):
+                    validate_local_image({"Id": docker_id, "Descriptor": descriptor}, identity)
+
     def test_single_manifest_binds_distinct_config_digest(self):
         config = "sha256:" + "1" * 64
         manifest = dict(schemaVersion=2, mediaType="application/vnd.oci.image.manifest.v1+json",
@@ -52,6 +102,20 @@ class IdentityTests(unittest.TestCase):
                 verified_subject(plan, identity, bad)
         with self.assertRaises(ValueError):
             verified_subject(plan | {"test_image": "ghcr.io/owner/repo@sha256:" + "3" * 64}, identity, scan)
+
+    def test_local_runtime_uses_docker_id_and_rejects_config_digest_or_replay(self):
+        docker_id = "sha256:" + "1" * 64
+        config = "sha256:" + "2" * 64
+        identity = dict(mode="local", docker_id=docker_id, config_digest=config)
+        scan = dict(subject=identity, enforce=True, critical_fixed=0)
+        plan = dict(publish=False, enforce=True, test_image=docker_id)
+        self.assertEqual(verified_subject(plan, identity, scan), "")
+        for wrong_image in (config, "sha256:" + "3" * 64):
+            with self.subTest(test_image=wrong_image):
+                with self.assertRaises(ValueError):
+                    verified_subject(plan | {"test_image": wrong_image}, identity, scan)
+        with self.assertRaises(ValueError):
+            verified_subject(plan, identity | {"docker_id": "sha256:" + "3" * 64}, scan)
 
     def test_provenance_records_subject_only_after_signed_claims_verify(self):
         with tempfile.TemporaryDirectory() as temp:

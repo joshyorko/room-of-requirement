@@ -220,6 +220,9 @@ class ScanTests(unittest.TestCase):
         self.fixture["source"]["target"]["manifestDigest"] = ""
         result = self.scan(self.fixture)
         self.assertEqual(result.returncode, 0, result.stderr)
+        self.fixture["source"]["target"]["imageID"] = "sha256:" + "c" * 64
+        self.assertNotEqual(self.scan(self.fixture).returncode, 0,
+                            "scanner must bind config digest, never Docker manifest Id")
         self.fixture["source"]["target"]["imageID"] = "sha256:" + "d" * 64
         self.assertNotEqual(self.scan(self.fixture).returncode, 0)
 
