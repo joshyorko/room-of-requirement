@@ -46,16 +46,18 @@ def _inspect_descriptor(image):
     return docker_id, descriptor
 
 
-def local_identity(image):
+def local_identity(image, raw_manifest=None):
     docker_id, descriptor = _inspect_descriptor(image)
     if descriptor is None:
+        require(raw_manifest is None, "classic Docker image identity cannot include a saved manifest")
         config_digest = docker_id
     else:
-        annotations = descriptor.get("annotations")
-        require(isinstance(annotations, dict), "docker image descriptor config.digest annotation missing")
-        require("config.digest" in annotations,
-                "docker image descriptor config.digest annotation missing")
-        config_digest = digest(annotations.get("config.digest"))
+        require(isinstance(raw_manifest, bytes), "saved image manifest bytes are required")
+        manifest_identity = registry_identity(raw_manifest, docker_id)
+        manifest = json.loads(raw_manifest)
+        require(manifest.get("mediaType") == descriptor.get("mediaType"),
+                "saved image manifest media type does not match descriptor")
+        config_digest = manifest_identity["config_digest"]
     return {"mode": "local", "docker_id": docker_id, "config_digest": config_digest}
 
 

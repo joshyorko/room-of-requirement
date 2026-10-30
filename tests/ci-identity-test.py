@@ -2,17 +2,21 @@
 """Verify the supported manifest/config relationship without equating their IDs."""
 
 import hashlib
+import io
 import json
 import os
 from pathlib import Path
 import subprocess
 import sys
 import tempfile
+import tarfile
 import unittest
+from unittest.mock import patch
 
 sys.path.insert(0, str(Path(__file__).resolve().parents[1] / ".github/scripts"))
 from image_identity import (local_identity, registry_identity, scan_identity,
                             validate_local_image, verified_subject)
+import build_image
 
 
 class IdentityTests(unittest.TestCase):
@@ -21,33 +25,176 @@ class IdentityTests(unittest.TestCase):
         self.assertEqual(local_identity({"Id": config}),
                          dict(mode="local", docker_id=config, config_digest=config))
 
-    def test_containerd_local_inspect_requires_single_manifest_and_config_annotation(self):
-        docker_id = "sha256:" + "1" * 64
+    def test_containerd_local_identity_hashes_manifest_and_ignores_annotations(self):
         config = "sha256:" + "2" * 64
+        raw = json.dumps({"schemaVersion": 2,
+                          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                          "config": {"digest": config}, "layers": []}).encode()
+        docker_id = "sha256:" + hashlib.sha256(raw).hexdigest()
         image = {"Id": docker_id, "Descriptor": {
-            "mediaType": "application/vnd.oci.image.manifest.v1+json",
-            "digest": docker_id, "annotations": {"config.digest": config}}}
-        self.assertEqual(local_identity(image),
+            "mediaType": "application/vnd.oci.image.manifest.v1+json", "digest": docker_id}}
+        self.assertEqual(local_identity(image, raw),
                          dict(mode="local", docker_id=docker_id, config_digest=config))
+        wrong_annotation = image | {"Descriptor": image["Descriptor"] | {
+            "annotations": {"config.digest": "sha256:" + "9" * 64}}}
+        self.assertEqual(local_identity(wrong_annotation, raw)["config_digest"], config)
+        for annotations in ({"config.digest": "bad"}, [], None):
+            self.assertEqual(local_identity(image | {"Descriptor": image["Descriptor"] | {
+                "annotations": annotations}}, raw)["config_digest"], config)
 
-    def test_local_inspect_rejects_missing_or_malformed_descriptor_identity(self):
+    def test_saved_manifest_extracts_exact_digest_member_and_drains_archive(self):
+        raw = json.dumps({"schemaVersion": 2,
+                          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                          "config": {"digest": "sha256:" + "2" * 64}, "layers": []}).encode()
+        docker_id = "sha256:" + hashlib.sha256(raw).hexdigest()
+        archive = self._archive([(f"blobs/sha256/{docker_id[7:]}", raw), ("extra", b"x")])
+        process = self._process(archive)
+        with patch.object(build_image.subprocess, "Popen", return_value=process) as popen:
+            self.assertEqual(build_image.saved_manifest(docker_id), raw)
+        popen.assert_called_once_with(["docker", "image", "save", docker_id], stdout=subprocess.PIPE)
+        self.assertEqual(process.stdout.bytes_read, len(archive))
+        self.assertTrue(process.wait_called)
+
+    def test_saved_manifest_drains_large_trailing_output_and_checks_real_producer_exit(self):
+        raw = json.dumps({"schemaVersion": 2,
+                          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                          "config": {"digest": "sha256:" + "2" * 64}, "layers": []}).encode()
+        docker_id = "sha256:" + hashlib.sha256(raw).hexdigest()
+        archive = self._archive([(f"blobs/sha256/{docker_id[7:]}", raw)])
+        with tempfile.NamedTemporaryFile() as fixture:
+            fixture.write(archive)
+            fixture.flush()
+            real_popen = subprocess.Popen
+            script = ("import pathlib,sys; sys.stdout.buffer.write(pathlib.Path(sys.argv[1]).read_bytes()); "
+                      "sys.stdout.buffer.write(b'x' * 8388608); sys.exit(int(sys.argv[2]))")
+
+            def producer(args, *, stdout):
+                self.assertEqual(args, ["docker", "image", "save", docker_id])
+                return real_popen([sys.executable, "-c", script, fixture.name, "0"], stdout=stdout)
+
+            with patch.object(build_image.subprocess, "Popen", side_effect=producer):
+                self.assertEqual(build_image.saved_manifest(docker_id), raw)
+
+            def failed_producer(args, *, stdout):
+                self.assertEqual(args, ["docker", "image", "save", docker_id])
+                return real_popen([sys.executable, "-c", script, fixture.name, "9"], stdout=stdout)
+
+            with patch.object(build_image.subprocess, "Popen", side_effect=failed_producer):
+                with self.assertRaises(ValueError):
+                    build_image.saved_manifest(docker_id)
+
+    def test_saved_manifest_rejects_missing_duplicate_oversized_truncated_and_failed_stream(self):
+        raw = b"{}"
+        docker_id = "sha256:" + hashlib.sha256(raw).hexdigest()
+        member = f"blobs/sha256/{docker_id[7:]}"
+        oversized = b"x" * (4 * 1024 * 1024 + 1)
+        oversized_id = "sha256:" + hashlib.sha256(oversized).hexdigest()
+        truncated = b"x" * 2048
+        truncated_id = "sha256:" + hashlib.sha256(truncated).hexdigest()
+        nonregular = io.BytesIO()
+        with tarfile.open(fileobj=nonregular, mode="w") as archive:
+            target = tarfile.TarInfo(member)
+            target.type = tarfile.SYMTYPE
+            target.linkname = "manifest.json"
+            archive.addfile(target)
+        malformed = [(self._archive([("other", raw)]), docker_id),
+                     (self._archive([(member, raw), (member, raw)]), docker_id),
+                     (nonregular.getvalue(), docker_id),
+                     (self._archive([(f"blobs/sha256/{oversized_id[7:]}", oversized)]), oversized_id),
+                     (self._archive([(f"blobs/sha256/{truncated_id[7:]}", truncated)])[:513], truncated_id)]
+        for archive, requested_id in malformed:
+            with self.subTest(size=len(archive)):
+                process = self._process(archive)
+                with patch.object(build_image.subprocess, "Popen", return_value=process):
+                    with self.assertRaises((ValueError, OSError, tarfile.TarError)):
+                        build_image.saved_manifest(requested_id)
+                self.assertTrue(process.wait_called)
+        process = self._process(self._archive([(member, raw)]), returncode=9)
+        with patch.object(build_image.subprocess, "Popen", return_value=process):
+            with self.assertRaises(ValueError):
+                build_image.saved_manifest(docker_id)
+        self.assertTrue(process.wait_called)
+
+    @staticmethod
+    def _archive(entries):
+        output = io.BytesIO()
+        with tarfile.open(fileobj=output, mode="w") as archive:
+            for name, data in entries:
+                member = tarfile.TarInfo(name)
+                member.size = len(data)
+                archive.addfile(member, io.BytesIO(data))
+        return output.getvalue()
+
+    @staticmethod
+    def _process(data, returncode=0):
+        class Process:
+            def __init__(self):
+                class Stream(io.BytesIO):
+                    def __init__(self, content):
+                        super().__init__(content)
+                        self.bytes_read = 0
+
+                    def read(self, size=-1):
+                        output = super().read(size)
+                        self.bytes_read += len(output)
+                        return output
+
+                    def readinto(self, buffer):
+                        count = super().readinto(buffer)
+                        self.bytes_read += count
+                        return count
+                self.stdout = Stream(data)
+                self.returncode = returncode
+                self.wait_called = False
+
+            def wait(self, **_kwargs):
+                self.wait_called = True
+                return self.returncode
+
+            def poll(self):
+                return self.returncode
+
+            def terminate(self):
+                self.returncode = -15
+
+            def kill(self):
+                self.returncode = -9
+        return Process()
+
+    def test_containerd_local_identity_rejects_invalid_manifest_and_descriptor(self):
         docker_id = "sha256:" + "1" * 64
-        valid = {"mediaType": "application/vnd.oci.image.manifest.v1+json",
-                 "digest": docker_id, "annotations": {"config.digest": "sha256:" + "2" * 64}}
-        for descriptor in (
-                valid | {"annotations": {}},
-                valid | {"annotations": {"config.digest": "bad"}},
-                valid | {"digest": "sha256:" + "3" * 64},
-                valid | {"mediaType": "application/vnd.oci.image.index.v1+json"},
-                valid | {"annotations": []},
-                []):
+        raw = json.dumps({"schemaVersion": 2,
+                          "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                          "config": {"digest": "sha256:" + "2" * 64}, "layers": []}).encode()
+        valid = {"mediaType": "application/vnd.oci.image.manifest.v1+json", "digest": docker_id}
+        for descriptor in (valid | {"digest": "sha256:" + "3" * 64},
+                           valid | {"mediaType": "application/vnd.oci.image.index.v1+json"}, []):
             with self.subTest(descriptor=descriptor):
                 with self.assertRaises(ValueError):
-                    local_identity({"Id": docker_id, "Descriptor": descriptor})
+                    local_identity({"Id": docker_id, "Descriptor": descriptor}, raw)
+        with self.assertRaises(ValueError):
+            local_identity({"Id": docker_id, "Descriptor": valid}, raw)
+        with self.assertRaises(ValueError):
+            local_identity({"Id": "sha256:" + hashlib.sha256(raw).hexdigest(),
+                            "Descriptor": valid})
+        index = json.dumps({"schemaVersion": 2,
+                            "mediaType": "application/vnd.oci.image.index.v1+json",
+                            "manifests": []}).encode()
+        index_digest = "sha256:" + hashlib.sha256(index).hexdigest()
+        with self.assertRaises(ValueError):
+            local_identity({"Id": index_digest, "Descriptor": {
+                "mediaType": "application/vnd.oci.image.index.v1+json", "digest": index_digest}}, index)
+        malformed = json.dumps({"schemaVersion": 2,
+                                "mediaType": "application/vnd.oci.image.manifest.v1+json",
+                                "config": {"digest": "invalid"}, "layers": []}).encode()
+        malformed_id = "sha256:" + hashlib.sha256(malformed).hexdigest()
+        with self.assertRaises(ValueError):
+            local_identity({"Id": malformed_id, "Descriptor": {
+                "mediaType": "application/vnd.oci.image.manifest.v1+json", "digest": malformed_id}}, malformed)
         for image in ({}, {"Id": "bad"}, {"Id": docker_id, "Descriptor": "bad"}):
             with self.subTest(image=image):
                 with self.assertRaises(ValueError):
-                    local_identity(image)
+                    local_identity(image, raw)
 
     def test_pulled_containerd_descriptor_can_omit_config_annotation(self):
         docker_id = "sha256:" + "3" * 64
