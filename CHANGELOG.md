@@ -1,5 +1,14 @@
 # Changelog
 
+## [1.20.8](https://github.com/joshyorko/room-of-requirement/compare/v1.20.7...v1.20.8) (2026-10-30)
+
+
+### 🐛 Bug Fixes
+
+* replace unavailable tldr formula with tealdeer ([cde32e7](https://github.com/joshyorko/room-of-requirement/commit/cde32e79488343bece89aa4fb933438bc130d245))
+* **wolfi:** provision rootless krun KVM group access ([d033714](https://github.com/joshyorko/room-of-requirement/commit/d033714b3196c65386201a1848d8fb2a897e42cd))
+* **wolfi:** require patched Ruby packages for critical CVEs ([#525](https://github.com/joshyorko/room-of-requirement/issues/525)) ([2b23e85](https://github.com/joshyorko/room-of-requirement/commit/2b23e853c9100c5f761e40e640eb7c2b8813c082))
+
 ## [1.20.7](https://github.com/joshyorko/room-of-requirement/compare/v1.20.6...v1.20.7) (2026-10-23)
 
 
