@@ -22,9 +22,11 @@ def capture(*args):
 
 
 def validate_node(version):
-    match = re.fullmatch(r"v(24)\.([0-9]+)\.([0-9]+)", version)
-    require(match is not None and tuple(map(int, match.groups())) >= (24, 22, 1),
-            "build requires stable Node 24 >=24.22.1")
+    match = re.fullmatch(r"v([0-9]+)\.([0-9]+)\.([0-9]+)", version)
+    floors = {24: (24, 22, 1), 26: (26, 13, 0)}
+    require(match is not None and int(match.group(1)) in floors
+            and tuple(map(int, match.groups())) >= floors[int(match.group(1))],
+            "build requires stable Node 24 >=24.22.1 or Node 26 >=26.13.0")
 
 
 def verify_package(archive, metadata):
