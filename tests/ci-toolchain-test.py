@@ -16,10 +16,13 @@ sys.path.insert(0, str(ROOT / ".github/scripts"))
 class ToolchainTests(unittest.TestCase):
     def test_node_floor_rejects_old_other_major_and_prerelease_versions(self):
         module = importlib.import_module("build_toolchain")
-        for version in ("v24.22.1", "v24.22.2", "v24.23.0"):
+        for version in ("v24.22.1", "v24.22.2", "v24.23.0", "v24.99.99",
+                        "v26.13.0", "v26.13.1", "v26.99.99"):
             module.validate_node(version)
-        for version in ("v24.22.0", "v24.9.0", "v22.22.1", "v26.12.1",
-                        "v24.22.1-rc.1", "24.22.1", ""):
+        for version in ("v24.22.0", "v24.9.0", "v26.12.1", "v26.12.99",
+                        "v22.22.1", "v25.22.1", "v27.22.1", "v28.22.1",
+                        "v24.22.1-rc.1", "v26.13.0-beta.1", "v26.13.0+build.1",
+                        "24.22.1", "", "v26.13", "node26.13.0"):
             with self.subTest(version=version), self.assertRaises(ValueError):
                 module.validate_node(version)
 
