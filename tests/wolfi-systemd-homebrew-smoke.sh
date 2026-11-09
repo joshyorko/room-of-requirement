@@ -36,23 +36,41 @@ verify_service() {
         return 1
     }
 
-    python3 - "${service_pid}" <<'PY'
+    if ! python3 - "${service_pid}" <<'PY'
 import pathlib
 import sys
+import time
 
 pid = sys.argv[1]
-owned = set()
-for descriptor in pathlib.Path(f"/proc/{pid}/fd").iterdir():
-    target = descriptor.resolve(strict=False).name
-    if target.startswith("socket:[") and target.endswith("]"):
-        owned.add(target[8:-1])
-listeners = set()
-for table in ("/proc/net/tcp", "/proc/net/tcp6"):
-    lines = pathlib.Path(table).read_text().splitlines()[1:]
-    listeners.update(line.split()[9] for line in lines if line.split()[3] == "0A")
-if not owned.intersection(listeners):
-    raise SystemExit("Homebrew t3 serve process owns no TCP listening socket")
+deadline = time.monotonic() + 30
+while True:
+    if not pathlib.Path(f"/proc/{pid}").exists():
+        raise SystemExit("Homebrew t3 serve process exited before listener readiness")
+    owned = set()
+    try:
+        for descriptor in pathlib.Path(f"/proc/{pid}/fd").iterdir():
+            target = descriptor.resolve(strict=False).name
+            if target.startswith("socket:[") and target.endswith("]"):
+                owned.add(target[8:-1])
+    except FileNotFoundError:
+        # A descriptor can close while procfs is being read. Retry only while
+        # the original process still exists; never accept another process.
+        owned.clear()
+    listeners = set()
+    for table in ("/proc/net/tcp", "/proc/net/tcp6"):
+        lines = pathlib.Path(table).read_text().splitlines()[1:]
+        listeners.update(line.split()[9] for line in lines if line.split()[3] == "0A")
+    if owned.intersection(listeners):
+        break
+    if time.monotonic() >= deadline:
+        raise SystemExit("Homebrew t3 serve process owns no TCP listening socket after 30 seconds")
+    time.sleep(0.25)
 PY
+    then
+        systemctl --user show "${unit}" \
+            --property=ActiveState,SubState,Result,MainPID,ExecMainStatus,NRestarts >&2 || true
+        return 1
+    fi
 }
 
 case "${1:?expected setup, verify, or cleanup}" in

@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import unittest
 import importlib.util
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / ".github/scripts"
@@ -431,6 +432,55 @@ class GitSourceTests(unittest.TestCase):
                     self.assertFalse(facts["main_ancestor"])
             finally:
                 os.chdir(previous)
+
+
+class HomebrewListenerTests(unittest.TestCase):
+    def run_probe(self, *, ready_after=None, exit_after=None, foreign=False):
+        # Execute the actual smoke probe against disposable procfs fixtures.
+        source = (ROOT / "tests/wolfi-systemd-homebrew-smoke.sh").read_text()
+        probe = source.split("<<'PY'\n", 1)[1].split("\nPY", 1)[0]
+        with tempfile.TemporaryDirectory() as work:
+            proc = Path(work)
+            fds = proc / "99/fd"
+            fds.mkdir(parents=True)
+            (fds / "7").symlink_to("socket:[123]")
+            (proc / "net").mkdir()
+            (proc / "net/tcp").write_text("header\n")
+            (proc / "net/tcp6").write_text("header\n")
+            clock = [0.0]
+            real_path = Path
+
+            def sleep(seconds):
+                clock[0] += seconds
+                if ready_after is not None and clock[0] >= ready_after:
+                    inode = "456" if foreign else "123"
+                    (proc / "net/tcp6").write_text(f"header\n0 local remote 0A 0 0 0 0 0 {inode}\n")
+                if exit_after is not None and clock[0] >= exit_after and fds.exists():
+                    (fds / "7").unlink()
+                    fds.rmdir()
+                    (proc / "99").rmdir()
+
+            def path(value):
+                return proc / value.removeprefix("/proc/") if value.startswith("/proc/") else real_path(value)
+
+            with mock.patch("pathlib.Path", side_effect=path), \
+                 mock.patch("sys.argv", ["probe", "99"]), \
+                 mock.patch("time.monotonic", side_effect=lambda: clock[0]), \
+                 mock.patch("time.sleep", side_effect=sleep):
+                exec(compile(probe, "homebrew-listener-probe", "exec"), {})
+            return clock[0]
+
+    def test_waits_for_the_service_owned_listener(self):
+        self.assertGreaterEqual(self.run_probe(ready_after=2), 2)
+
+    def test_missing_or_foreign_listener_times_out(self):
+        for options in ({}, {"ready_after": 1, "foreign": True}):
+            with self.subTest(options=options), self.assertRaisesRegex(SystemExit, "no TCP listening socket"):
+                self.run_probe(**options)
+
+    def test_service_exit_fails_before_timeout(self):
+        with self.assertRaisesRegex(SystemExit, "exited before"):
+            self.run_probe(exit_after=1)
 
 
 if __name__ == "__main__":
