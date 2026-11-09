@@ -30,6 +30,11 @@ assert not any("/sys/fs/cgroup" in mount or "/var/run/docker.sock" in mount
 dockerfile = (root / "src/wolfi/.devcontainer/Dockerfile").read_text()
 stages = re.findall(r"^FROM .* AS (\S+)$", dockerfile, re.MULTILINE)
 assert stages[-3:] == ["runtime", "wolfi-systemd", "final"]
+metadata_labels = re.findall(r"^LABEL devcontainer\.metadata='(.+)'$", dockerfile, re.MULTILINE)
+metadata = json.loads(metadata_labels[-1])
+assert metadata[0]["containerUser"] == "root"
+assert metadata[0]["remoteUser"] == "vscode"
+assert metadata[0]["updateRemoteUserUID"] is False
 assert "apk add --no-cache dbus pam systemd systemd-systemctl" in dockerfile
 assert "ENTRYPOINT [\"/usr/lib/systemd/systemd\"]" in dockerfile
 assert "CMD [\"--system\", \"--unit=multi-user.target\"]" in dockerfile
