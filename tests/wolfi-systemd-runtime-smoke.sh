@@ -19,6 +19,7 @@ state="$(systemctl is-system-running 2>&1 || true)"
     fail "system manager is ${state}; expected running"
 }
 systemctl is-active --quiet ror-container-init.service || fail "RoR initialization unit is inactive"
+systemctl is-active --quiet systemd-logind.service || fail "logind is inactive"
 systemctl is-active --quiet ror-docker.service || fail "RoR Docker service is inactive"
 systemctl is-active --quiet user@1000.service || fail "vscode user manager is inactive"
 systemctl show user@1000.service --property=ControlGroup --value | grep -q . || \

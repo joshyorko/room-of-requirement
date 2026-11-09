@@ -47,7 +47,7 @@ export const step = (action) => ({
   RejectVolumeCollision: "reject a pre-existing test volume",
   BootSystemd: "systemd becomes PID 1",
   BootLegacyWolfi: "legacy Wolfi starts its entrypoint",
-  BootRejected: "fail startup when required packages or cgroups are unavailable",
+  BootRejected: "fail startup when required cgroups are unavailable",
   StartDBus: "start system D-Bus",
   StartLogind: "start logind",
   InitializeHomeSuccess: "seed only missing HOME defaults",

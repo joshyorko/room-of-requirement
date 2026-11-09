@@ -13,7 +13,9 @@ Coverage: `src/common/entrypoint.sh` home-seeder result handling; `src/wolfi/sys
 
 Source synchronization baseline: `e5b6ef909b843f9cf361062b4393844337db8a6e`. Confirm the mapping against the covered source before moving this baseline to a later commit.
 
-Use `SystemdGood.cfg`, `SystemdSeedRejected.cfg`, `LegacyWolfi.cfg`, `MissingCgroup.cfg`, `MissingPackages.cfg`, `DockerUnavailable.cfg`, `VolumeCollision.cfg`, and `KvmAvailable.cfg` as passing scenarios. `SystemdSeedIgnored.cfg` reproduces the old warning-and-continue defect and must violate `InitCompleteRequiresSeed`, `ManagerRequiresBootstrap`, and `BrewServiceContract`. `PodmanPrepFailure.cfg` and `KvmPrepFailure.cfg` must violate `RuntimeSmokePasses`. `CgroupHost.cfg` and `UidRemapped.cfg` must reject their configuration invariants. An unexpected result is a verification failure, not permission to weaken a rule.
+Use `SystemdGood.cfg`, `SystemdSeedRejected.cfg`, `LegacyWolfi.cfg`, `MissingCgroup.cfg`, `DockerUnavailable.cfg`, `VolumeCollision.cfg`, and `KvmAvailable.cfg` as passing scenarios. `MissingPackages.cfg` must violate `StartupSettles`: PID 1 and D-Bus can run while a missing `systemd-logind-service` prevents initialization and user-manager readiness. Hosted run 42629208843/job 129201432555 replayed this path; the Dockerfile now installs that split package and checks its service/binary plus both user-manager template units at build time.
+
+`SystemdSeedIgnored.cfg` reproduces the old warning-and-continue defect and must violate `InitCompleteRequiresSeed`, `ManagerRequiresBootstrap`, and `BrewServiceContract`. `PodmanPrepFailure.cfg` and `KvmPrepFailure.cfg` must violate `RuntimeSmokePasses`. `CgroupHost.cfg` and `UidRemapped.cfg` must reject their configuration invariants. An unexpected result is a verification failure, not permission to weaken a rule.
 
 Run `bash tests/wolfi-systemd-init-test.sh` to replay the seeder counterexample against actual shell control flow. It redirects only the external seeder in a scratch copy and fakes host-mutating commands. The test must reject failed systemd initialization while preserving legacy warning-and-continue behavior.
 

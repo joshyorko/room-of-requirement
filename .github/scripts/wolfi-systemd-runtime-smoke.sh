@@ -86,6 +86,7 @@ wait_for_systemd() {
                 printf "system state: "; systemctl is-system-running 2>&1 || true
                 for unit in dbus.service systemd-logind.service ror-container-init.service \
                     ror-docker.service ror-vscode-user-manager.service user@1000.service; do
+                    printf "Unit: %s\n" "$unit"
                     systemctl show "$unit" --property=LoadState,ActiveState,SubState,Result --no-pager 2>&1 || true
                 done
                 systemctl --failed --no-pager 2>&1 || true

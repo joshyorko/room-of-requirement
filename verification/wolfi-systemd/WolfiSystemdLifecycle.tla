@@ -76,7 +76,6 @@ BootSystemd ==
     /\ Flavor = "wolfi-systemd"
     /\ s.container = "created"
     /\ CgroupDelegated
-    /\ PackagesInstalled
     /\ CgroupNamespace = "private"
     /\ s' = [s EXCEPT !.container = "running",
                     !.pid1 = "systemd",
@@ -92,7 +91,7 @@ BootLegacyWolfi ==
 BootRejected ==
     /\ Flavor = "wolfi-systemd"
     /\ s.container = "created"
-    /\ (~CgroupDelegated \/ ~PackagesInstalled \/ CgroupNamespace # "private")
+    /\ (~CgroupDelegated \/ CgroupNamespace # "private")
     /\ s' = [s EXCEPT !.container = "failed",
                     !.initFailed = TRUE]
 
@@ -105,6 +104,7 @@ StartDBus ==
 StartLogind ==
     /\ s.container = "running"
     /\ s.systemdActive
+    /\ PackagesInstalled
     /\ ~s.logindReady
     /\ s' = [s EXCEPT !.logindReady = TRUE]
 
@@ -342,7 +342,6 @@ RestartContainer ==
     /\ Flavor = "wolfi-systemd"
     /\ s.container = "stopped"
     /\ CgroupDelegated
-    /\ PackagesInstalled
     /\ s' = [s EXCEPT !.container = "running",
                     !.pid1 = "systemd",
                     !.systemdActive = TRUE,
@@ -374,7 +373,6 @@ RecreateContainer ==
     /\ s.container = "stopped"
     /\ s.generation < 2
     /\ CgroupDelegated
-    /\ PackagesInstalled
     /\ s' = [s EXCEPT !.container = "created",
                     !.generation = s.generation + 1,
                     !.pid1 = "none",

@@ -36,6 +36,10 @@ assert metadata[0]["containerUser"] == "root"
 assert metadata[0]["remoteUser"] == "vscode"
 assert metadata[0]["updateRemoteUserUID"] is False
 assert "apk add --no-cache dbus linux-pam systemd systemd-systemctl" in dockerfile
+systemd_stage = dockerfile.split("FROM runtime AS wolfi-systemd\n", 1)[1].split("FROM runtime AS final", 1)[0]
+assert "systemd-logind-service" in systemd_stage, "Wolfi splits logind into systemd-logind-service"
+for required_unit in ("systemd-logind.service", "user@.service", "user-runtime-dir@.service"):
+    assert required_unit in systemd_stage, f"Build must check the installed {required_unit}"
 assert "ENTRYPOINT [\"/usr/lib/systemd/systemd\"]" in dockerfile
 assert "CMD [\"--system\", \"--unit=multi-user.target\"]" in dockerfile
 assert "STOPSIGNAL SIGRTMIN+3" in dockerfile
