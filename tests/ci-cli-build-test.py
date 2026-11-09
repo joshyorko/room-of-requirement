@@ -111,7 +111,7 @@ class CliBuildTests(unittest.TestCase):
                         CI_DOCKER_STATE=str(self.root / "state.json"), RUNNER_TEMP=str(self.root),
                         GITHUB_OUTPUT=str(self.root / "output"), PYTHONDONTWRITEBYTECODE="1")
 
-    def build(self, with_feature, run_id="123", event="schedule", refresh=False):
+    def build(self, with_feature, run_id="123", event="schedule", refresh=False, variant="wolfi"):
         config = dict(build=dict(dockerfile="Dockerfile", context="../../.."))
         if with_feature:
             config["features"] = {"../../../.devcontainer/feature": {}}
@@ -120,7 +120,7 @@ class CliBuildTests(unittest.TestCase):
         state_path.unlink(missing_ok=True)
         ref = "refs/pull/1/merge" if event == "pull_request" else "refs/heads/main"
         request = dict(event=event, ref=ref, source=self.source,
-                       repository="owner/repo", variant="wolfi", run_id=run_id, run_attempt="1",
+                       repository="owner/repo", variant=variant, run_id=run_id, run_attempt="1",
                        publish=True, enforce=True, refresh=refresh, release_version="")
         result = subprocess.run([str(SCRIPTS / "build_image.py")], cwd=self.root,
                                 env=self.env | {"REQUEST": json.dumps(request)},
@@ -167,6 +167,11 @@ class CliBuildTests(unittest.TestCase):
                     self.assertIn("install.sh", state["dockerfile"])
                 receipt = json.loads((self.root / "image-evidence/metadata.json").read_text())
                 self.assertEqual(receipt, state["labels"])
+
+    def test_systemd_image_identity_label_binds_the_opt_in_flavor(self):
+        state, _ = self.build(True, event="pull_request", variant="wolfi-systemd")
+        self.assertEqual(state["labels"].get("io.ror.variant"), "wolfi-systemd")
+        self.assertEqual(state["labels"].get("org.opencontainers.image.revision"), self.source)
 
     def test_actual_cli_metadata_rejects_same_source_out_of_order_promotion(self):
         older, plan = self.build(True, "123")

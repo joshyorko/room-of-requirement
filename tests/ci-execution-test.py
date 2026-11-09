@@ -71,6 +71,16 @@ elif name == 'docker':
             print(os.environ.get('LOCAL_ID', 'sha256:' + 'b' * 64))
     elif args[:1] == ['run']:
         print('ci-owned-container')
+    elif args[:2] == ['volume', 'inspect']:
+        volume_name = args[-1]
+        calls = [json.loads(line) for line in pathlib.Path(os.environ['CALLS']).read_text().splitlines()]
+        for call in reversed(calls):
+            if call[:3] == ['docker', 'volume', 'create'] and call[-1] == volume_name:
+                print(next(value.split('=', 1)[1] for value in call
+                           if value.startswith('io.ror.smoke.run=')))
+                break
+        else:
+            sys.exit(1)
 elif name == 'git':
     print(os.environ.get('SOURCE_SHA', 'a' * 40))
 '''
@@ -276,6 +286,21 @@ class ExecutionTests(unittest.TestCase):
                 execution = next(c for c in self.calls() if suite in " ".join(c))
                 self.assertIn("--in-container", execution)
                 self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], self.calls())
+
+    def test_wolfi_systemd_smoke_uses_private_cgroups_and_test_owned_volumes(self):
+        result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi-systemd")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        run = next(c for c in calls if c[:2] == ["docker", "run"])
+        self.assertIn("--privileged", run)
+        self.assertIn("--cgroupns=private", run)
+        self.assertNotIn("--cgroupns=host", run)
+        self.assertFalse(any("/sys/fs/cgroup" in argument or "/var/run/docker.sock" in argument
+                             for argument in run))
+        mounts = [run[i + 1] for i, value in enumerate(run[:-1]) if value == "--mount"]
+        self.assertTrue(any("target=/home/vscode" in mount for mount in mounts))
+        self.assertEqual(sum(call[:2] == ["docker", "run"] for call in calls), 3)
+        self.assertTrue(any(call[:3] == ["docker", "volume", "rm"] for call in calls))
 
     def test_required_privileged_home_contract_failure_fails_runtime_gate(self):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "ubuntu-noble",

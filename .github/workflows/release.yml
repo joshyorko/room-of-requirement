@@ -50,7 +50,7 @@ jobs:
     strategy:
       fail-fast: false
       matrix:
-        variant: [ubuntu-noble, debian-trixie, wolfi]
+        variant: [ubuntu-noble, debian-trixie, wolfi, wolfi-systemd]
     uses: ./.github/workflows/build-image.yml
     with:
       variant: ${{ matrix.variant }}

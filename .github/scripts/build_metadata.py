@@ -16,13 +16,16 @@ MARKER = "io.ror.publication"
 
 
 def labels_for(plan):
-    return {
+    labels = {
         MARKER: "verified-v1",
         "org.opencontainers.image.source": "https://github.com/" + plan["repository"],
         "org.opencontainers.image.revision": plan["source"],
         "io.ror.run-id": str(plan["run_id"]),
         "io.ror.run-attempt": str(plan["run_attempt"]),
     }
+    if plan["variant"] == "wolfi-systemd":
+        labels["io.ror.variant"] = plan["variant"]
+    return labels
 
 
 def validate_labels(labels, plan):

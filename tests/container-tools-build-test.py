@@ -27,7 +27,7 @@ class SourceBuildTests(unittest.TestCase):
 
     def test_builder_images_match_required_go_toolchain(self):
         root = HELPERS.parents[2]
-        for variant in ('debian-trixie', 'ubuntu-noble', 'wolfi'):
+        for variant in ('debian-trixie', 'ubuntu-noble', 'wolfi', 'wolfi-systemd'):
             with self.subTest(variant=variant):
                 dockerfile = root / 'src' / variant / '.devcontainer/Dockerfile'
                 match = re.search(r'^ARG ROR_GO_BUILDER_IMAGE=golang:([^@\s]+)',

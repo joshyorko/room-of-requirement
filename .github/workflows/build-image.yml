@@ -38,7 +38,7 @@ on:
       variant:
         type: choice
         default: ubuntu-noble
-        options: [ubuntu-noble, debian-trixie, wolfi]
+        options: [ubuntu-noble, debian-trixie, wolfi, wolfi-systemd]
       publish:
         description: Publish a candidate (branch candidates never promote production aliases)
         type: boolean

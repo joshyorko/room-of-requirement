@@ -72,6 +72,8 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(json.loads(result.stdout),
                          ["ubuntu-noble", "ubuntu-noble-dind", "latest", "codespaces"])
         self.assertEqual(json.loads(self.promotion(variant="wolfi").stdout), ["wolfi", "secure"])
+        self.assertEqual(json.loads(self.promotion(variant="wolfi-systemd").stdout),
+                         ["wolfi-systemd"])
 
     def test_failed_skipped_cancelled_missing_gates_never_promote(self):
         for gate in ("verify", "attest", "provenance"):
@@ -109,6 +111,8 @@ class PolicyTests(unittest.TestCase):
         self.assertEqual(json.loads(result.stdout), ["v1.2.3", "v1.2", "v1"])
         self.assertEqual(json.loads(self.promotion(**release, variant="wolfi").stdout),
                          ["v1.2.3-wolfi", "v1.2-wolfi", "v1-wolfi"])
+        self.assertEqual(json.loads(self.promotion(**release, variant="wolfi-systemd").stdout),
+                         ["v1.2.3-wolfi-systemd", "v1.2-wolfi-systemd", "v1-wolfi-systemd"])
         for changes in (dict(tag_sha=SHA), dict(main_ancestor=False),
                         dict(latest_release="v1.2.4"), dict(release_tag="v1.2.4"),
                         dict(ref="refs/heads/topic"), dict(release_version="1.2.3-rc.1")):
