@@ -14,7 +14,9 @@ import yaml
 
 ROOT = Path(__file__).resolve().parents[1]
 IMAGE_SUITES = {"runtime-home-ownership-test.sh", "vscode-home-contract-test.sh",
-                "runtime-native-smoke.sh", "runtime-docker-image-smoke.sh"}
+                "runtime-native-smoke.sh", "runtime-docker-image-smoke.sh",
+                "wolfi-systemd-homebrew-smoke.sh", "wolfi-systemd-runtime-smoke.sh",
+                "wolfi-systemd-user-manager-smoke.sh"}
 
 
 class RegressionSelectionTests(unittest.TestCase):
