@@ -8,6 +8,7 @@ fail() {
 
 [ "$(cat /proc/1/comm)" = systemd ] || fail "PID 1 is not systemd"
 [[ "$(readlink /proc/1/exe)" == */systemd ]] || fail "/proc/1/exe is not systemd"
+[ "$(id -u vscode)" = 1000 ] || fail "vscode UID is not the configured UID 1000"
 awk '$5 == "/sys/fs/cgroup" && $0 ~ / - cgroup2 / { found = 1 } END { exit !found }' \
     /proc/1/mountinfo || fail "systemd cgroup v2 mount is missing"
 grep -q '^0::' /proc/1/cgroup || fail "unified cgroup v2 hierarchy is missing"

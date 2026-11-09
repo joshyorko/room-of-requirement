@@ -17,6 +17,7 @@ assert (root / "src/wolfi-systemd/.devcontainer/Dockerfile").resolve() == (
     root / "src/wolfi/.devcontainer/Dockerfile").resolve()
 assert systemd["containerUser"] == "root"
 assert systemd["remoteUser"] == "vscode"
+assert systemd["updateRemoteUserUID"] is False
 assert systemd["overrideCommand"] is False
 assert "--privileged" in systemd["runArgs"]
 assert "--cgroupns=private" in systemd["runArgs"]

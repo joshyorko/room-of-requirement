@@ -27,6 +27,7 @@ settings:
   "image": "ghcr.io/joshyorko/room-of-requirement:wolfi-systemd",
   "containerUser": "root",
   "remoteUser": "vscode",
+  "updateRemoteUserUID": false,
   "overrideCommand": false,
   "privileged": true,
   "runArgs": ["--privileged", "--cgroupns=private"],

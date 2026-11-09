@@ -8,6 +8,7 @@
   "workspaceFolder": "/workspaces/room-of-requirement",
   "containerUser": "root",
   "remoteUser": "vscode",
+  "updateRemoteUserUID": false,
   "containerEnv": {
     "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
   },

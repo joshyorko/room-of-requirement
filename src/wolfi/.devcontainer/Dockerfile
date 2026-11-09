@@ -392,7 +392,7 @@ RUN systemctl enable ror-container-init.service ror-docker.service \
         ror-vscode-user-manager.service
 
 ENV ROR_IMAGE_VARIANT=wolfi-systemd
-LABEL devcontainer.metadata='[{"containerUser":"root","remoteUser":"vscode","overrideCommand":false,"privileged":true,"runArgs":["--privileged","--cgroupns=private"],"remoteEnv":{"XDG_RUNTIME_DIR":"/run/user/1000","DBUS_SESSION_BUS_ADDRESS":"unix:path=/run/user/1000/bus"}}]'
+LABEL devcontainer.metadata='[{"containerUser":"root","remoteUser":"vscode","updateRemoteUserUID":false,"overrideCommand":false,"privileged":true,"runArgs":["--privileged","--cgroupns=private"],"remoteEnv":{"XDG_RUNTIME_DIR":"/run/user/1000","DBUS_SESSION_BUS_ADDRESS":"unix:path=/run/user/1000/bus"}}]'
 ENTRYPOINT ["/usr/lib/systemd/systemd"]
 CMD ["--system", "--unit=multi-user.target"]
 STOPSIGNAL SIGRTMIN+3
