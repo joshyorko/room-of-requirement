@@ -72,7 +72,7 @@ start_container() {
 
 wait_for_systemd() {
     local attempt
-    for attempt in $(seq 1 120); do
+    for ((attempt = 1; attempt <= 120; attempt++)); do
         if docker exec --user root "${container_id}" systemctl is-active --quiet ror-vscode-user-manager.service 2>/dev/null; then
             docker exec --user root "${container_id}" bash /ror-source/tests/wolfi-systemd-runtime-smoke.sh
             return
