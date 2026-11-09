@@ -7,9 +7,13 @@ variant="${2:?variant required}"
 scripts="$(cd "$(dirname "${BASH_SOURCE[0]}")" && pwd)"
 source_root="$(cd "$scripts/../.." && pwd)"
 case "$variant" in
-    ubuntu-noble|debian-trixie|wolfi) ;;
+    ubuntu-noble|debian-trixie|wolfi|wolfi-systemd) ;;
     *) echo "Unsupported smoke variant: $variant" >&2; exit 1 ;;
 esac
+
+if [[ "$variant" == wolfi-systemd ]]; then
+    exec "$scripts/wolfi-systemd-runtime-smoke.sh" "$image"
+fi
 
 container="$(docker run -d --privileged \
     --mount type=volume,target=/var/lib/docker \

@@ -57,6 +57,12 @@ def isolate(config, image, prefix):
     return result, volumes
 
 
+def runtime_smoke_suites(variant):
+    suites = [("docker-smoke.sh", None), ("podman-smoke.sh", "vscode")]
+    return [(script, user) for script, user in suites
+            if not user or variant in {"wolfi", "wolfi-systemd"}]
+
+
 def prepare_workspace(work, candidate_uid):
     """Grant both UIDs access only to this runner-owned disposable payload.
 
@@ -170,9 +176,7 @@ def smoke(root, meta):
                            "mise", "exec", "--", "node", "--version")
             validate_node(node)
             (evidence / "template-node.txt").write_text(node + "\n")
-            for script, user in (("docker-smoke.sh", None), ("podman-smoke.sh", "vscode")):
-                if user and meta["variant"] != "wolfi":
-                    continue
+            for script, user in runtime_smoke_suites(meta["variant"]):
                 args = ["docker", "exec", "-i"] + (["--user", user] if user else [])
                 with (scripts / script).open() as source:
                     subprocess.run([*args, container, "bash", "--noprofile", "--norc", "-s"],

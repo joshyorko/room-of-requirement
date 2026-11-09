@@ -11,6 +11,7 @@ import subprocess
 import tempfile
 import unittest
 import importlib.util
+from unittest import mock
 
 ROOT = Path(__file__).resolve().parents[1]
 SCRIPTS = ROOT / ".github/scripts"
@@ -71,6 +72,18 @@ elif name == 'docker':
             print(os.environ.get('LOCAL_ID', 'sha256:' + 'b' * 64))
     elif args[:1] == ['run']:
         print('ci-owned-container')
+    elif args[:2] == ['volume', 'inspect']:
+        volume_name = args[-1]
+        calls = [json.loads(line) for line in pathlib.Path(os.environ['CALLS']).read_text().splitlines()]
+        for call in reversed(calls):
+            if call[:3] == ['docker', 'volume', 'create'] and call[-1] == volume_name:
+                print(next(value.split('=', 1)[1] for value in call
+                           if value.startswith('io.ror.smoke.run=')))
+                break
+        else:
+            sys.exit(1)
+    elif args[:1] == ['inspect']:
+        print(os.environ.get('INSPECT_STATE', 'running'))
 elif name == 'git':
     print(os.environ.get('SOURCE_SHA', 'a' * 40))
 '''
@@ -277,6 +290,33 @@ class ExecutionTests(unittest.TestCase):
                 self.assertIn("--in-container", execution)
                 self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], self.calls())
 
+    def test_wolfi_systemd_smoke_uses_private_cgroups_and_test_owned_volumes(self):
+        result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi-systemd")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        run = next(c for c in calls if c[:2] == ["docker", "run"])
+        self.assertIn("--privileged", run)
+        self.assertIn("--cgroupns=private", run)
+        self.assertNotIn("--cgroupns=host", run)
+        self.assertFalse(any("/sys/fs/cgroup" in argument or "/var/run/docker.sock" in argument
+                             for argument in run))
+        mounts = [run[i + 1] for i, value in enumerate(run[:-1]) if value == "--mount"]
+        self.assertTrue(any("target=/home/vscode" in mount for mount in mounts))
+        self.assertEqual(sum(call[:2] == ["docker", "run"] for call in calls), 3)
+        self.assertTrue(any(call[:3] == ["docker", "volume", "rm"] for call in calls))
+
+    def test_wolfi_systemd_startup_failure_reports_container_state_and_cleans_owned_resources(self):
+        result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi-systemd",
+                                 FAIL_COMMAND="docker exec", INSPECT_STATE="exited")
+        self.assertNotEqual(result.returncode, 0)
+        calls = self.calls()
+        self.assertTrue(any(call[:2] == ["docker", "inspect"] for call in calls))
+        self.assertTrue(any(call[:2] == ["docker", "logs"] for call in calls))
+        self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], calls)
+        created = [call[-1] for call in calls if call[:3] == ["docker", "volume", "create"]]
+        removed = [call[-1] for call in calls if call[:3] == ["docker", "volume", "rm"]]
+        self.assertEqual(sorted(created), sorted(removed))
+
     def test_required_privileged_home_contract_failure_fails_runtime_gate(self):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "ubuntu-noble",
                                  FAIL_COMMAND="home-smoke.sh")
@@ -392,6 +432,93 @@ class GitSourceTests(unittest.TestCase):
                     self.assertFalse(facts["main_ancestor"])
             finally:
                 os.chdir(previous)
+
+
+class PodmanManagerTests(unittest.TestCase):
+    def probe(self, variant, manager):
+        with tempfile.TemporaryDirectory() as work:
+            directory = Path(work)
+            fake = '''#!/usr/bin/env python3
+import os, pathlib, sys
+name = pathlib.Path(sys.argv[0]).name
+args = sys.argv[1:]
+if name == 'id': print('1000')
+elif name == 'stat': print('700')
+elif name == 'podman' and args[0] == 'info':
+    print('true overlay netavark ' + os.environ['TEST_MANAGER'])
+elif name == 'podman' and 'cat' in args: print('wolfi-podman')
+'''
+            for name in ("id", "stat", "podman", "buildah", "skopeo"):
+                target = directory / name
+                target.write_text(fake)
+                target.chmod(0o755)
+            # Redirect only the runtime-dir existence check to the owned fixture.
+            source = (SCRIPTS / "podman-smoke.sh").read_text().replace(
+                'runtime_dir="/run/user/$(id -u)"', f'runtime_dir="{directory}"')
+            return subprocess.run(["bash", "-c", source], text=True, capture_output=True,
+                env=dict(os.environ, PATH=str(directory) + ":" + os.environ["PATH"],
+                         ROR_IMAGE_VARIANT=variant, TEST_MANAGER=manager), timeout=10)
+
+    def test_each_flavor_requires_its_own_cgroup_manager(self):
+        for variant, manager in (("wolfi", "cgroupfs"), ("wolfi-systemd", "systemd")):
+            with self.subTest(variant=variant):
+                result = self.probe(variant, manager)
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_wrong_manager_fails_for_both_flavors(self):
+        for variant, manager in (("wolfi", "systemd"), ("wolfi-systemd", "cgroupfs")):
+            with self.subTest(variant=variant):
+                result = self.probe(variant, manager)
+                self.assertNotEqual(result.returncode, 0)
+
+
+class HomebrewListenerTests(unittest.TestCase):
+    def run_probe(self, *, ready_after=None, exit_after=None, foreign=False):
+        # Execute the actual smoke probe against disposable procfs fixtures.
+        source = (ROOT / "tests/wolfi-systemd-homebrew-smoke.sh").read_text()
+        probe = source.split("<<'PY'\n", 1)[1].split("\nPY", 1)[0]
+        with tempfile.TemporaryDirectory() as work:
+            proc = Path(work)
+            fds = proc / "99/fd"
+            fds.mkdir(parents=True)
+            (fds / "7").symlink_to("socket:[123]")
+            (proc / "net").mkdir()
+            (proc / "net/tcp").write_text("header\n")
+            (proc / "net/tcp6").write_text("header\n")
+            clock = [0.0]
+            real_path = Path
+
+            def sleep(seconds):
+                clock[0] += seconds
+                if ready_after is not None and clock[0] >= ready_after:
+                    inode = "456" if foreign else "123"
+                    (proc / "net/tcp6").write_text(f"header\n0 local remote 0A 0 0 0 0 0 {inode}\n")
+                if exit_after is not None and clock[0] >= exit_after and fds.exists():
+                    (fds / "7").unlink()
+                    fds.rmdir()
+                    (proc / "99").rmdir()
+
+            def path(value):
+                return proc / value.removeprefix("/proc/") if value.startswith("/proc/") else real_path(value)
+
+            with mock.patch("pathlib.Path", side_effect=path), \
+                 mock.patch("sys.argv", ["probe", "99"]), \
+                 mock.patch("time.monotonic", side_effect=lambda: clock[0]), \
+                 mock.patch("time.sleep", side_effect=sleep):
+                exec(compile(probe, "homebrew-listener-probe", "exec"), {})
+            return clock[0]
+
+    def test_waits_for_the_service_owned_listener(self):
+        self.assertGreaterEqual(self.run_probe(ready_after=2), 2)
+
+    def test_missing_or_foreign_listener_times_out(self):
+        for options in ({}, {"ready_after": 1, "foreign": True}):
+            with self.subTest(options=options), self.assertRaisesRegex(SystemExit, "no TCP listening socket"):
+                self.run_probe(**options)
+
+    def test_service_exit_fails_before_timeout(self):
+        with self.assertRaisesRegex(SystemExit, "exited before"):
+            self.run_probe(exit_after=1)
 
 
 if __name__ == "__main__":

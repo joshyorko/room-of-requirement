@@ -243,6 +243,7 @@ prepare_dind_runtime() {
 usage() {
     cat <<'USAGE'
 Usage: ror-docker-start.sh [--socket PATH] [--link-default true|false] [--dry-run]
+                           [--foreground]
 
 Environment:
   ROR_DOCKER_STORAGE_DRIVER=auto|fuse-overlayfs|vfs|overlay2|default
@@ -256,6 +257,7 @@ DEFAULT_SOCKET="${ROR_DOCKER_TEST_DEFAULT_SOCKET:-/var/run/docker.sock}"
 PROFILE_DIR="${ROR_DOCKER_TEST_PROFILE_DIR:-/etc/profile.d}"
 LINK_DEFAULT="true"
 DRY_RUN="${ROR_DOCKER_START_DRY_RUN:-}"
+FOREGROUND="${ROR_DOCKER_START_FOREGROUND:-0}"
 SOURCE_CONFIG="${ROR_DOCKER_DAEMON_CONFIG:-/etc/docker/daemon.json}"
 EFFECTIVE_CONFIG="${ROR_DOCKER_EFFECTIVE_CONFIG:-/run/ror/docker-daemon.json}"
 
@@ -271,6 +273,10 @@ while [ "$#" -gt 0 ]; do
             ;;
         --dry-run)
             DRY_RUN="1"
+            shift
+            ;;
+        --foreground)
+            FOREGROUND="1"
             shift
             ;;
         -h | --help)
@@ -388,6 +394,18 @@ done
 if [ -S "${DOCKER_SOCKET}" ]; then
     run_as_root chown root:docker "${DOCKER_SOCKET}" 2>/dev/null || true
     run_as_root chmod 660 "${DOCKER_SOCKET}" 2>/dev/null || true
+fi
+
+if [ "${FOREGROUND}" = "1" ]; then
+    if ! command -v systemd-notify >/dev/null 2>&1; then
+        log "systemd-notify is required for foreground service readiness"
+        kill "${DOCKERD_PID}" 2>/dev/null || true
+        wait "${DOCKERD_PID}" 2>/dev/null || true
+        exit 1
+    fi
+    systemd-notify --ready --status="Docker API ready on ${DOCKER_HOST_VALUE}"
+    wait "${DOCKERD_PID}"
+    exit "$?"
 fi
 
 if [ "${DOCKER_SOCKET}" != "${DEFAULT_SOCKET}" ] && [ -S "${DOCKER_SOCKET}" ]; then

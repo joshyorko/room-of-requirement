@@ -89,6 +89,14 @@ class TemplateTests(unittest.TestCase):
             with self.assertRaises(ValueError):
                 module.image_variant(image, "owner/repo")
 
+    def test_wolfi_systemd_runs_the_rootless_podman_template_contract(self):
+        module = self.module()
+        expected = [("docker-smoke.sh", None), ("podman-smoke.sh", "vscode")]
+        self.assertEqual(module.runtime_smoke_suites("wolfi"), expected)
+        self.assertEqual(module.runtime_smoke_suites("wolfi-systemd"), expected)
+        self.assertEqual(module.runtime_smoke_suites("ubuntu-noble"), [("docker-smoke.sh", None)])
+        self.assertEqual(module.runtime_smoke_suites("debian-trixie"), [("docker-smoke.sh", None)])
+
     def test_applied_payload_preserves_features_and_lifecycle_but_isolates_volumes(self):
         module = self.module()
         config = dict(image="ghcr.io/owner/repo:wolfi", features={"feature:1": {}},

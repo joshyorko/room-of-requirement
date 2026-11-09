@@ -258,7 +258,7 @@ RUN mkdir -p \
 # ============================================================================
 # STAGE 4: Final Image (Optimized for size - heavy tools installed on demand)
 # ============================================================================
-FROM homebrew AS final
+FROM homebrew AS runtime
 
 # Switch to root for system operations
 USER 0
@@ -378,3 +378,28 @@ WORKDIR /workspaces
 # Entrypoint wrapper starts dockerd via sudo, then runs CMD as vscode user
 ENTRYPOINT ["/usr/local/bin/entrypoint.sh"]
 CMD ["sleep", "infinity"]
+
+# Optional systemd runtime. Keep it before the final stage so unqualified
+# Dockerfile builds continue to select the original non-systemd image.
+FROM runtime AS wolfi-systemd
+
+USER 0
+RUN apk add --no-cache dbus linux-pam systemd systemd-systemctl systemd-logind-service && \
+    test -x /usr/lib/systemd/systemd-logind && \
+    test -f /usr/lib/systemd/system/systemd-logind.service && \
+    test -f /usr/lib/systemd/system/user@.service && \
+    test -f /usr/lib/systemd/system/user-runtime-dir@.service
+COPY src/wolfi/systemd/ror-container-init.service /etc/systemd/system/ror-container-init.service
+COPY src/wolfi/systemd/ror-docker.service /etc/systemd/system/ror-docker.service
+COPY src/wolfi/systemd/ror-vscode-user-manager.service /etc/systemd/system/ror-vscode-user-manager.service
+RUN systemctl enable ror-container-init.service ror-docker.service \
+        ror-vscode-user-manager.service
+
+ENV ROR_IMAGE_VARIANT=wolfi-systemd
+LABEL devcontainer.metadata='[{"containerUser":"root","remoteUser":"vscode","updateRemoteUserUID":false,"overrideCommand":false,"privileged":true,"runArgs":["--privileged","--cgroupns=private"],"remoteEnv":{"XDG_RUNTIME_DIR":"/run/user/1000","DBUS_SESSION_BUS_ADDRESS":"unix:path=/run/user/1000/bus"}}]'
+ENTRYPOINT ["/usr/lib/systemd/systemd"]
+CMD ["--system", "--unit=multi-user.target"]
+STOPSIGNAL SIGRTMIN+3
+
+# Preserve the original target as the default for raw builds and current users.
+FROM runtime AS final

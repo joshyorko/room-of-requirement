@@ -1,0 +1,18 @@
+[Unit]
+Description=Room of Requirement Docker-in-Docker daemon
+Requires=ror-container-init.service
+After=ror-container-init.service
+Before=multi-user.target ror-vscode-user-manager.service
+
+[Service]
+Type=notify
+NotifyAccess=main
+ExecStart=/usr/local/bin/ror-docker-start.sh --foreground
+Restart=on-failure
+RestartSec=2s
+TimeoutStartSec=45s
+TimeoutStopSec=30s
+KillMode=control-group
+
+[Install]
+WantedBy=multi-user.target

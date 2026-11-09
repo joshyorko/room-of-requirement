@@ -19,8 +19,14 @@ if [[ "$runtime_ready" != 1 ]]; then
     exit 1
 fi
 export XDG_RUNTIME_DIR="$runtime_dir"
+case "${ROR_IMAGE_VARIANT:-wolfi}" in
+    wolfi) expected_manager=cgroupfs ;;
+    wolfi-systemd) expected_manager=systemd ;;
+    *) echo "Unsupported Podman smoke variant: ${ROR_IMAGE_VARIANT}" >&2; exit 1 ;;
+esac
 podman_info="$(podman info --format '{{.Host.Security.Rootless}} {{.Store.GraphDriverName}} {{.Host.NetworkBackend}} {{.Host.CgroupManager}}')"
-test "$podman_info" = 'true overlay netavark cgroupfs'
+printf 'Podman runtime: %s; expected cgroup manager: %s\n' "$podman_info" "$expected_manager"
+test "$podman_info" = "true overlay netavark ${expected_manager}"
 podman run --rm docker.io/library/alpine:3.22 sh -c 'wget -q -O- https://example.com >/dev/null'
 podman run --rm --cpus 0.25 docker.io/library/alpine:3.22 true
 bind_dir="$(mktemp -d)"

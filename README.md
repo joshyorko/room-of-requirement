@@ -22,7 +22,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 
 `latest` points at the Ubuntu Noble variant, which is the default Codespaces path. Core tools `mise`, `starship`, and `zoxide` are included. Language runtimes are configured for each project; `bbrew` and additional bundles install on demand. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
 
-Published variant tags:
+Variant tags:
 
 | Tag | Variant | Purpose |
 |-----|---------|---------|
@@ -33,6 +33,10 @@ Published variant tags:
 | `debian-trixie` | Debian Trixie | Microsoft Debian comparison baseline |
 | `wolfi` | Wolfi | Chainguard secure/minimal variant |
 | `secure` | Wolfi | Secure/minimal alias |
+| `wolfi-systemd` | Wolfi + systemd | Opt-in system manager and `vscode` user services |
+
+`wolfi-systemd` is a distinct image target and never replaces the existing
+`wolfi` or `secure` tags.
 
 ### Option 2: Open This Repository
 
@@ -51,6 +55,9 @@ For the Kubernetes PVC-backed `/home/vscode` contract, safe checksum
 validation, migration notes, and rollback instructions, see
 [DevPod Home Persistence](docs/DEVPOD-HOME-PERSISTENCE.md).
 
+For the opt-in Wolfi image with real systemd and Homebrew user services, see
+[Wolfi systemd](docs/WOLFI-SYSTEMD.md).
+
 ---
 
 ## 📦 Architecture Overview
@@ -62,6 +69,7 @@ room-of-requirement/
 │   ├── ubuntu-noble/.devcontainer/ # Default Microsoft Ubuntu variant
 │   ├── debian-trixie/.devcontainer # Microsoft Debian baseline
 │   ├── wolfi/.devcontainer/        # Chainguard secure/minimal variant
+│   ├── wolfi-systemd/.devcontainer # Opt-in Wolfi systemd configuration
 │   └── common/                     # Shared Brewfiles, config, scripts, ujust
 └── docker-bake.hcl                 # Dockerfile-only inspection targets
 ```
@@ -126,12 +134,14 @@ Build a raw Dockerfile layer for debugging:
 docker build -f src/ubuntu-noble/.devcontainer/Dockerfile .
 docker build -f src/debian-trixie/.devcontainer/Dockerfile .
 docker build -f src/wolfi/.devcontainer/Dockerfile .
+docker build --target wolfi-systemd -f src/wolfi-systemd/.devcontainer/Dockerfile .
 ```
 
 Build a runnable image with Dev Container feature processing:
 
 ```bash
 devcontainer build --workspace-folder . --config src/ubuntu-noble/.devcontainer/devcontainer.json
+devcontainer build --workspace-folder . --config src/wolfi-systemd/.devcontainer/devcontainer.json
 ```
 
 Published GHCR images are built with `devcontainer build`, not raw `docker build`
@@ -260,7 +270,8 @@ room-of-requirement/
 │   ├── common/              # Shared Brewfiles, config, scripts, post-create
 │   ├── ubuntu-noble/        # Default Microsoft Ubuntu variant
 │   ├── debian-trixie/       # Microsoft Debian baseline variant
-│   └── wolfi/               # Chainguard secure/minimal variant
+│   ├── wolfi/               # Chainguard secure/minimal variant
+│   └── wolfi-systemd/       # Opt-in Wolfi systemd variant
 ├── docker-bake.hcl          # Dockerfile-only inspection targets
 ├── templates/               # Project starter templates
 ├── automation/              # Maintenance automation

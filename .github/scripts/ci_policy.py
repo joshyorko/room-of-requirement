@@ -9,6 +9,7 @@ VARIANTS = {
     "ubuntu-noble": ["ubuntu-noble", "ubuntu-noble-dind", "latest", "codespaces"],
     "debian-trixie": ["debian-trixie"],
     "wolfi": ["wolfi", "secure"],
+    "wolfi-systemd": ["wolfi-systemd"],
 }
 
 
