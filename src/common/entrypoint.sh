@@ -27,8 +27,12 @@ fi
 # A home volume hides image-layer dotfiles. Restore only missing defaults before
 # shells or lifecycle hooks run; the helper never overwrites user state.
 if [ -x /usr/local/bin/seed-vscode-home.sh ]; then
-    /usr/local/bin/seed-vscode-home.sh 2>/dev/null || \
+    if ! /usr/local/bin/seed-vscode-home.sh 2>/dev/null; then
         log "Warning: Failed to prepare the standard vscode home"
+        if [ "${ROR_SYSTEMD_CONTAINER:-0}" = "1" ]; then
+            exit 1
+        fi
+    fi
 fi
 
 # Prepare rootless Podman without changing Docker's startup contract. The

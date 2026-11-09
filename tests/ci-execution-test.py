@@ -81,6 +81,8 @@ elif name == 'docker':
                 break
         else:
             sys.exit(1)
+    elif args[:1] == ['inspect']:
+        print(os.environ.get('INSPECT_STATE', 'running'))
 elif name == 'git':
     print(os.environ.get('SOURCE_SHA', 'a' * 40))
 '''
@@ -301,6 +303,18 @@ class ExecutionTests(unittest.TestCase):
         self.assertTrue(any("target=/home/vscode" in mount for mount in mounts))
         self.assertEqual(sum(call[:2] == ["docker", "run"] for call in calls), 3)
         self.assertTrue(any(call[:3] == ["docker", "volume", "rm"] for call in calls))
+
+    def test_wolfi_systemd_startup_failure_reports_container_state_and_cleans_owned_resources(self):
+        result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi-systemd",
+                                 FAIL_COMMAND="docker exec", INSPECT_STATE="exited")
+        self.assertNotEqual(result.returncode, 0)
+        calls = self.calls()
+        self.assertTrue(any(call[:2] == ["docker", "inspect"] for call in calls))
+        self.assertTrue(any(call[:2] == ["docker", "logs"] for call in calls))
+        self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], calls)
+        created = [call[-1] for call in calls if call[:3] == ["docker", "volume", "create"]]
+        removed = [call[-1] for call in calls if call[:3] == ["docker", "volume", "rm"]]
+        self.assertEqual(sorted(created), sorted(removed))
 
     def test_required_privileged_home_contract_failure_fails_runtime_gate(self):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "ubuntu-noble",

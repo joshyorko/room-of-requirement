@@ -19,14 +19,20 @@ verify_service() {
     service_pid="$(systemctl --user show "${unit}" --property=MainPID --value)"
     [ "${service_pid}" -gt 1 ]
     [ "$(stat -c '%u' "/proc/${service_pid}")" = 1000 ]
+    if ! tr '\0' '\n' < "/proc/${service_pid}/environ" | \
+        grep -Fqx "T3CODE_HOME=${T3CODE_HOME}"; then
+        echo "Homebrew service is not using the disposable T3CODE_HOME" >&2
+        return 1
+    fi
     service_command="$(ps -o args= -p "${service_pid}")"
-    [[ "${service_command}" == *"t3 serve"* ]] || {
-        echo "Unexpected Homebrew service command" >&2
+    [[ "${service_command}" == *"dist/bin.mjs"*"serve"* || \
+       "${service_command}" == *"dist/index.mjs"*"serve"* ]] || {
+        echo "Homebrew main PID is not the formula's t3 serve process" >&2
         return 1
     }
-    process_count="$(ps -eo args= | awk '$0 ~ /[t]3 serve/ { count += 1 } END { print count + 0 }')"
-    [ "${process_count}" -eq 1 ] || {
-        echo "Expected exactly one t3 serve process, found ${process_count}" >&2
+    service_count="$(ps -eo args= | awk '$0 ~ /dist\/(bin|index)\.mjs.*serve/ { count += 1 } END { print count + 0 }')"
+    [ "${service_count}" -eq 1 ] || {
+        echo "Expected exactly one formula t3 serve process, found ${service_count}" >&2
         return 1
     }
 

@@ -72,15 +72,44 @@ start_container() {
 
 wait_for_systemd() {
     local attempt
-    for ((attempt = 1; attempt <= 120; attempt++)); do
+    local container_state
+
+    dump_startup_diagnostics() {
+        local details
+        details="$(docker inspect --format '{{.State.Status}} exit={{.State.ExitCode}} error={{.State.Error}}' \
+            "${container_id}" 2>/dev/null || echo 'inspect unavailable')"
+        echo "FAIL: systemd startup diagnostics: ${details}" >&2
+        docker logs --timestamps "${container_id}" >&2 || true
+        if [[ "${details}" == running* ]]; then
+            docker exec --user root "${container_id}" bash -c '
+                printf "PID 1: "; cat /proc/1/comm 2>&1 || true
+                printf "system state: "; systemctl is-system-running 2>&1 || true
+                for unit in dbus.service systemd-logind.service ror-container-init.service \
+                    ror-docker.service ror-vscode-user-manager.service user@1000.service; do
+                    systemctl show "$unit" --property=LoadState,ActiveState,SubState,Result --no-pager 2>&1 || true
+                done
+                systemctl --failed --no-pager 2>&1 || true
+                journalctl -b -n 100 --no-pager 2>&1 || true
+            ' >&2 || true
+        fi
+    }
+
+    for ((attempt = 1; attempt <= 60; attempt++)); do
         if docker exec --user root "${container_id}" systemctl is-active --quiet ror-vscode-user-manager.service 2>/dev/null; then
             docker exec --user root "${container_id}" bash /ror-source/tests/wolfi-systemd-runtime-smoke.sh
             return
         fi
+        container_state="$(docker inspect --format '{{.State.Status}}' "${container_id}" 2>/dev/null || true)"
+        case "${container_state}" in
+            exited|dead|removing)
+                dump_startup_diagnostics
+                echo "FAIL: container stopped before the vscode user manager became active" >&2
+                return 1
+                ;;
+        esac
         sleep 1
     done
-    docker logs "${container_id}" >&2 || true
-    docker exec --user root "${container_id}" systemctl --failed --no-pager >&2 || true
+    dump_startup_diagnostics
     echo "FAIL: systemd user manager did not become active in ${container_id}" >&2
     return 1
 }
@@ -121,6 +150,9 @@ container_id=""
 start_container
 wait_for_systemd
 user_manager verify
+homebrew_service setup
+user_manager verify
+homebrew_service cleanup
 user_manager cleanup
 
 # Exercise RoR's existing Docker, rootless Podman, home, and native runtime checks.

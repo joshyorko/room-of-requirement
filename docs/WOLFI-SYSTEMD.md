@@ -48,6 +48,12 @@ The image does not install or start T3. Once the unchanged Homebrew formula is
 installed by the operator, services run as `vscode` through `brew services` and
 `systemctl --user`. No account authorization is performed by the image.
 
+A formula installed into the writable container layer is not retained by a
+fresh container recreation. Reinstall runtime-installed formulas after
+recreation; the disposable CI smoke does this explicitly and verifies that the
+service uses its temporary `T3CODE_HOME`. The smoke separately checks that a
+user unit stored in the persistent `vscode` home resumes after recreation.
+
 ## Rollback
 
 Select `ghcr.io/joshyorko/room-of-requirement:wolfi`, remove the explicit
