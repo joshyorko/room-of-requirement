@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.0](https://github.com/joshyorko/room-of-requirement/compare/v1.20.8...v1.21.0) (2026-11-09)
+
+
+### ✨ Features
+
+* **wolfi:** add opt-in systemd user-service image ([#554](https://github.com/joshyorko/room-of-requirement/issues/554)) ([ca37c5e](https://github.com/joshyorko/room-of-requirement/commit/ca37c5e4099e001a94c2f5f3bb8c5e2888c1dd42))
+
 ## [1.20.8](https://github.com/joshyorko/room-of-requirement/compare/v1.20.7...v1.20.8) (2026-10-30)
 
 
