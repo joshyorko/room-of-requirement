@@ -384,7 +384,7 @@ CMD ["sleep", "infinity"]
 FROM runtime AS wolfi-systemd
 
 USER 0
-RUN apk add --no-cache dbus pam systemd systemd-systemctl
+RUN apk add --no-cache dbus linux-pam systemd systemd-systemctl
 COPY src/wolfi/systemd/ror-container-init.service /etc/systemd/system/ror-container-init.service
 COPY src/wolfi/systemd/ror-docker.service /etc/systemd/system/ror-docker.service
 COPY src/wolfi/systemd/ror-vscode-user-manager.service /etc/systemd/system/ror-vscode-user-manager.service

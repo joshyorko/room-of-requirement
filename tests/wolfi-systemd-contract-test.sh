@@ -35,7 +35,7 @@ metadata = json.loads(metadata_labels[-1])
 assert metadata[0]["containerUser"] == "root"
 assert metadata[0]["remoteUser"] == "vscode"
 assert metadata[0]["updateRemoteUserUID"] is False
-assert "apk add --no-cache dbus pam systemd systemd-systemctl" in dockerfile
+assert "apk add --no-cache dbus linux-pam systemd systemd-systemctl" in dockerfile
 assert "ENTRYPOINT [\"/usr/lib/systemd/systemd\"]" in dockerfile
 assert "CMD [\"--system\", \"--unit=multi-user.target\"]" in dockerfile
 assert "STOPSIGNAL SIGRTMIN+3" in dockerfile
