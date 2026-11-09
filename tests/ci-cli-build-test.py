@@ -112,10 +112,16 @@ class CliBuildTests(unittest.TestCase):
                         GITHUB_OUTPUT=str(self.root / "output"), PYTHONDONTWRITEBYTECODE="1")
 
     def build(self, with_feature, run_id="123", event="schedule", refresh=False, variant="wolfi"):
+        config_dir = self.root / "src" / variant / ".devcontainer"
+        config_dir.mkdir(parents=True, exist_ok=True)
         config = dict(build=dict(dockerfile="Dockerfile", context="../../.."))
+        if variant == "wolfi-systemd":
+            config["build"]["target"] = "wolfi-systemd"
+            (config_dir / "Dockerfile").write_text("FROM scratch AS wolfi-systemd\n")
+            (config_dir / "devcontainer-lock.json").write_text('{"features":{}}')
         if with_feature:
             config["features"] = {"../../../.devcontainer/feature": {}}
-        (self.config / "devcontainer.json").write_text(json.dumps(config))
+        (config_dir / "devcontainer.json").write_text(json.dumps(config))
         state_path = self.root / "state.json"
         state_path.unlink(missing_ok=True)
         ref = "refs/pull/1/merge" if event == "pull_request" else "refs/heads/main"
