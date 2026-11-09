@@ -1,0 +1,70 @@
+{
+  "name": "Room of Requirement Wolfi with systemd",
+  "build": {
+    "dockerfile": "Dockerfile",
+    "context": "../../..",
+    "target": "wolfi-systemd"
+  },
+  "workspaceFolder": "/workspaces/room-of-requirement",
+  "containerUser": "root",
+  "remoteUser": "vscode",
+  "containerEnv": {
+    "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true"
+  },
+  "remoteEnv": {
+    "SHELL": "/bin/zsh",
+    "HOMEBREW_NO_ANALYTICS": "1",
+    "HOMEBREW_NO_AUTO_UPDATE": "1",
+    "DOCKER_BUILDKIT": "1",
+    "DEV_CONTAINERS_SKIP_GCOMPAT_INSTALL": "true",
+    "XDG_RUNTIME_DIR": "/run/user/1000",
+    "DBUS_SESSION_BUS_ADDRESS": "unix:path=/run/user/1000/bus"
+  },
+  "mounts": [
+    "source=ror-vscode-home-${devcontainerId},target=/home/vscode,type=volume",
+    "source=ror-mise-cache,target=/home/vscode/.local/share/mise,type=volume",
+    "source=ror-npm-cache,target=/home/vscode/.npm,type=volume",
+    "source=ror-zsh-history,target=/home/vscode/.zsh_history_dir,type=volume",
+    "source=ror-docker-data-${devcontainerId},target=/var/lib/docker,type=volume",
+    "source=ror-wolfi-podman-storage-${devcontainerId},target=/home/vscode/.local/share/containers/storage,type=volume"
+  ],
+  "customizations": {
+    "vscode": {
+      "extensions": [
+        "ms-azuretools.vscode-containers",
+        "github.vscode-github-actions",
+        "ms-python.python",
+        "esbenp.prettier-vscode",
+        "dbaeumer.vscode-eslint",
+        "github.copilot",
+        "github.copilot-chat",
+        "openai.chatgpt"
+      ],
+      "settings": {
+        "terminal.integrated.defaultProfile.linux": "zsh",
+        "terminal.integrated.profiles.linux": {
+          "zsh": {
+            "path": "/bin/zsh",
+            "args": ["-l"]
+          }
+        },
+        "terminal.integrated.shellIntegration.enabled": true,
+        "terminal.integrated.shellIntegration.decorationsEnabled": "never",
+        "editor.defaultFormatter": null,
+        "editor.formatOnSave": true,
+        "github.copilot.enable": {
+          "*": true
+        },
+        "github.copilot.advanced": {}
+      }
+    }
+  },
+  "features": {},
+  "privileged": true,
+  "overrideCommand": false,
+  "runArgs": [
+    "--privileged",
+    "--cgroupns=private"
+  ],
+  "postCreateCommand": "/bin/bash /usr/local/bin/devcontainer-post-create.sh"
+}

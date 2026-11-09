@@ -1,0 +1,14 @@
+[Unit]
+Description=Start the persistent vscode systemd user manager
+Requires=ror-container-init.service ror-docker.service
+After=systemd-logind.service dbus.service ror-container-init.service ror-docker.service
+Before=multi-user.target
+
+[Service]
+Type=oneshot
+RemainAfterExit=yes
+ExecStart=/usr/bin/loginctl enable-linger vscode
+ExecStart=/usr/bin/systemctl start user@1000.service
+
+[Install]
+WantedBy=multi-user.target

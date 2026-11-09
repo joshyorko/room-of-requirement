@@ -42,16 +42,33 @@ prepare_podman_runtime() {
     local vscode_uid
     local runtime_dir
     local podman_storage
+    local runtime_ready=1
     vscode_uid="$(id -u vscode)"
     runtime_dir="/run/user/${vscode_uid}"
     podman_storage="${HOME}/.local/share/containers/storage"
 
-    run_as_root mkdir -p "${runtime_dir}" "${podman_storage}" 2>/dev/null || {
+    if [ "${ROR_SYSTEMD_CONTAINER:-0}" = "1" ]; then
+        # logind owns /run/user/$UID in the systemd flavor. Never replace its
+        # runtime directory or race user-runtime-dir@ with an entrypoint chown.
+        if [ ! -d "${runtime_dir}" ] || [ "$(stat -c '%u' "${runtime_dir}")" != "${vscode_uid}" ]; then
+            log "Warning: logind has not prepared ${runtime_dir}; deferring runtime-dir setup"
+            runtime_ready=0
+        fi
+    else
+        run_as_root mkdir -p "${runtime_dir}" 2>/dev/null || {
+            log "Warning: Failed to create Podman runtime directory"
+            return 0
+        }
+        run_as_root chown vscode:vscode "${runtime_dir}" 2>/dev/null || \
+            log "Warning: Failed to chown Podman runtime directory"
+        run_as_root chmod 700 "${runtime_dir}" 2>/dev/null || \
+            log "Warning: Failed to restrict Podman runtime directory"
+    fi
+
+    run_as_root mkdir -p "${podman_storage}" 2>/dev/null || {
         log "Warning: Failed to create Podman runtime or storage directories"
         return 0
     }
-    run_as_root chown vscode:vscode "${runtime_dir}" 2>/dev/null || \
-        log "Warning: Failed to chown Podman runtime directory"
     if [ "$(stat -c '%u' "${podman_storage}")" = "0" ]; then
         local storage_mode
         storage_mode="$(stat -c '%a' "${podman_storage}")"
@@ -62,9 +79,9 @@ prepare_podman_runtime() {
             log "Warning: Failed to chown Podman storage root"
         fi
     fi
-    run_as_root chmod 700 "${runtime_dir}" 2>/dev/null || \
-        log "Warning: Failed to restrict Podman runtime directory"
-    export XDG_RUNTIME_DIR="${runtime_dir}"
+    if [ "${runtime_ready}" = "1" ]; then
+        export XDG_RUNTIME_DIR="${runtime_dir}"
+    fi
 
     if command -v mount >/dev/null 2>&1; then
         run_as_root mount --make-rshared / 2>/dev/null || \
@@ -77,6 +94,11 @@ prepare_podman_runtime
 # Wolfi supplies this helper; prepare account groups before Devsy opens sessions.
 if [ -x /usr/local/bin/prepare-kvm.sh ]; then
     /usr/local/bin/prepare-kvm.sh || log "Warning: Failed to register the KVM device group"
+fi
+
+if [ "${ROR_ENTRYPOINT_INIT_ONLY:-0}" = "1" ]; then
+    log "Room of Requirement systemd initialization complete"
+    exit 0
 fi
 
 if [ -x /usr/local/share/docker-init.sh ] && [ "${ROR_USE_DEVCONTAINER_DOCKER_INIT:-1}" != "0" ]; then
