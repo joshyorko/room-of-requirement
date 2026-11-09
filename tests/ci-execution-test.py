@@ -434,6 +434,44 @@ class GitSourceTests(unittest.TestCase):
                 os.chdir(previous)
 
 
+class PodmanManagerTests(unittest.TestCase):
+    def probe(self, variant, manager):
+        with tempfile.TemporaryDirectory() as work:
+            directory = Path(work)
+            fake = '''#!/usr/bin/env python3
+import os, pathlib, sys
+name = pathlib.Path(sys.argv[0]).name
+args = sys.argv[1:]
+if name == 'id': print('1000')
+elif name == 'stat': print('700')
+elif name == 'podman' and args[0] == 'info':
+    print('true overlay netavark ' + os.environ['TEST_MANAGER'])
+elif name == 'podman' and 'cat' in args: print('wolfi-podman')
+'''
+            for name in ("id", "stat", "podman", "buildah", "skopeo"):
+                target = directory / name
+                target.write_text(fake)
+                target.chmod(0o755)
+            # Redirect only the runtime-dir existence check to the owned fixture.
+            source = (SCRIPTS / "podman-smoke.sh").read_text().replace(
+                'runtime_dir="/run/user/$(id -u)"', f'runtime_dir="{directory}"')
+            return subprocess.run(["bash", "-c", source], text=True, capture_output=True,
+                env=dict(os.environ, PATH=str(directory) + ":" + os.environ["PATH"],
+                         ROR_IMAGE_VARIANT=variant, TEST_MANAGER=manager), timeout=10)
+
+    def test_each_flavor_requires_its_own_cgroup_manager(self):
+        for variant, manager in (("wolfi", "cgroupfs"), ("wolfi-systemd", "systemd")):
+            with self.subTest(variant=variant):
+                result = self.probe(variant, manager)
+                self.assertEqual(result.returncode, 0, result.stderr)
+
+    def test_wrong_manager_fails_for_both_flavors(self):
+        for variant, manager in (("wolfi", "systemd"), ("wolfi-systemd", "cgroupfs")):
+            with self.subTest(variant=variant):
+                result = self.probe(variant, manager)
+                self.assertNotEqual(result.returncode, 0)
+
+
 class HomebrewListenerTests(unittest.TestCase):
     def run_probe(self, *, ready_after=None, exit_after=None, foreign=False):
         # Execute the actual smoke probe against disposable procfs fixtures.
