@@ -58,7 +58,7 @@ class BrewfileValidatorTests(unittest.TestCase):
                 "\n".join(
                     [
                         'tap "joshyorko/tools"',
-                        'brew "joshyorko/tools/fizzy-symphony"',
+                        'brew "joshyorko/tools/action-server"',
                         'cask "joshyorko/tools/rcc"',
                     ]
                 )
@@ -74,7 +74,7 @@ class BrewfileValidatorTests(unittest.TestCase):
                     stdout = json.dumps(
                         [
                             {
-                                "formula_names": ["fizzy-symphony"],
+                                "formula_names": ["action-server"],
                                 "cask_tokens": ["rcc"],
                             }
                         ]
