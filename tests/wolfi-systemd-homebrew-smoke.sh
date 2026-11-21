@@ -7,32 +7,16 @@ export XDG_RUNTIME_DIR=/run/user/1000
 export DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus
 export HOMEBREW_NO_ANALYTICS=1
 export HOMEBREW_NO_AUTO_UPDATE=1
-case "${T3CODE_HOME:?T3CODE_HOME must be a disposable test path}" in
-    /tmp/ror-wolfi-systemd-smoke-*) ;;
-    *) echo "T3CODE_HOME must use the disposable smoke-test prefix" >&2; exit 2 ;;
-esac
-unit=sh.brew.t3code-cli-main.service
-dropin_dir="${HOME}/.config/systemd/user/${unit}.d"
+unit=sh.brew.redis.service
 verify_service() {
-    brew services info t3code-cli-main >/dev/null
+    brew services info redis >/dev/null
     systemctl --user is-active --quiet "${unit}"
     service_pid="$(systemctl --user show "${unit}" --property=MainPID --value)"
     [ "${service_pid}" -gt 1 ]
     [ "$(stat -c '%u' "/proc/${service_pid}")" = 1000 ]
-    if ! tr '\0' '\n' < "/proc/${service_pid}/environ" | \
-        grep -Fqx "T3CODE_HOME=${T3CODE_HOME}"; then
-        echo "Homebrew service is not using the disposable T3CODE_HOME" >&2
-        return 1
-    fi
-    service_command="$(ps -o args= -p "${service_pid}")"
-    [[ "${service_command}" == *"dist/bin.mjs"*"serve"* || \
-       "${service_command}" == *"dist/index.mjs"*"serve"* ]] || {
-        echo "Homebrew main PID is not the formula's t3 serve process" >&2
-        return 1
-    }
-    service_count="$(ps -eo args= | awk '$0 ~ /dist\/(bin|index)\.mjs.*serve/ { count += 1 } END { print count + 0 }')"
-    [ "${service_count}" -eq 1 ] || {
-        echo "Expected exactly one formula t3 serve process, found ${service_count}" >&2
+    expected_executable="$(readlink -f "$(brew --prefix redis)/bin/redis-server")"
+    [ "$(readlink -f "/proc/${service_pid}/exe")" = "${expected_executable}" ] || {
+        echo "Homebrew main PID is not the installed Redis server" >&2
         return 1
     }
 
@@ -45,7 +29,7 @@ pid = sys.argv[1]
 deadline = time.monotonic() + 30
 while True:
     if not pathlib.Path(f"/proc/{pid}").exists():
-        raise SystemExit("Homebrew t3 serve process exited before listener readiness")
+        raise SystemExit("Homebrew Redis process exited before listener readiness")
     owned = set()
     try:
         for descriptor in pathlib.Path(f"/proc/{pid}/fd").iterdir():
@@ -63,7 +47,7 @@ while True:
     if owned.intersection(listeners):
         break
     if time.monotonic() >= deadline:
-        raise SystemExit("Homebrew t3 serve process owns no TCP listening socket after 30 seconds")
+        raise SystemExit("Homebrew Redis process owns no TCP listening socket after 30 seconds")
     time.sleep(0.25)
 PY
     then
@@ -75,35 +59,24 @@ PY
 
 case "${1:?expected setup, verify, or cleanup}" in
     setup)
-        mkdir -p "${T3CODE_HOME}"
-        systemctl --user set-environment "T3CODE_HOME=${T3CODE_HOME}"
-        brew tap joshyorko/tools
-        brew install --formula joshyorko/tools/t3code-cli-main
-        brew services start t3code-cli-main
-        mkdir -p "${dropin_dir}"
-        printf '[Service]\nEnvironment=T3CODE_HOME=%s\n' "${T3CODE_HOME}" > "${dropin_dir}/smoke.conf"
-        systemctl --user daemon-reload
-        systemctl --user restart "${unit}"
+        brew install --formula redis
+        brew services start redis
         verify_service
-        brew services restart t3code-cli-main
+        brew services restart redis
         verify_service
-        printf 'PASS: Homebrew service starts and restarts as vscode with a temporary T3CODE_HOME\n'
+        printf 'PASS: Homebrew Redis service starts and restarts as vscode\n'
         ;;
     verify)
         verify_service
-        printf 'PASS: Homebrew t3code-cli-main service survived container stop/start\n'
+        printf 'PASS: Homebrew Redis service survived container stop/start\n'
         ;;
     cleanup)
-        brew services stop t3code-cli-main
+        brew services stop redis
         if systemctl --user is-active --quiet "${unit}"; then
             echo "Homebrew service remained active after stop" >&2
             exit 1
         fi
-        systemctl --user unset-environment T3CODE_HOME
-        rm -rf -- "${dropin_dir}"
-        systemctl --user daemon-reload
-        rm -rf -- "${T3CODE_HOME}"
-        printf 'PASS: Homebrew service stops and temporary T3CODE_HOME is removed\n'
+        printf 'PASS: Homebrew Redis service stops\n'
         ;;
     *)
         echo "expected setup, verify, or cleanup" >&2
