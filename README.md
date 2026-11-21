@@ -20,7 +20,7 @@ Add to your project's `.devcontainer/devcontainer.json`:
 }
 ```
 
-`latest` points at the Ubuntu Noble variant, which is the default Codespaces path. Core tools `mise`, `starship`, and `zoxide` are included. Language runtimes are configured for each project; `bbrew` and additional bundles install on demand. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, `fizzy-popper-self-hosted`, `fizzy-symphony`, and `oracle` are available via `ujust bbrew` -> select `ror`.
+`latest` points at the Ubuntu Noble variant, which is the default Codespaces path. Core tools `mise`, `starship`, and `zoxide` are included. Language runtimes are configured for each project; `bbrew` and additional bundles install on demand. Additional tools like `gh`, `uv`, `sqlite`, `duckdb`, `rcc`, `action-server`, `codex`, `claude-code`, `fizzy-cli-master`, and `oracle` are available via `ujust bbrew` -> select `ror`.
 
 Variant tags:
 
@@ -116,7 +116,7 @@ ujust brew-download-ror # Download the RoR Brewfile artifacts without installing
 | **core** | mise, starship, zoxide, bbrew |
 | **dev** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux, git-lfs |
 | **cloud** | aws-cli, azure-cli, terraform, kubectl, helm, k9s, k3d, dagger, devspace |
-| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server, fizzy-cli-master, fizzy-popper-self-hosted, fizzy-symphony, oracle |
+| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server, fizzy-cli-master, oracle |
 
 ---
 
