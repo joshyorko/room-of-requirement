@@ -1,5 +1,12 @@
 # Changelog
 
+## [1.21.2](https://github.com/joshyorko/room-of-requirement/compare/v1.21.1...v1.21.2) (2026-11-21)
+
+
+### 🐛 Bug Fixes
+
+* install Python for the Wolfi Homebrew smoke probe ([#584](https://github.com/joshyorko/room-of-requirement/issues/584)) ([57449c2](https://github.com/joshyorko/room-of-requirement/commit/57449c2d4c6442b58d4754fb03c72bfd733a1b6a))
+
 ## [1.21.1](https://github.com/joshyorko/room-of-requirement/compare/v1.21.0...v1.21.1) (2026-11-11)
 
 
