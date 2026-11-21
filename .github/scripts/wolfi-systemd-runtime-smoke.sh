@@ -126,7 +126,6 @@ homebrew_service() {
     docker exec --user vscode \
         --env XDG_RUNTIME_DIR=/run/user/1000 \
         --env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus \
-        --env T3CODE_HOME="/tmp/ror-wolfi-systemd-smoke-${suffix}" \
         "${container_id}" bash /ror-source/tests/wolfi-systemd-homebrew-smoke.sh "$@"
 }
 

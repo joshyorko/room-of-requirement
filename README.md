@@ -116,7 +116,7 @@ ujust brew-download-ror # Download the RoR Brewfile artifacts without installing
 | **core** | mise, starship, zoxide, bbrew |
 | **dev** | bat, eza, fd, fzf, ripgrep, jq, yq, htop, tmux, git-lfs |
 | **cloud** | aws-cli, azure-cli, terraform, kubectl, helm, k9s, k3d, dagger, devspace |
-| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server, t3code-cli-main, fizzy-cli-master, fizzy-popper-self-hosted, fizzy-symphony, oracle |
+| **ror** | uv, sqlite, duckdb, gh, codex, claude-code, rcc, action-server, fizzy-cli-master, fizzy-popper-self-hosted, fizzy-symphony, oracle |
 
 ---
 
