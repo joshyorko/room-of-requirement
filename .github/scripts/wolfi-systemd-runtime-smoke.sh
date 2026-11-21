@@ -123,6 +123,10 @@ user_manager() {
 }
 
 homebrew_service() {
+    if [[ "${1}" == setup ]]; then
+        # The listener probe needs Python; service formulae need not depend on it.
+        docker exec --user root "${container_id}" apk add --no-cache python-3.15
+    fi
     docker exec --user vscode \
         --env XDG_RUNTIME_DIR=/run/user/1000 \
         --env DBUS_SESSION_BUS_ADDRESS=unix:path=/run/user/1000/bus \

@@ -305,6 +305,32 @@ class ExecutionTests(unittest.TestCase):
         self.assertEqual(sum(call[:2] == ["docker", "run"] for call in calls), 3)
         self.assertTrue(any(call[:3] == ["docker", "volume", "rm"] for call in calls))
 
+    def test_wolfi_systemd_installs_probe_python_before_each_homebrew_setup(self):
+        result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi-systemd")
+        self.assertEqual(result.returncode, 0, result.stderr)
+        calls = self.calls()
+        installs = [(i, call) for i, call in enumerate(calls)
+                    if call[-4:] == ["apk", "add", "--no-cache", "python-3.15"]]
+        setups = [i for i, call in enumerate(calls)
+                  if call[-2:] == ["/ror-source/tests/wolfi-systemd-homebrew-smoke.sh", "setup"]]
+        self.assertEqual(len(installs), 2, "Both fresh containers need the probe interpreter")
+        self.assertEqual(len(setups), 2)
+        for (install, command), setup in zip(installs, setups):
+            self.assertEqual(command[:5], ["docker", "exec", "--user", "root", "ci-owned-container"])
+            self.assertLess(install, setup)
+
+    def test_wolfi_systemd_probe_dependency_failure_stops_setup_and_cleans_resources(self):
+        result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi-systemd",
+                                 FAIL_COMMAND="apk add --no-cache python-3.15")
+        self.assertEqual(result.returncode, 7, result.stderr)
+        calls = self.calls()
+        self.assertFalse(any("/ror-source/tests/wolfi-systemd-homebrew-smoke.sh" in call
+                             for call in calls))
+        self.assertIn(["docker", "rm", "-f", "-v", "ci-owned-container"], calls)
+        created = [call[-1] for call in calls if call[:3] == ["docker", "volume", "create"]]
+        removed = [call[-1] for call in calls if call[:3] == ["docker", "volume", "rm"]]
+        self.assertEqual(sorted(created), sorted(removed))
+
     def test_wolfi_systemd_startup_failure_reports_container_state_and_cleans_owned_resources(self):
         result = self.run_script("runtime-smoke.sh", "local:candidate", "wolfi-systemd",
                                  FAIL_COMMAND="docker exec", INSPECT_STATE="exited")
