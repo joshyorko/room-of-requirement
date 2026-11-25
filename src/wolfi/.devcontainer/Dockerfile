@@ -392,7 +392,9 @@ RUN apk add --no-cache dbus linux-pam systemd systemd-systemctl systemd-logind-s
 COPY src/wolfi/systemd/ror-container-init.service /etc/systemd/system/ror-container-init.service
 COPY src/wolfi/systemd/ror-docker.service /etc/systemd/system/ror-docker.service
 COPY src/wolfi/systemd/ror-vscode-user-manager.service /etc/systemd/system/ror-vscode-user-manager.service
-RUN systemctl enable ror-container-init.service ror-docker.service \
+# Containers do not provide the host virtual console expected by tty1's getty.
+RUN systemctl mask getty@tty1.service && \
+    systemctl enable ror-container-init.service ror-docker.service \
         ror-vscode-user-manager.service
 
 ENV ROR_IMAGE_VARIANT=wolfi-systemd

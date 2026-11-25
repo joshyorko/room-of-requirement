@@ -38,6 +38,7 @@ assert metadata[0]["updateRemoteUserUID"] is False
 assert "apk add --no-cache dbus linux-pam systemd systemd-systemctl" in dockerfile
 systemd_stage = dockerfile.split("FROM runtime AS wolfi-systemd\n", 1)[1].split("FROM runtime AS final", 1)[0]
 assert "systemd-logind-service" in systemd_stage, "Wolfi splits logind into systemd-logind-service"
+assert "systemctl mask getty@tty1.service" in systemd_stage, "Containers have no host virtual console on tty1"
 for required_unit in ("systemd-logind.service", "user@.service", "user-runtime-dir@.service"):
     assert required_unit in systemd_stage, f"Build must check the installed {required_unit}"
 assert "ENTRYPOINT [\"/usr/lib/systemd/systemd\"]" in dockerfile
