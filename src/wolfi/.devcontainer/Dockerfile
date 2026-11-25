@@ -7,7 +7,7 @@
 # ARG PINS: Base image version
 # ============================================================================
 # Wolfi base image - kept current by maintenance robot for security patches
-ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:7974283557d272e72834dfae1a9a5b98b6bdfc90ecf88b352cf2778f15c5481d
+ARG WOLFI_BASE_IMAGE=cgr.dev/chainguard/wolfi-base:latest@sha256:28c39be5a5e1e9b85081c10740e8495f6518a865b23bc6a486637c4b21e74b43
 # Official Docker CLI image used to override Wolfi's CLI binary while Wolfi's
 # docker-cli package is still built with a vulnerable Go stdlib revision.
 ARG DOCKER_CLI_IMAGE=docker:29.10.1-cli@sha256:6e26c5a09acc481245d6b50836f1f713c609e51ebc88735c08f5aa4b3c91e15a
@@ -392,7 +392,9 @@ RUN apk add --no-cache dbus linux-pam systemd systemd-systemctl systemd-logind-s
 COPY src/wolfi/systemd/ror-container-init.service /etc/systemd/system/ror-container-init.service
 COPY src/wolfi/systemd/ror-docker.service /etc/systemd/system/ror-docker.service
 COPY src/wolfi/systemd/ror-vscode-user-manager.service /etc/systemd/system/ror-vscode-user-manager.service
-RUN systemctl enable ror-container-init.service ror-docker.service \
+# Containers do not provide the host virtual console expected by tty1's getty.
+RUN systemctl mask getty@tty1.service && \
+    systemctl enable ror-container-init.service ror-docker.service \
         ror-vscode-user-manager.service
 
 ENV ROR_IMAGE_VARIANT=wolfi-systemd
